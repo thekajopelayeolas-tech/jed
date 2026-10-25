@@ -43,6 +43,11 @@ export function setupInput(canvas, player, inventory, actions) {
     else if (e.button === 2) actions.onPlace();
   });
 
+  // Releasing the left button stops hold-to-mine.
+  document.addEventListener('mouseup', (e) => {
+    if (e.button === 0 && actions.onRelease) actions.onRelease();
+  });
+
   document.addEventListener('contextmenu', (e) => e.preventDefault());
 
   document.addEventListener('wheel', (e) => {

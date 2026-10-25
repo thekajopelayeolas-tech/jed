@@ -12,6 +12,7 @@ import { createInventoryUI } from './inventory-ui.js';
 import { MobManager } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
+import { breakTime, canHarvest, attackDamage } from './mining.js';
 
 const SEED = 1337;
 
@@ -67,7 +68,8 @@ function targetHit() {
 // What a broken block leaves behind. Blocks not listed here drop themselves.
 const DROP_FOR = { [BLOCK.GRASS]: BLOCK.DIRT, [BLOCK.STONE]: BLOCK.COBBLESTONE };
 
-// Left click: hit a mob if one is in front of the player, otherwise break the block.
+// Left click: hit a mob in front of the player with the held weapon. Otherwise start mining the block.
+// A click on a mob does not start mining. Mining runs in the frame loop while the button is held.
 function attack() {
   const eye = player.eye;
   const dir = player.lookDir();
@@ -78,20 +80,64 @@ function attack() {
     : REACH;
   const mob = mobs.raycastMob(eye, dir, blockDist);
   if (mob) {
-    mob.takeHit(3, player.pos.x, player.pos.z);
+    const dmg = attackDamage(inventory.selectedItem.id);
+    mob.takeHit(dmg, player.pos.x, player.pos.z);
     if (mob.dead) drops.spawn(mob.def.drop, mob.pos.x, mob.pos.y, mob.pos.z);
     return;
   }
-  breakBlock();
+  mining.start();
 }
 
-function breakBlock() {
-  const hit = targetHit();
-  if (!hit || hit.id === BLOCK.BEDROCK) return;
-  if (world.setBlock(hit.block.x, hit.block.y, hit.block.z, BLOCK.AIR)) {
+// Breaks the block at the given cell. The drop only appears if the held tool can harvest it.
+function finishBreak(hit) {
+  const held = inventory.selectedItem.id;
+  const drop = canHarvest(hit.id, held);
+  if (world.setBlock(hit.block.x, hit.block.y, hit.block.z, BLOCK.AIR) && drop) {
     drops.spawn(DROP_FOR[hit.id] ?? hit.id, hit.block.x, hit.block.y, hit.block.z);
   }
 }
+
+// Hold-to-mine state. Progress is in seconds and resets when the target changes or the button is released.
+const mining = {
+  pressed: false,
+  target: null,
+  progress: 0,
+  start() {
+    this.pressed = true;
+  },
+  stop() {
+    this.pressed = false;
+    this.target = null;
+    this.progress = 0;
+  },
+  // Called every frame. Advances progress on the block in front of the player.
+  update(dt) {
+    if (!this.pressed) return;
+    const hit = targetHit();
+    if (!hit) { this.target = null; this.progress = 0; return; }
+    const key = `${hit.block.x},${hit.block.y},${hit.block.z}`;
+    if (this.target !== key) {
+      this.target = key;
+      this.progress = 0;
+    }
+    const need = breakTime(hit.id, inventory.selectedItem.id);
+    if (!Number.isFinite(need)) return;
+    this.progress += dt;
+    if (this.progress >= need) {
+      finishBreak(hit);
+      this.target = null;
+      this.progress = 0;
+    }
+  },
+  // Fraction 0..1 for the crack overlay on the HUD.
+  fraction() {
+    if (!this.target) return 0;
+    const hit = targetHit();
+    if (!hit) return 0;
+    const need = breakTime(hit.id, inventory.selectedItem.id);
+    return Number.isFinite(need) ? Math.min(1, this.progress / need) : 0;
+  },
+};
 
 function placeBlock() {
   const hit = targetHit();
@@ -118,6 +164,7 @@ const crafting = createInventoryUI(inventory);
 
 setupInput(renderer.domElement, player, inventory, {
   onBreak: attack,
+  onRelease: () => mining.stop(),
   onPlace: placeBlock,
   onRespawn: respawn,
   onPauseChange: (paused) => hud.setPaused(paused && !crafting.isOpen()),
@@ -167,6 +214,7 @@ function frame(now) {
   timeOfDay = updateDayNight(scene, sky, timeOfDay, dt, RENDER_DISTANCE);
   world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
   drops.update(dt, player.pos, inventory);
+  if (!crafting.isOpen()) mining.update(dt);
   if (!crafting.isOpen()) {
     mobs.update(dt, player.pos, timeOfDay, (mob, damage) => {
       if (player.hurt(damage)) {
