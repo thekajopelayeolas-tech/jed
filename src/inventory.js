@@ -8,8 +8,21 @@ export const INV_SIZE = 36;
 export const RECIPES = [
   { result: BLOCK.PLANKS, count: 4, shaped: true, pattern: ['W'], key: { W: BLOCK.WOOD } },
   { result: BLOCK.CRAFTING_TABLE, count: 1, shaped: true, pattern: ['PP', 'PP'], key: { P: BLOCK.PLANKS } },
-  { result: BLOCK.TORCH, count: 4, shaped: true, pattern: ['C', 'S'], key: { C: BLOCK.COAL_ORE, S: BLOCK.WOOD } },
+  { result: BLOCK.TORCH, count: 4, shaped: true, pattern: ['C', 'S'], key: { C: BLOCK.COAL, S: BLOCK.STICK } },
   { result: BLOCK.GLASS, count: 1, shaped: true, pattern: ['SS', 'SS'], key: { S: BLOCK.SAND } },
+  { result: BLOCK.STICK, count: 4, shaped: true, pattern: ['P', 'P'], key: { P: BLOCK.PLANKS } },
+  { result: BLOCK.BED, count: 1, shaped: true, pattern: ['WWW', 'PPP'], key: { W: BLOCK.WOOL, P: BLOCK.PLANKS } },
+  // Wooden tools (planks + sticks).
+  { result: BLOCK.WOODEN_PICKAXE, count: 1, shaped: true, pattern: ['PPP', ' S ', ' S '], key: { P: BLOCK.PLANKS, S: BLOCK.STICK } },
+  { result: BLOCK.WOODEN_AXE, count: 1, shaped: true, pattern: ['PP', 'PS', ' S'], key: { P: BLOCK.PLANKS, S: BLOCK.STICK } },
+  { result: BLOCK.WOODEN_SWORD, count: 1, shaped: true, pattern: ['P', 'P', 'S'], key: { P: BLOCK.PLANKS, S: BLOCK.STICK } },
+  // Stone tools (cobblestone + sticks).
+  { result: BLOCK.STONE_PICKAXE, count: 1, shaped: true, pattern: ['CCC', ' S ', ' S '], key: { C: BLOCK.COBBLESTONE, S: BLOCK.STICK } },
+  { result: BLOCK.STONE_AXE, count: 1, shaped: true, pattern: ['CC', 'CS', ' S'], key: { C: BLOCK.COBBLESTONE, S: BLOCK.STICK } },
+  { result: BLOCK.STONE_SWORD, count: 1, shaped: true, pattern: ['C', 'C', 'S'], key: { C: BLOCK.COBBLESTONE, S: BLOCK.STICK } },
+  // Iron tools (iron ingots + sticks).
+  { result: BLOCK.IRON_PICKAXE, count: 1, shaped: true, pattern: ['III', ' S ', ' S '], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  { result: BLOCK.IRON_SWORD, count: 1, shaped: true, pattern: ['I', 'I', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
 ];
 
 // Items are {id, count}. Returns a 2D grid recipe match or null.

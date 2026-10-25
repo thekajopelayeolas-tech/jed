@@ -106,8 +106,11 @@ export function createCrafting(inventory) {
   function craft() {
     const out = matchRecipe(grid, GRID_SIZE);
     if (!out || !canFit(inventory, out.result, out.count)) return;
-    // Recipes use one item per filled cell, so each filled cell gives up one item.
-    for (let i = 0; i < grid.length; i++) grid[i] = BLOCK.AIR;
+    // Each filled grid cell gives up exactly one item, as in standard shaped crafting.
+    for (let i = 0; i < grid.length; i++) {
+      if (grid[i] === BLOCK.AIR) continue;
+      grid[i] = BLOCK.AIR;
+    }
     inventory.add(out.result, out.count);
     render();
   }
