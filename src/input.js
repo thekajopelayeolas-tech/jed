@@ -25,7 +25,6 @@ export function setupInput(canvas, player, inventory, actions) {
 
   document.addEventListener('keydown', (e) => {
     player.keys[e.code] = true;
-    if (e.code === 'KeyF' && !e.repeat) player.flying = !player.flying;
     if (e.code === 'KeyR' && !e.repeat) actions.onRespawn();
     if (e.code === 'KeyE' && !e.repeat) actions.onToggleCrafting();
     if (e.code.startsWith('Digit')) {

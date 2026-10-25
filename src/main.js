@@ -186,11 +186,9 @@ function frame(now) {
   const hit = targetHit();
   hud.update({
     inventory,
-    hotbarItems: null,
     target: hit ? BLOCK_DEFS[hit.id]?.name : null,
     health: player.health,
     maxHealth: player.maxHealth,
-    flying: player.flying,
     timeOfDay,
     pos: player.pos,
     chunks: world.chunks.size,

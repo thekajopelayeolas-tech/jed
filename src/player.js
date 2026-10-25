@@ -16,7 +16,6 @@ export class Player {
     this.pos = new THREE.Vector3(x, y, z);
     this.vel = new THREE.Vector3();
     this.onGround = false;
-    this.flying = false;
     this.yaw = 0;
     this.pitch = 0;
     this.keys = {};
@@ -95,15 +94,6 @@ export class Player {
 
     const sprint = this.keys.ShiftLeft || this.keys.ShiftRight;
     const speed = WALK_SPEED * (sprint ? SPRINT_MULT : 1);
-
-    if (this.flying) {
-      this.vel.set(move.x * speed, 0, move.z * speed);
-      this.vel.y = (this.keys.Space ? 1 : 0) * speed - (this.keys.ControlLeft ? speed : 0);
-      this.pos.addScaledVector(this.vel, dt);
-      this.onGround = false;
-      this.fallStartY = this.pos.y;
-      return;
-    }
 
     this.vel.x = move.x * speed;
     this.vel.z = move.z * speed;

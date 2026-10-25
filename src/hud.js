@@ -37,17 +37,17 @@ export function createHud() {
   const pause = document.createElement('div');
   pause.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;' +
     'background:rgba(0,0,0,0.5);font-size:22px;pointer-events:auto;cursor:pointer;';
-  pause.textContent = 'Click to play. WASD move, Space jump, F fly, 1-9 select, LMB break, RMB place, R respawn';
+  pause.textContent = 'Click to play. WASD move, Space jump, E crafting, 1-9 select, LMB attack/break, RMB place/use, R respawn';
   root.appendChild(pause);
 
   return {
     setPaused(paused) {
       pause.style.display = paused ? 'flex' : 'none';
     },
-    update({ inventory, hotbarItems, target, health: hp, maxHealth, flying, timeOfDay, pos, chunks }) {
+    update({ inventory, target, health: hp, maxHealth, timeOfDay, pos, chunks }) {
       info.textContent =
         `XYZ: ${pos.x.toFixed(1)} ${pos.y.toFixed(1)} ${pos.z.toFixed(1)}\n` +
-        `Chunks: ${chunks}  Flying: ${flying ? 'on' : 'off'}\n` +
+        `Chunks: ${chunks}\n` +
         `Time: ${(timeOfDay * 100).toFixed(0)}%` +
         (target ? `\nLooking at: ${target}` : '');
       health.textContent = '♥'.repeat(Math.ceil((hp / maxHealth) * 10)) + ` ${hp}/${maxHealth}`;
