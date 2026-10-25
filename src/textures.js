@@ -56,6 +56,10 @@ const PAINTERS = {
   },
   craftTop: (x, y) => (x % 5 === 0 || y % 5 === 0 ? [0.35, 0.25, 0.12, 1] : PAINTERS.planks(x, y)),
   craftSide: (x, y) => (x >= 4 && x <= 11 && y >= 4 && y <= 11 ? [0.3, 0.22, 0.1, 1] : PAINTERS.planks(x, y)),
+  // Bed top: red blanket with a white pillow at the head end (top rows).
+  bedTop: (x, y) => (y < 6 ? jitter([0.95, 0.95, 0.92], noise(x, y, 20), 0.06) : jitter([0.8, 0.15, 0.15], noise(x, y, 21), 0.08)),
+  // Bed side: red blanket over a wood frame at the bottom.
+  bedSide: (x, y) => (y >= 13 ? jitter([0.4, 0.28, 0.14], noise(x, y, 22), 0.1) : jitter([0.7, 0.12, 0.12], noise(x, y, 23), 0.08)),
 };
 
 // Tile index for each named painter, in atlas order.
@@ -79,6 +83,7 @@ export const BLOCK_TILES = {
   [BLOCK.IRON_ORE]: { top: 'iron', side: 'iron', bottom: 'iron' },
   [BLOCK.TORCH]: { top: 'torch', side: 'torch', bottom: 'torch' },
   [BLOCK.CRAFTING_TABLE]: { top: 'craftTop', side: 'craftSide', bottom: 'planks' },
+  [BLOCK.BED]: { top: 'bedTop', side: 'bedSide', bottom: 'planks' },
 };
 
 // Builds the atlas canvas as a Uint8ClampedArray of RGBA pixels, ready for THREE.DataTexture.

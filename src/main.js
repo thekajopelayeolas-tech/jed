@@ -13,6 +13,7 @@ import { MobManager } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
+import { createSleep } from './sleep.js';
 
 const SEED = 1337;
 
@@ -139,6 +140,24 @@ const mining = {
   },
 };
 
+// Right click: sleep if the target is a bed, otherwise place the held block.
+function useOrPlace() {
+  const hit = targetHit();
+  if (hit && hit.id === BLOCK.BED) {
+    if (!sleep.start(timeOfDay)) showMessage('You can only sleep at night.');
+    return;
+  }
+  placeBlock();
+}
+
+// Brief on-screen message used for sleep feedback.
+let messageUntil = 0;
+let messageText = '';
+function showMessage(text, seconds = 2.5) {
+  messageText = text;
+  messageUntil = performance.now() + seconds * 1000;
+}
+
 function placeBlock() {
   const hit = targetHit();
   if (!hit) return;
@@ -160,12 +179,13 @@ function overlapsPlayer(bx, by, bz) {
     p.y + 1.8 > by && p.y < by + 1;
 }
 
+const sleep = createSleep();
 const crafting = createInventoryUI(inventory);
 
 setupInput(renderer.domElement, player, inventory, {
   onBreak: attack,
   onRelease: () => mining.stop(),
-  onPlace: placeBlock,
+  onPlace: useOrPlace,
   onRespawn: respawn,
   onPauseChange: (paused) => hud.setPaused(paused && !crafting.isOpen()),
   onToggleCrafting: () => {
@@ -209,9 +229,19 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
 
-  // The player does not move while the crafting panel is open.
-  if (!crafting.isOpen()) player.update(dt);
-  timeOfDay = updateDayNight(scene, sky, timeOfDay, dt, RENDER_DISTANCE);
+  // The player does not move while the inventory is open or while asleep.
+  if (!crafting.isOpen() && !sleep.isSleeping()) player.update(dt);
+  // While asleep, time stands still until the sleep timer ends. Then it jumps to sunrise.
+  const wakeTime = sleep.update(dt, timeOfDay);
+  if (wakeTime !== null) {
+    timeOfDay = wakeTime;
+    showMessage('Good morning!');
+  }
+  if (!sleep.isSleeping()) {
+    timeOfDay = updateDayNight(scene, sky, timeOfDay, dt, RENDER_DISTANCE);
+  } else {
+    updateDayNight(scene, sky, timeOfDay, 0, RENDER_DISTANCE);
+  }
   world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
   drops.update(dt, player.pos, inventory);
   if (!crafting.isOpen()) mining.update(dt);
@@ -241,6 +271,15 @@ function frame(now) {
     pos: player.pos,
     chunks: world.chunks.size,
   });
+
+  // Sleep and message feedback. Sleep text takes priority over timed messages.
+  if (sleep.isSleeping()) {
+    hud.setStatus(`Sleeping through the night… ${Math.round(sleep.progress() * 100)}%`);
+  } else if (performance.now() < messageUntil) {
+    hud.setStatus(messageText);
+  } else {
+    hud.setStatus('');
+  }
 
   renderer.render(scene, camera);
   requestAnimationFrame(frame);

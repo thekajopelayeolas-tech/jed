@@ -34,6 +34,11 @@ export function createHud() {
     slotEls.push(el);
   }
 
+  // Central status line for sleep and other messages.
+  const status = document.createElement('div');
+  status.style.cssText = 'position:absolute;left:50%;top:30%;transform:translateX(-50%);font-size:20px;text-align:center;display:none;';
+  root.appendChild(status);
+
   const pause = document.createElement('div');
   pause.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;' +
     'background:rgba(0,0,0,0.5);font-size:22px;pointer-events:auto;cursor:pointer;';
@@ -43,6 +48,11 @@ export function createHud() {
   return {
     setPaused(paused) {
       pause.style.display = paused ? 'flex' : 'none';
+    },
+    // `status` is text to show centre-screen, or an empty string to hide it.
+    setStatus(text) {
+      status.textContent = text;
+      status.style.display = text ? 'block' : 'none';
     },
     update({ inventory, target, health: hp, maxHealth, timeOfDay, pos, chunks }) {
       info.textContent =
