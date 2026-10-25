@@ -11,6 +11,7 @@ import { DropManager } from './drops.js';
 import { createCrafting } from './crafting.js';
 import { MobManager } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
+import { createAtlasTexture } from './textures.js';
 
 const SEED = 1337;
 
@@ -23,8 +24,9 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 500);
 const sky = createSky(scene);
 
-const opaqueMat = new THREE.MeshLambertMaterial({ vertexColors: true });
-const transMat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.6, depthWrite: false });
+const atlas = createAtlasTexture(THREE);
+const opaqueMat = new THREE.MeshLambertMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 });
+const transMat = new THREE.MeshLambertMaterial({ map: atlas, vertexColors: true, transparent: true, opacity: 0.85, depthWrite: false });
 
 const world = new World(scene, SEED, opaqueMat, transMat);
 const player = new Player(world, 8, 80, 8);
