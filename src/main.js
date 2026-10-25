@@ -8,7 +8,7 @@ import { createHud } from './hud.js';
 import { setupInput } from './input.js';
 import { updateDayNight, createSky } from './sky.js';
 import { DropManager } from './drops.js';
-import { createCrafting } from './crafting.js';
+import { createInventoryUI } from './inventory-ui.js';
 import { MobManager } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
@@ -114,7 +114,7 @@ function overlapsPlayer(bx, by, bz) {
     p.y + 1.8 > by && p.y < by + 1;
 }
 
-const crafting = createCrafting(inventory);
+const crafting = createInventoryUI(inventory);
 
 setupInput(renderer.domElement, player, inventory, {
   onBreak: attack,
