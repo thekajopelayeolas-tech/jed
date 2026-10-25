@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { BLOCK, isSolid } from './blocks.js';
 import { CHUNK_HEIGHT } from './constants.js';
+import { shouldBurn, burnStep } from './burning.js';
+import { buildMobModel } from './mob-model.js';
 
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
@@ -14,7 +16,7 @@ export const MOB = {
 // Mob definitions: body box size, max health, movement speed, and attack.
 const MOB_DEFS = {
   [MOB.COW]: { size: [0.9, 0.9, 0.9], color: 0xf2f2f2, health: 6, speed: 1.4, hostile: false, drop: BLOCK.BEEF },
-  [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drop: BLOCK.ROTTEN_FLESH },
+  [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drop: BLOCK.ROTTEN_FLESH, burnsInSun: true },
 };
 
 // A single mob with a box body, simple physics against the voxel world, and AI.
@@ -34,15 +36,15 @@ export class Mob {
     this.attackCooldown = 0;
     this.hitFlash = 0;
 
-    const [w, h, d] = this.def.size;
+    // Collision uses this simple box. The visible model is built separately and animated.
+    const [w, h] = this.def.size;
     this.height = h;
     this.halfWidth = w / 2;
-    this.material = new THREE.MeshLambertMaterial({ color: this.def.color });
-    this.mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), this.material);
-    this.mesh.position.y = h / 2;
     this.group = new THREE.Group();
-    this.group.add(this.mesh);
+    this.model = buildMobModel(type);
+    this.group.add(this.model.group);
     this.scene.add(this.group);
+    this.walkPhase = 0;
   }
 
   // True if the body overlaps any solid block at the given position.
@@ -139,7 +141,16 @@ export class Mob {
     if (this.moveAxis('y', this.vel.y * dt) && falling) this.vel.y = 0;
 
     this.group.position.copy(this.pos);
-    this.material.color.setHex(this.hitFlash > 0 ? 0xff5050 : this.def.color);
+    // Hit flash tints every part red for a moment. Otherwise each part keeps its own colour.
+    for (const mat of this.model.materials) {
+      mat.emissive.setHex(this.hitFlash > 0 ? 0x661010 : 0x000000);
+    }
+    // Walking animation: legs and arms swing in opposite phase while the mob moves.
+    const moving = Math.hypot(mx, mz) > 0.05;
+    if (moving) this.walkPhase += dt * this.def.speed * 4;
+    const swing = moving ? Math.sin(this.walkPhase) * 0.6 : 0;
+    this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
+    this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
     if (mx !== 0 || mz !== 0) this.group.rotation.y = Math.atan2(-mx, -mz);
   }
 
@@ -162,8 +173,10 @@ export class Mob {
 
   dispose() {
     this.scene.remove(this.group);
-    this.mesh.geometry.dispose();
-    this.material.dispose();
+    this.model.group.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
   }
 }
 
@@ -203,6 +216,10 @@ export class MobManager {
     for (let i = this.mobs.length - 1; i >= 0; i--) {
       const m = this.mobs[i];
       m.update(dt, playerPos, onAttack);
+      // Sunlight damage: a burning zombie takes fire damage each tick until it dies or is shaded.
+      const burning = shouldBurn(m, this.world, timeOfDay);
+      const burnDamage = burnStep(m, dt, burning);
+      if (burnDamage > 0 && !m.dead) m.takeHit(burnDamage, m.pos.x, m.pos.z);
       if (m.dead || m.pos.distanceTo(playerPos) > 48) {
         m.dispose();
         this.mobs.splice(i, 1);
