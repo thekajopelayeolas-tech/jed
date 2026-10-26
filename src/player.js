@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { isSolid } from './blocks.js';
+import { isFullCube, bodyHitsBlock } from './building.js';
 import { Hunger } from './hunger.js';
 import { emptyArmour, damageReduction } from './armour.js';
 import { bodyInWater, swimVelocityY, SWIM_SPEED_MULT } from './swimming.js';
@@ -70,6 +71,11 @@ export class Player {
   }
 
   collides(px, py, pz) {
+    const body = {
+      minX: px - HALF_WIDTH, maxX: px + HALF_WIDTH,
+      minY: py, maxY: py + HEIGHT,
+      minZ: pz - HALF_WIDTH, maxZ: pz + HALF_WIDTH,
+    };
     const minX = Math.floor(px - HALF_WIDTH);
     const maxX = Math.floor(px + HALF_WIDTH - 1e-6);
     const minY = Math.floor(py);
@@ -79,7 +85,10 @@ export class Player {
     for (let x = minX; x <= maxX; x++) {
       for (let y = minY; y <= maxY; y++) {
         for (let z = minZ; z <= maxZ; z++) {
-          if (isSolid(this.world.getBlock(x, y, z))) return true;
+          const id = this.world.getBlock(x, y, z);
+          if (!isSolid(id)) continue;
+          // Full cubes block on any overlap. Slabs and stairs only block where their shape is.
+          if (isFullCube(id) || bodyHitsBlock(id, x, y, z, body)) return true;
         }
       }
     }

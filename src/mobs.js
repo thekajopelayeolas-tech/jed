@@ -11,14 +11,22 @@ const KNOCKBACK_DECAY = 6;
 // Mob types.
 export const MOB = {
   COW: 'cow',
+  SHEEP: 'sheep',
   ZOMBIE: 'zombie',
 };
 
 // Mob definitions: body box size, max health, movement speed, and attack.
+// `drop` is what the mob leaves when killed. Sheep drop wool.
 const MOB_DEFS = {
   [MOB.COW]: { size: [0.9, 0.9, 0.9], color: 0xf2f2f2, health: 6, speed: 1.4, hostile: false, drop: BLOCK.BEEF },
+  [MOB.SHEEP]: { size: [0.9, 0.9, 0.9], color: 0xf5f5f0, health: 5, speed: 1.3, hostile: false, drop: BLOCK.WOOL },
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drop: BLOCK.ROTTEN_FLESH, burnsInSun: true },
 };
+
+// Passive mobs spawn evenly: half cows, half sheep.
+export function pickPassiveMob() {
+  return Math.random() < 0.5 ? MOB.COW : MOB.SHEEP;
+}
 
 // A cell is dark enough for a zombie when neither sky light nor block light reaches it.
 // Any light at all (a torch, the open sky) means no zombie can spawn there.
@@ -200,11 +208,11 @@ export class MobManager {
     this.spawnTimer = 0;
   }
 
-  // Tries one spawn near the player. Zombies favour night, cows favour day.
+  // Tries one spawn near the player. Zombies favour night. Passive mobs favour day, and are cows or sheep.
   // Zombies only spawn in the dark: a cell with any light (sky or block) is too bright for a zombie.
   trySpawn(playerPos, timeOfDay) {
     const night = timeOfDay > 0.5;
-    const type = night || Math.random() < 0.3 ? MOB.ZOMBIE : MOB.COW;
+    const type = night || Math.random() < 0.3 ? MOB.ZOMBIE : pickPassiveMob();
     const angle = Math.random() * Math.PI * 2;
     const dist = 14 + Math.random() * 10;
     const x = Math.floor(playerPos.x + Math.cos(angle) * dist);

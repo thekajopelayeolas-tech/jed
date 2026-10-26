@@ -6,6 +6,8 @@ import * as THREE from 'three';
 const PALETTES = {
   zombie: { skin: 0x5c8f3e, shirt: 0x2f6f8f, trousers: 0x3b3b8a, eye: 0xa6ff7a },
   cow: { skin: 0xf2f2f2, shirt: 0xe9e9e9, trousers: 0x3a2a1a, eye: 0x111111 },
+  // Sheep: a woolly white body with a darker grey face and legs.
+  sheep: { skin: 0x4a4a4a, shirt: 0xf4f4ee, trousers: 0x3c3c3c, eye: 0x111111 },
 };
 
 function box(w, h, d, color) {

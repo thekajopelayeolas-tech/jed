@@ -99,7 +99,7 @@ export function createFurnaceUI(inventory) {
   panel.appendChild(mainWrap);
 
   const hint = document.createElement('div');
-  hint.textContent = 'Click: pick up / place · Right click: split · E: close';
+  hint.textContent = 'Click: pick up / place · Shift click: take one slot · F: take everything · E: close';
   hint.style.cssText = 'font-size:12px;';
   panel.appendChild(hint);
 
@@ -213,13 +213,19 @@ export function createFurnaceUI(inventory) {
       root.style.display = 'flex';
       render();
     },
-    // Closes the panel and gives back the fuel and input the player still has in the furnace slots.
+    // Moves everything out of the open furnace (input, fuel and output) into the player's inventory.
+    // Whatever does not fit stays in the furnace. Bound to F while the furnace panel is open.
+    takeAll() {
+      if (!open || !furnace) return;
+      for (const slot of [furnace.input, furnace.fuel, furnace.output]) moveSlotToInventory(inventory, slot);
+      render();
+    },
+    // Closes the panel. The furnace keeps its contents, and only the item held on the cursor is returned.
     close() {
       if (!open) return;
       open = false;
       root.style.display = 'none';
-      // Everything in the furnace goes back to the player, including the smelted output.
-      for (const slot of [furnace.input, furnace.fuel, furnace.output]) moveSlotToInventory(inventory, slot);
+      // The furnace keeps its contents when closed. Only the item held on the cursor is returned.
       if (cursor.id !== BLOCK.AIR) {
         const left = inventory.add(cursor.id, cursor.count);
         cursor.count = left;

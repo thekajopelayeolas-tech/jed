@@ -3,6 +3,7 @@ import { BLOCK, BLOCK_DEFS } from './blocks.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { LIGHT, lightFactor } from './lighting.js';
 import { BLOCK_TILES, TILE_INDEX, tileUV } from './textures.js';
+import { isFullCube, boxesFor } from './building.js';
 
 // Face definitions: direction, 4 corner offsets (CCW from outside), and shade.
 const FACES = [
@@ -46,6 +47,38 @@ function cornerAO(world, wx, y, wz, f, c) {
   return 3 - sideA - sideB - diag;
 }
 
+// Emits the six faces of one axis-aligned box inside a block cell. Box corners are in 0..1 cell units.
+// Faces point outward, so the side facing a neighbour is drawn too. Lighting and textures match cubes.
+function emitBox(box, id, def, target, world, chunk, wx, y, wz, x, z) {
+  const [x0, y0, z0, x1, y1, z1] = box;
+  const fx = wx;
+  const fy = y;
+  const fz = wz;
+  const shapes = [
+    { dir: [1, 0, 0], shade: 0.8, face: 'side', corners: [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]] },
+    { dir: [-1, 0, 0], shade: 0.8, face: 'side', corners: [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]] },
+    { dir: [0, 1, 0], shade: 1.0, face: 'top', corners: [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]] },
+    { dir: [0, -1, 0], shade: 0.5, face: 'bottom', corners: [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]] },
+    { dir: [0, 0, 1], shade: 0.9, face: 'side', corners: [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]] },
+    { dir: [0, 0, -1], shade: 0.9, face: 'side', corners: [[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]] },
+  ];
+  for (const f of shapes) {
+    const lf = lightFactor(Math.max(0, world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.SKY), world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.BLOCK)));
+    const tileName = BLOCK_TILES[id][f.face] ?? BLOCK_TILES[id].side;
+    const [u0, v0, u1, v1] = tileUV(TILE_INDEX[tileName]);
+    const uvs = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
+    const base = target.pos.length / 3;
+    f.corners.forEach((c, i) => {
+      const k = lf * f.shade;
+      target.pos.push(x + c[0], y + c[1], z + c[2]);
+      target.nor.push(f.dir[0], f.dir[1], f.dir[2]);
+      target.col.push(k, k, k);
+      target.uv.push(uvs[i][0], uvs[i][1]);
+    });
+    target.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+}
+
 // Builds opaque and transparent geometry for one chunk.
 // `world.getBlock(wx, wy, wz)` is used to check neighbours across chunk borders.
 export function buildChunkGeometry(chunk, world) {
@@ -65,10 +98,19 @@ export function buildChunkGeometry(chunk, world) {
         const wx = ox + x;
         const wz = oz + z;
 
+        // Slabs and stairs are partial boxes, so they are drawn box by box and never culled.
+        if (!isFullCube(id)) {
+          for (const box of boxesFor(id)) {
+            emitBox(box, id, def, target, world, chunk, wx, y, wz, x, z);
+          }
+          continue;
+        }
+
         for (const f of FACES) {
           const nid = world.getBlock(wx + f.dir[0], y + f.dir[1], wz + f.dir[2]);
           // Hide a face if the neighbour is opaque, or is the same transparent block type.
-          if (nid !== BLOCK.AIR && (!BLOCK_DEFS[nid].transparent || nid === id)) continue;
+          // A slab or stair does not fill its whole cell, so a cube must still draw its face next to one.
+          if (nid !== BLOCK.AIR && isFullCube(nid) && (!BLOCK_DEFS[nid].transparent || nid === id)) continue;
 
           // Brightness comes from the light in the empty cell this face looks into.
           const fx = wx + f.dir[0];

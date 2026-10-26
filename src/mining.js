@@ -21,6 +21,19 @@ const HARDNESS = {
   [BLOCK.WOOL]: { hardness: 0.8, tool: null, tier: 0 },
   [BLOCK.BED]: { hardness: 0.6, tool: null, tier: 0 },
   [BLOCK.TORCH]: { hardness: 0, tool: null, tier: 0 },
+  // Building blocks. Wood breaks with an axe, and the stone-based ones with a pickaxe, like their raw materials.
+  [BLOCK.STONE_BRICKS]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.POLISHED_STONE]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.BRICKS]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.CONCRETE]: { hardness: 1.8, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.WOOD_SLAB]: { hardness: 2.0, tool: TOOL.AXE, tier: 0 },
+  [BLOCK.STONE_SLAB]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.BRICK_SLAB]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.CONCRETE_SLAB]: { hardness: 1.8, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.WOOD_STAIRS]: { hardness: 2.0, tool: TOOL.AXE, tier: 0 },
+  [BLOCK.STONE_STAIRS]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.BRICK_STAIRS]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
+  [BLOCK.CONCRETE_STAIRS]: { hardness: 1.8, tool: TOOL.PICKAXE, tier: 1 },
 };
 
 // Bedrock cannot be mined. Unlisted blocks use a default hardness.

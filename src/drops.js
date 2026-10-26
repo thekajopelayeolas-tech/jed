@@ -21,7 +21,7 @@ const blockGeoCache = new Map();
 const itemMatCache = new Map();
 
 // Cube geometry for a block, with each face UV-mapped to its atlas tile. Built once per block and shared.
-function blockGeometry(id) {
+export function blockGeometry(id) {
   if (blockGeoCache.has(id)) return blockGeoCache.get(id);
   const g = dropGeo.clone();
   const uvAttr = g.attributes.uv;

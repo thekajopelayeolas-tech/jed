@@ -54,5 +54,18 @@ const check = (name, cond) => {
   check('moving items never creates or loses any', inv.countOf(BLOCK.BEEF) + inv.countOf(BLOCK.COOKED_BEEF) + f.input.count + f.output.count === before);
 }
 
+// Closing keeps the furnace contents. Only F (takeAll) moves them out. The panel is built in a browser,
+// so this is checked in the browser test. Here we check the rule that F uses: all three slots are moved.
+{
+  const inv = new Inventory();
+  const f = new Furnace();
+  f.input = { id: BLOCK.BEEF, count: 3 };
+  f.fuel = { id: BLOCK.COAL, count: 4 };
+  f.output = { id: BLOCK.COOKED_BEEF, count: 2 };
+  for (const slot of [f.input, f.fuel, f.output]) moveSlotToInventory(inv, slot);
+  check('F moves input, fuel and output into the inventory', inv.countOf(BLOCK.BEEF) === 3 && inv.countOf(BLOCK.COAL) === 4 && inv.countOf(BLOCK.COOKED_BEEF) === 2);
+  check('after F the furnace is empty', f.input.count === 0 && f.fuel.count === 0 && f.output.count === 0);
+}
+
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;

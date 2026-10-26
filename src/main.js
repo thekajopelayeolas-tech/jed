@@ -7,10 +7,12 @@ import { RENDER_DISTANCE, REACH, SEA_LEVEL, CHUNK_HEIGHT } from './constants.js'
 import { createHud } from './hud.js';
 import { setupInput } from './input.js';
 import { updateDayNight, createSky } from './sky.js';
-import { DropManager } from './drops.js';
+import { DropManager, blockGeometry } from './drops.js';
 import { createInventoryUI } from './inventory-ui.js';
 import { createFurnaceUI } from './furnace-ui.js';
 import { createRecipeBookUI } from './recipe-book-ui.js';
+import { createHeldView } from './held-view.js';
+import { itemTexture } from './item-icons.js';
 import { Furnace, emptyFurnaceInto } from './smelting.js';
 import { PARTS, armourInfo } from './armour.js';
 import { MobManager } from './mobs.js';
@@ -29,6 +31,8 @@ document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 500);
+// The camera is in the scene so the held item, which is attached to it, is drawn.
+scene.add(camera);
 const sky = createSky(scene);
 
 const atlas = createAtlasTexture(THREE);
@@ -40,6 +44,9 @@ const player = new Player(world, 8, 80, 8);
 const inventory = new Inventory();
 const hud = createHud();
 const drops = new DropManager(scene, world, opaqueMat);
+// The first-person held item. Sprites for non-block items come from the same textures as the drops.
+// Held blocks use the world's atlas material and the same cube geometry as drops, so they look the same as placed blocks.
+const heldView = createHeldView(camera, (id) => itemTexture(THREE, id), opaqueMat, blockGeometry);
 const mobs = new MobManager(scene, world);
 
 // Starter items so the hotbar is useful immediately.
@@ -242,7 +249,7 @@ function overlapsPlayer(bx, by, bz) {
 }
 
 const sleep = createSleep();
-const crafting = createInventoryUI(inventory, player);
+const crafting = createInventoryUI(inventory, player, opaqueMat);
 const furnaceUI = createFurnaceUI(inventory);
 const recipeBook = createRecipeBookUI(inventory);
 
@@ -271,6 +278,10 @@ setupInput(renderer.domElement, player, inventory, {
     // Opening the panel frees the mouse. Closing it grabs the mouse again.
     if (crafting.toggle()) document.exitPointerLock();
     else renderer.domElement.requestPointerLock();
+  },
+  onTakeAll: () => {
+    // F empties the open furnace into the inventory. It does nothing when no furnace is open.
+    if (furnaceUI.isOpen()) furnaceUI.takeAll();
   },
   onToggleRecipeBook: () => {
     // B closes whichever panel is open. Otherwise it opens the recipe book.
@@ -356,6 +367,7 @@ function frame(now) {
   if (!sleep.isSleeping()) player.hunger.update(dt, player.isSprinting());
 
   camera.position.copy(player.eye);
+  heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem);
   camera.rotation.order = 'YXZ';
   camera.rotation.y = player.yaw;
   camera.rotation.x = player.pitch;

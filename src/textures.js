@@ -67,6 +67,22 @@ const PAINTERS = {
   furnaceTop: (x, y) => jitter([0.42, 0.42, 0.42], noise(x, y, 25), 0.14),
   // Diamond ore: stone with pale cyan gems.
   diamondOre: (x, y) => (noise(x, y, 26) > 0.9 ? [0.45, 0.92, 0.95, 1] : jitter(STONE, noise(x, y, 27), 0.18)),
+  // Stone bricks: grey stone laid in offset rows with dark mortar.
+  stoneBricks: (x, y) => {
+    const row = Math.floor(y / 4);
+    const mortar = y % 4 === 0 || x % 8 === ((row % 2) * 4);
+    return jitter(mortar ? [0.3, 0.3, 0.3] : [0.52, 0.52, 0.52], noise(x, y, 40), 0.1);
+  },
+  // Polished stone: smooth light grey with a faint seam.
+  polishedStone: (x, y) => jitter(x % 16 === 0 || y % 16 === 0 ? [0.5, 0.5, 0.5] : [0.66, 0.66, 0.66], noise(x, y, 41), 0.05),
+  // Bricks: red-orange bricks in offset rows with pale mortar.
+  bricks: (x, y) => {
+    const row = Math.floor(y / 4);
+    const mortar = y % 4 === 0 || x % 8 === ((row % 2) * 4);
+    return jitter(mortar ? [0.82, 0.8, 0.74] : [0.6, 0.3, 0.25], noise(x, y, 42), 0.1);
+  },
+  // Concrete: even light grey with fine speckles.
+  concrete: (x, y) => jitter([0.6, 0.6, 0.6], noise(x, y, 43), 0.12),
   // Rainbow ore: stone with small gems in a rainbow of colours.
   rainbowOre: (x, y) => {
     const n = noise(x, y, 28);
@@ -102,6 +118,18 @@ export const BLOCK_TILES = {
   [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', bottom: 'furnaceTop' },
   [BLOCK.DIAMOND_ORE]: { top: 'diamondOre', side: 'diamondOre', bottom: 'diamondOre' },
   [BLOCK.RAINBOW_ORE]: { top: 'rainbowOre', side: 'rainbowOre', bottom: 'rainbowOre' },
+  [BLOCK.STONE_BRICKS]: { top: 'stoneBricks', side: 'stoneBricks', bottom: 'stoneBricks' },
+  [BLOCK.POLISHED_STONE]: { top: 'polishedStone', side: 'polishedStone', bottom: 'polishedStone' },
+  [BLOCK.BRICKS]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },
+  [BLOCK.CONCRETE]: { top: 'concrete', side: 'concrete', bottom: 'concrete' },
+  [BLOCK.WOOD_SLAB]: { top: 'planks', side: 'planks', bottom: 'planks' },
+  [BLOCK.STONE_SLAB]: { top: 'stone', side: 'stone', bottom: 'stone' },
+  [BLOCK.BRICK_SLAB]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },
+  [BLOCK.CONCRETE_SLAB]: { top: 'concrete', side: 'concrete', bottom: 'concrete' },
+  [BLOCK.WOOD_STAIRS]: { top: 'planks', side: 'planks', bottom: 'planks' },
+  [BLOCK.STONE_STAIRS]: { top: 'stone', side: 'stone', bottom: 'stone' },
+  [BLOCK.BRICK_STAIRS]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },
+  [BLOCK.CONCRETE_STAIRS]: { top: 'concrete', side: 'concrete', bottom: 'concrete' },
 };
 
 // Builds the atlas canvas as a Uint8ClampedArray of RGBA pixels, ready for THREE.DataTexture.

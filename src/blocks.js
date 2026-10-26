@@ -1,4 +1,6 @@
 // Block registry. id 0 is air. Colors are per face: [top, side, bottom].
+import { BUILD } from './building.js';
+
 export const BLOCK = {
   AIR: 0,
   GRASS: 1,
@@ -55,6 +57,19 @@ export const BLOCK = {
   DIAMOND_CHEST: 50,
   DIAMOND_LEGS: 51,
   DIAMOND_BOOTS: 52,
+  // Building blocks (see building.js). These ids are placeable, so they are not items.
+  STONE_BRICKS: BUILD.STONE_BRICKS,
+  POLISHED_STONE: BUILD.POLISHED_STONE,
+  BRICKS: BUILD.BRICKS,
+  CONCRETE: BUILD.CONCRETE,
+  WOOD_SLAB: BUILD.WOOD_SLAB,
+  STONE_SLAB: BUILD.STONE_SLAB,
+  BRICK_SLAB: BUILD.BRICK_SLAB,
+  CONCRETE_SLAB: BUILD.CONCRETE_SLAB,
+  WOOD_STAIRS: BUILD.WOOD_STAIRS,
+  STONE_STAIRS: BUILD.STONE_STAIRS,
+  BRICK_STAIRS: BUILD.BRICK_STAIRS,
+  CONCRETE_STAIRS: BUILD.CONCRETE_STAIRS,
 };
 
 // Tool classes and tiers. Used by mining speed and weapon damage.
@@ -130,6 +145,18 @@ export const BLOCK_DEFS = {
   [BLOCK.DIAMOND_CHEST]: { name: 'Diamond Chestplate', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
   [BLOCK.DIAMOND_LEGS]: { name: 'Diamond Leggings', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
   [BLOCK.DIAMOND_BOOTS]: { name: 'Diamond Boots', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
+  [BUILD.STONE_BRICKS]: { name: 'Stone Bricks', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },
+  [BUILD.POLISHED_STONE]: { name: 'Polished Stone', top: [0.62, 0.62, 0.62], side: [0.62, 0.62, 0.62], bottom: [0.62, 0.62, 0.62], solid: true, transparent: false },
+  [BUILD.BRICKS]: { name: 'Bricks', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
+  [BUILD.CONCRETE]: { name: 'Concrete', top: [0.6, 0.6, 0.6], side: [0.6, 0.6, 0.6], bottom: [0.6, 0.6, 0.6], solid: true, transparent: false },
+  [BUILD.WOOD_SLAB]: { name: 'Wood Slab', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },
+  [BUILD.STONE_SLAB]: { name: 'Stone Slab', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },
+  [BUILD.BRICK_SLAB]: { name: 'Brick Slab', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
+  [BUILD.CONCRETE_SLAB]: { name: 'Concrete Slab', top: [0.6, 0.6, 0.6], side: [0.6, 0.6, 0.6], bottom: [0.6, 0.6, 0.6], solid: true, transparent: false },
+  [BUILD.WOOD_STAIRS]: { name: 'Wood Stairs', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },
+  [BUILD.STONE_STAIRS]: { name: 'Stone Stairs', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },
+  [BUILD.BRICK_STAIRS]: { name: 'Brick Stairs', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
+  [BUILD.CONCRETE_STAIRS]: { name: 'Concrete Stairs', top: [0.6, 0.6, 0.6], side: [0.6, 0.6, 0.6], bottom: [0.6, 0.6, 0.6], solid: true, transparent: false },
 };
 
 export function isSolid(id) {

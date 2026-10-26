@@ -43,6 +43,19 @@ export const RECIPES = [
   { result: BLOCK.DIAMOND_CHEST, count: 1, shaped: true, pattern: ['D D', 'DDD', 'DDD'], key: { D: BLOCK.DIAMOND } },
   { result: BLOCK.DIAMOND_LEGS, count: 1, shaped: true, pattern: ['DDD', 'D D', 'D D'], key: { D: BLOCK.DIAMOND } },
   { result: BLOCK.DIAMOND_BOOTS, count: 1, shaped: true, pattern: ['D D', 'D D'], key: { D: BLOCK.DIAMOND } },
+  // Building blocks. Each material gets a block, slabs, and stairs.
+  { result: BLOCK.STONE_BRICKS, count: 4, shaped: true, pattern: ['SS', 'SS'], key: { S: BLOCK.STONE } },
+  { result: BLOCK.POLISHED_STONE, count: 4, shaped: true, pattern: ['CC', 'CC'], key: { C: BLOCK.COBBLESTONE } },
+  { result: BLOCK.BRICKS, count: 1, shaped: true, pattern: ['CC', 'CC'], key: { C: BLOCK.COBBLESTONE } },
+  { result: BLOCK.CONCRETE, count: 4, shaped: true, pattern: ['SCS', 'CSC'], key: { S: BLOCK.SAND, C: BLOCK.COBBLESTONE } },
+  { result: BLOCK.WOOD_SLAB, count: 6, shaped: true, pattern: ['PPP'], key: { P: BLOCK.PLANKS } },
+  { result: BLOCK.STONE_SLAB, count: 6, shaped: true, pattern: ['SSS'], key: { S: BLOCK.STONE } },
+  { result: BLOCK.BRICK_SLAB, count: 6, shaped: true, pattern: ['BBB'], key: { B: BLOCK.BRICKS } },
+  { result: BLOCK.CONCRETE_SLAB, count: 6, shaped: true, pattern: ['CCC'], key: { C: BLOCK.CONCRETE } },
+  { result: BLOCK.WOOD_STAIRS, count: 4, shaped: true, pattern: ['P  ', 'PP ', 'PPP'], key: { P: BLOCK.PLANKS } },
+  { result: BLOCK.STONE_STAIRS, count: 4, shaped: true, pattern: ['S  ', 'SS ', 'SSS'], key: { S: BLOCK.STONE } },
+  { result: BLOCK.BRICK_STAIRS, count: 4, shaped: true, pattern: ['B  ', 'BB ', 'BBB'], key: { B: BLOCK.BRICKS } },
+  { result: BLOCK.CONCRETE_STAIRS, count: 4, shaped: true, pattern: ['C  ', 'CC ', 'CCC'], key: { C: BLOCK.CONCRETE } },
 ];
 
 // Items are {id, count}. Returns a 2D grid recipe match or null.

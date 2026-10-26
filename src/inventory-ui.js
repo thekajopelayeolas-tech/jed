@@ -3,6 +3,7 @@ import { HOTBAR_SIZE, INV_SIZE, matchRecipe } from './inventory.js';
 import { placeStack, splitStack, moveStack } from './stacks.js';
 import { iconCanvas } from './icons.js';
 import { PARTS, armourInfo } from './armour.js';
+import { createCharacterPreview } from './character-ui.js';
 
 const GRID_SIZE = 3;
 const STACK_MAX = 64;
@@ -36,7 +37,7 @@ function paint(el, stack) {
 // splits a stack or drops one item. Shift click moves a stack between the hotbar and the main grid.
 // The 3x3 crafting grid and its output are shown next to the inventory. The four armour slots sit
 // beside the crafting grid. `player` holds the worn armour, which reduces incoming damage.
-export function createInventoryUI(inventory, player) {
+export function createInventoryUI(inventory, player, atlasMaterial) {
   let open = false;
   const craftGrid = Array.from({ length: GRID_SIZE * GRID_SIZE }, () => ({ id: BLOCK.AIR, count: 0 }));
   // The stack held by the mouse cursor.
@@ -79,6 +80,11 @@ export function createInventoryUI(inventory, player) {
     armourWrap.appendChild(el);
     armourEls[part] = el;
   }
+
+  // The player's character preview sits beside the armour column, so the worn gear and held item show.
+  const preview = createCharacterPreview(inventory, player, atlasMaterial);
+  preview.element.style.marginLeft = '12px';
+  topRow.appendChild(preview.element);
 
   const mainWrap = document.createElement('div');
   mainWrap.style.cssText = 'display:grid;grid-template-columns:repeat(9,52px);gap:4px;';
