@@ -87,8 +87,16 @@ export function createCharacterPreview(inventory, player, atlasMaterial, width =
   // Glitch state: each frame may start a short burst where parts jitter and the colour flickers.
   let glitchUntil = 0;
   let nextGlitch = 0;
+  // A shell is a group of boxes, so the flicker works on every box in it. Each box keeps its own base colour.
+  const boxesOf = (shell) => {
+    const out = [];
+    shell.traverse((o) => { if (o.material) out.push(o); });
+    return out;
+  };
   const baseColours = new Map();
-  for (const shell of Object.values(model.shells)) baseColours.set(shell, shell.material.color.clone());
+  for (const shell of Object.values(model.shells)) {
+    for (const box of boxesOf(shell)) baseColours.set(box, box.material.color.clone());
+  }
 
   function glitchStep(t) {
     if (t > nextGlitch && t > glitchUntil) {
@@ -104,13 +112,13 @@ export function createCharacterPreview(inventory, player, atlasMaterial, width =
     }
     model.group.position.x = jitter(0.08);
     // Flicker: during a burst, shell colours swap toward cyan or magenta for a frame at a time.
-    for (const [shell, base] of baseColours) {
-      if (!shell.visible) continue;
+    for (const [box, base] of baseColours) {
+      if (!box.visible || !box.parent?.visible) continue;
       if (active && Math.random() < 0.35) {
         const flick = Math.random() < 0.5 ? [0.2, 1, 1] : [1, 0.2, 0.9];
-        shell.material.color.setRGB(flick[0], flick[1], flick[2]);
+        box.material.color.setRGB(flick[0], flick[1], flick[2]);
       } else {
-        shell.material.color.copy(base);
+        box.material.color.copy(base);
       }
     }
     // The label flashes during bursts.
@@ -138,7 +146,8 @@ export function createCharacterPreview(inventory, player, atlasMaterial, width =
     // The armour's real colour comes from applyArmour, so it is the base for the flicker. Record it before
     // the glitch changes it, so a flicker never becomes the new base colour.
     for (const shell of Object.values(model.shells)) {
-      if (shell.visible) baseColours.set(shell, shell.material.color.clone());
+      if (!shell.visible) continue;
+      for (const box of boxesOf(shell)) baseColours.set(box, box.material.color.clone());
     }
     glitchStep(now / 1000);
     renderer.render(scene, camera);
