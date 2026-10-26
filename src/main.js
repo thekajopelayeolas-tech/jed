@@ -10,6 +10,7 @@ import { updateDayNight, createSky } from './sky.js';
 import { DropManager } from './drops.js';
 import { createInventoryUI } from './inventory-ui.js';
 import { createFurnaceUI } from './furnace-ui.js';
+import { createRecipeBookUI } from './recipe-book-ui.js';
 import { Furnace, emptyFurnaceInto } from './smelting.js';
 import { PARTS, armourInfo } from './armour.js';
 import { MobManager } from './mobs.js';
@@ -243,9 +244,20 @@ function overlapsPlayer(bx, by, bz) {
 const sleep = createSleep();
 const crafting = createInventoryUI(inventory, player);
 const furnaceUI = createFurnaceUI(inventory);
+const recipeBook = createRecipeBookUI(inventory);
 
 // True while any inventory-style panel is open. Movement and mining pause while one is open.
-const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen();
+const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen() || recipeBook.isOpen();
+
+// Closes whichever panel is open and grabs the mouse back for play. Returns true if a panel was closed.
+function closeAnyPanel() {
+  if (furnaceUI.isOpen()) furnaceUI.close();
+  else if (recipeBook.isOpen()) recipeBook.close();
+  else if (crafting.isOpen()) crafting.toggle();
+  else return false;
+  renderer.domElement.requestPointerLock();
+  return true;
+}
 
 setupInput(renderer.domElement, player, inventory, {
   onBreak: attack,
@@ -255,14 +267,16 @@ setupInput(renderer.domElement, player, inventory, {
   onPauseChange: (paused) => hud.setPaused(paused && !anyPanelOpen()),
   onToggleCrafting: () => {
     // E closes whichever panel is open. Otherwise it opens the crafting panel.
-    if (furnaceUI.isOpen()) {
-      furnaceUI.close();
-      renderer.domElement.requestPointerLock();
-      return;
-    }
+    if (closeAnyPanel()) return;
     // Opening the panel frees the mouse. Closing it grabs the mouse again.
     if (crafting.toggle()) document.exitPointerLock();
     else renderer.domElement.requestPointerLock();
+  },
+  onToggleRecipeBook: () => {
+    // B closes whichever panel is open. Otherwise it opens the recipe book.
+    if (closeAnyPanel()) return;
+    recipeBook.toggle();
+    document.exitPointerLock();
   },
   isUIOpen: () => anyPanelOpen(),
 });
@@ -314,6 +328,7 @@ function frame(now) {
   // Every furnace in the world keeps smelting, even with its panel closed.
   for (const f of furnaces.values()) f.update(dt);
   furnaceUI.refresh();
+  recipeBook.refresh();
   // While asleep, time stands still until the sleep timer ends. Then it jumps to sunrise.
   const wakeTime = sleep.update(dt, timeOfDay);
   if (wakeTime !== null) {

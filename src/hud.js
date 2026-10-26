@@ -98,7 +98,7 @@ export function createHud() {
   const pause = document.createElement('div');
   pause.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;' +
     'background:rgba(0,0,0,0.5);font-size:22px;pointer-events:auto;cursor:pointer;';
-  pause.textContent = 'Click to play. WASD move, Space jump, E crafting, 1-9 select, LMB attack/break, RMB place/use, R respawn';
+  pause.textContent = 'Click to play. WASD move, Space jump, E crafting, B recipe book, 1-9 select, LMB attack/break, RMB place/use, R respawn';
   root.appendChild(pause);
 
   return {
