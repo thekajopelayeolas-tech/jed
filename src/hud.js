@@ -98,12 +98,20 @@ export function createHud() {
   const pause = document.createElement('div');
   pause.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;' +
     'background:rgba(0,0,0,0.5);font-size:22px;pointer-events:auto;cursor:pointer;';
-  pause.textContent = 'Click to play. WASD move, Space jump, E crafting, B recipe book, 1-9 select, LMB attack/break, RMB place/use, R respawn';
+  // The pause text sits above the lobby panel, which is added later with mountLobby().
+  const pauseText = document.createElement('div');
+  pauseText.textContent = 'Click to play. WASD move, Space jump, E crafting, B recipe book, 1-9 select, LMB attack/break, RMB place/use, R respawn';
+  pause.appendChild(pauseText);
   root.appendChild(pause);
 
   return {
     setPaused(paused) {
       pause.style.display = paused ? 'flex' : 'none';
+    },
+    // Puts a panel (for example the lobby) on the pause screen, under the controls text.
+    mountLobby(element) {
+      element.style.marginTop = '16px';
+      pause.appendChild(element);
     },
     // `status` is text to show centre-screen, or an empty string to hide it.
     setStatus(text) {

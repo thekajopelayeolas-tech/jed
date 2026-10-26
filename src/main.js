@@ -21,6 +21,8 @@ import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
 import { createSleep } from './sleep.js';
 import { foodPoints } from './hunger.js';
+import { createMultiplayer } from './multiplayer.js';
+import { createLobbyUI } from './lobby-ui.js';
 
 const SEED = 1337;
 
@@ -292,6 +294,51 @@ setupInput(renderer.domElement, player, inventory, {
   isUIOpen: () => anyPanelOpen(),
 });
 
+// Multiplayer. The lobby server runs on the host's computer. Set the address in the lobby panel or the page URL.
+// The default is the same machine, which is useful for testing with two tabs.
+const LOBBY_HOST = new URLSearchParams(location.search).get('server') || `${location.hostname || 'localhost'}:8787`;
+const mpUI = createLobbyUI({
+  httpUrl: `http://${LOBBY_HOST}`,
+  playerName: 'Player',
+  onStatus: (text) => hud.setStatus(text),
+  onTeleport: (id) => {
+    // Move next to the chosen player, one block to the side so you don't stand inside them.
+    const target = mp.player(id);
+    if (!target) return;
+    // Only the position changes. Health and hunger stay as they are.
+    player.pos.set(target.x + 1, target.y, target.z);
+    player.vel.set(0, 0, 0);
+    showMessage(`Teleported to ${target.name}`);
+  },
+});
+hud.mountLobby(mpUI.element);
+const mp = createMultiplayer(`ws://${LOBBY_HOST}`, (msg) => {
+  if (msg.type === 'joined') mpUI.setInLobby(true, msg.lobby);
+  if (msg.type === 'closed' || msg.type === 'left') mpUI.renderPlayers();
+  if (msg.type === 'players') mpUI.renderPlayers();
+}, (text) => mpUI.setStatus(text));
+mpUI.attach(mp);
+
+// Other players drawn as simple blocks, so they can be seen in the world.
+const remotes = new Map();
+function syncRemotes() {
+  const seen = new Set();
+  for (const p of mp.others()) {
+    seen.add(p.id);
+    let mesh = remotes.get(p.id);
+    if (!mesh) {
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.8, 0.6), new THREE.MeshLambertMaterial({ color: 0xd9732b }));
+      scene.add(mesh);
+      remotes.set(p.id, mesh);
+    }
+    mesh.position.set(p.x, p.y + 0.9, p.z);
+    mesh.rotation.y = p.yaw;
+  }
+  for (const [id, mesh] of remotes) {
+    if (!seen.has(id)) { scene.remove(mesh); remotes.delete(id); }
+  }
+}
+
 // Restore a saved game if one exists, otherwise start fresh at spawn.
 const saved = loadGame();
 let timeOfDay = 0.25;
@@ -365,6 +412,10 @@ function frame(now) {
   }
   player.tickHealth(dt);
   if (!sleep.isSleeping()) player.hunger.update(dt, player.isSprinting());
+
+  // Send this player's position to the lobby, and draw the others.
+  if (mp.lobby) mp.sendMove(player);
+  syncRemotes();
 
   camera.position.copy(player.eye);
   heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem);
