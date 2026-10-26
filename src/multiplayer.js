@@ -19,7 +19,7 @@ export function otherPlayers(list, myId) {
 }
 
 // Connects to a lobby server. `url` is ws:// or wss://. Callbacks receive server messages already parsed.
-export function createMultiplayer(url, onMessage, onStatus) {
+export function createMultiplayer(url, onMessage, onStatus, { blocked = false } = {}) {
   const WebSocketCtor = globalThis.WebSocket;
   let socket = null;
   let myId = null;
@@ -56,11 +56,17 @@ export function createMultiplayer(url, onMessage, onStatus) {
 
   return {
     connect() {
+      // Some pages (for example HTTPS) cannot open a plain ws:// connection. Do not try, so the browser does
+      // not block it. The player gets a clear message instead.
+      if (blocked) {
+        onStatus?.('Multiplayer needs a secure lobby server (wss://). Single player works everywhere.');
+        return;
+      }
       socket = new WebSocketCtor(url);
       socket.addEventListener('open', flush);
       socket.addEventListener('message', (e) => handle(JSON.parse(e.data)));
       socket.addEventListener('close', () => onStatus?.('Disconnected'));
-      socket.addEventListener('error', () => onStatus?.('Could not reach the lobby server'));
+      socket.addEventListener('error', () => onStatus?.(`Could not reach the lobby server at ${url}. Is it running? Start it with npm run dev.`));
     },
     // Hosting and joining open the connection first, so nothing is connected until the player asks.
     host(name, playerName) {

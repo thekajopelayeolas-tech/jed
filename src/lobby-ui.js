@@ -1,6 +1,6 @@
 // Lobby panel shown on the pause screen. Lets you host a world with a name, or join a listed lobby.
 // Once in a lobby it lists the other players, and clicking one teleports you to them.
-export function createLobbyUI({ serverUrl, httpUrl, playerName, onTeleport, onStatus }) {
+export function createLobbyUI({ serverUrl, httpUrl, playerName, onTeleport, onStatus, reachable = true }) {
   const root = document.createElement('div');
   root.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-items:stretch;background:#c6c6c6;color:#222;' +
     'border:3px solid #000;padding:12px;width:300px;font-family:monospace;font-size:13px;pointer-events:auto;';
@@ -65,6 +65,11 @@ export function createLobbyUI({ serverUrl, httpUrl, playerName, onTeleport, onSt
   // Lists open lobbies from the server. Each one has a Join button.
   async function refreshLobbies() {
     if (inLobby) return;
+    // On a secure page the local lobby cannot be reached (mixed content), so do not request it.
+    if (!reachable) {
+      lobbyList.textContent = 'Multiplayer needs a secure lobby server. Single player works everywhere.';
+      return;
+    }
     try {
       const res = await fetch(`${httpUrl}/lobbies`);
       const lobbies = await res.json();

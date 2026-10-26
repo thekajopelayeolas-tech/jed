@@ -356,8 +356,15 @@ setupInput(renderer.domElement, player, inventory, {
 // Multiplayer. The lobby server runs on the host's computer. Set the address in the lobby panel or the page URL.
 // The default is the same machine, which is useful for testing with two tabs.
 const LOBBY_HOST = new URLSearchParams(location.search).get('server') || `${location.hostname || 'localhost'}:8787`;
+// A page served over HTTPS may only talk to secure endpoints. Browsers block plain http:// and ws:// requests
+// from it (mixed content). The local lobby server speaks plain HTTP, so on HTTPS it is not reachable from the page.
+const SECURE_PAGE = location.protocol === 'https:';
+const HTTP_SCHEME = SECURE_PAGE ? 'https' : 'http';
+const WS_SCHEME = SECURE_PAGE ? 'wss' : 'ws';
+const LOBBY_REACHABLE = !SECURE_PAGE || new URLSearchParams(location.search).has('secureLobby');
 const mpUI = createLobbyUI({
-  httpUrl: `http://${LOBBY_HOST}`,
+  httpUrl: `${HTTP_SCHEME}://${LOBBY_HOST}`,
+  reachable: LOBBY_REACHABLE,
   playerName: 'Player',
   onStatus: (text) => hud.setStatus(text),
   onTeleport: (id) => {
@@ -371,11 +378,11 @@ const mpUI = createLobbyUI({
   },
 });
 hud.mountLobby(mpUI.element);
-const mp = createMultiplayer(`ws://${LOBBY_HOST}`, (msg) => {
+const mp = createMultiplayer(`${WS_SCHEME}://${LOBBY_HOST}`, (msg) => {
   if (msg.type === 'joined') mpUI.setInLobby(true, msg.lobby);
   if (msg.type === 'closed' || msg.type === 'left') mpUI.renderPlayers();
   if (msg.type === 'players') mpUI.renderPlayers();
-}, (text) => mpUI.setStatus(text));
+}, (text) => mpUI.setStatus(text), { blocked: !LOBBY_REACHABLE });
 mpUI.attach(mp);
 
 // Other players drawn as simple blocks, so they can be seen in the world.
