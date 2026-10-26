@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
+import { DOOR, STORAGE, FURNACE_STATE } from './building.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory } from './inventory.js';
@@ -14,7 +15,9 @@ import { createRecipeBookUI } from './recipe-book-ui.js';
 import { createHeldView } from './held-view.js';
 import { itemTexture } from './item-icons.js';
 import { Furnace, emptyFurnaceInto } from './smelting.js';
-import { PARTS, armourInfo } from './armour.js';
+import { Chest, emptyChestInto } from './chest.js';
+import { createChestUI } from './chest-ui.js';
+import { PARTS, armourInfo, defencePoints } from './armour.js';
 import { MobManager } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
@@ -49,7 +52,7 @@ const drops = new DropManager(scene, world, opaqueMat);
 // The first-person held item. Sprites for non-block items come from the same textures as the drops.
 // Held blocks use the world's atlas material and the same cube geometry as drops, so they look the same as placed blocks.
 const heldView = createHeldView(camera, (id) => itemTexture(THREE, id), opaqueMat, blockGeometry);
-const mobs = new MobManager(scene, world);
+const mobs = new MobManager(scene, world, SEED);
 
 // Starter items so the hotbar is useful immediately.
 inventory.add(BLOCK.DIRT, 64);
@@ -88,6 +91,10 @@ const DROP_FOR = {
   [BLOCK.COAL_ORE]: BLOCK.COAL,
   [BLOCK.DIAMOND_ORE]: BLOCK.DIAMOND,
   [BLOCK.RAINBOW_ORE]: BLOCK.RAINBOW_GEM,
+  // An open door drops a closed door, so breaking it never leaves an open door in the inventory.
+  [DOOR.OPEN_DOOR]: DOOR.DOOR,
+  // A lit furnace drops a furnace, not its lit state.
+  [FURNACE_STATE.LIT]: BLOCK.FURNACE,
 };
 
 // Left click: hit a mob in front of the player with the held weapon. Otherwise start mining the block.
@@ -104,7 +111,7 @@ function attack() {
   if (mob) {
     const dmg = attackDamage(inventory.selectedItem.id);
     mob.takeHit(dmg, player.pos.x, player.pos.z);
-    if (mob.dead) drops.spawn(mob.def.drop, mob.pos.x, mob.pos.y, mob.pos.z);
+    if (mob.dead) for (const id of mob.def.drops) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
     return;
   }
   mining.start();
@@ -118,12 +125,21 @@ function finishBreak(hit) {
   if (world.setBlock(x, y, z, BLOCK.AIR)) {
     if (drop) drops.spawn(DROP_FOR[hit.id] ?? hit.id, x, y, z);
     // A furnace also gives back everything it held, so breaking it never loses items.
-    if (hit.id === BLOCK.FURNACE) {
+    if (hit.id === BLOCK.FURNACE || hit.id === FURNACE_STATE.LIT) {
       const key = furnaceKey(x, y, z);
       const f = furnaces.get(key);
       if (f) {
         dropFurnaceContents(f, x, y, z);
         furnaces.delete(key);
+      }
+    }
+    // A chest gives back everything stored in it, so breaking it never loses items.
+    if (hit.id === STORAGE.CHEST) {
+      const key = furnaceKey(x, y, z);
+      const c = chests.get(key);
+      if (c) {
+        emptyChestInto(c, (id, dx, dy, dz) => drops.spawn(id, dx, dy, dz), x, y, z);
+        chests.delete(key);
       }
     }
   }
@@ -176,9 +192,35 @@ const mining = {
   },
 };
 
+// A label for the crack overlay: how hard the block is to mine with the held item.
+// Easy blocks break in under a second, medium blocks in a few, and hard blocks take longer.
+function crackLabel(hit, seconds) {
+  if (!hit || !Number.isFinite(seconds)) return '';
+  if (seconds < 1) return 'easy';
+  if (seconds < 3) return 'medium';
+  return 'hard';
+}
+
 // Furnaces keep their contents per block position. Each one is created when first opened.
 const furnaces = new Map();
 const furnaceKey = (x, y, z) => `${x},${y},${z}`;
+// Chests keep their contents per block position, the same way. Each one is created when first opened.
+const chests = new Map();
+
+function chestAt(x, y, z) {
+  const key = furnaceKey(x, y, z);
+  if (!chests.has(key)) chests.set(key, new Chest());
+  return chests.get(key);
+}
+
+// Switches the furnace block at a stored position between unlit and lit, so its fire shows in the world.
+// The key is "x,y,z". Only the block changes. Its contents stay in the furnaces map.
+function setFurnaceLit(key, lit) {
+  const [x, y, z] = key.split(',').map(Number);
+  const id = world.getBlock(x, y, z);
+  if (lit && id === BLOCK.FURNACE) world.setBlock(x, y, z, FURNACE_STATE.LIT);
+  else if (!lit && id === FURNACE_STATE.LIT) world.setBlock(x, y, z, BLOCK.FURNACE);
+}
 
 function furnaceAt(x, y, z) {
   const key = furnaceKey(x, y, z);
@@ -193,7 +235,22 @@ function useOrPlace() {
     if (!sleep.start(timeOfDay)) showMessage('You can only sleep at night.');
     return;
   }
-  if (hit && hit.id === BLOCK.FURNACE) {
+  // A door swaps between closed and open. Opening it lets you through, and closing it blocks you again.
+  if (hit && (hit.id === DOOR.DOOR || hit.id === DOOR.OPEN_DOOR)) {
+    const { x, y, z } = hit.block;
+    world.setBlock(x, y, z, hit.id === DOOR.DOOR ? DOOR.OPEN_DOOR : DOOR.DOOR);
+    return;
+  }
+  // A chest opens its storage panel. Only one panel at a time, so the others are closed first.
+  if (hit && hit.id === STORAGE.CHEST) {
+    const { x, y, z } = hit.block;
+    if (crafting.isOpen()) crafting.toggle();
+    if (furnaceUI.isOpen()) furnaceUI.close();
+    chestUI.open(chestAt(x, y, z));
+    document.exitPointerLock();
+    return;
+  }
+  if (hit && (hit.id === BLOCK.FURNACE || hit.id === FURNACE_STATE.LIT)) {
     const { x, y, z } = hit.block;
     // Only one panel at a time: close the crafting panel before opening the furnace.
     if (crafting.isOpen()) crafting.toggle();
@@ -253,14 +310,16 @@ function overlapsPlayer(bx, by, bz) {
 const sleep = createSleep();
 const crafting = createInventoryUI(inventory, player, opaqueMat);
 const furnaceUI = createFurnaceUI(inventory);
+const chestUI = createChestUI(inventory);
 const recipeBook = createRecipeBookUI(inventory);
 
 // True while any inventory-style panel is open. Movement and mining pause while one is open.
-const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen() || recipeBook.isOpen();
+const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen() || recipeBook.isOpen() || chestUI.isOpen();
 
 // Closes whichever panel is open and grabs the mouse back for play. Returns true if a panel was closed.
 function closeAnyPanel() {
-  if (furnaceUI.isOpen()) furnaceUI.close();
+  if (chestUI.isOpen()) chestUI.close();
+  else if (furnaceUI.isOpen()) furnaceUI.close();
   else if (recipeBook.isOpen()) recipeBook.close();
   else if (crafting.isOpen()) crafting.toggle();
   else return false;
@@ -357,6 +416,7 @@ if (saved) {
   player.yaw = p.yaw ?? 0;
   player.pitch = p.pitch ?? 0;
   for (const [key, data] of Object.entries(saved.furnaces ?? {})) furnaces.set(key, Furnace.fromJSON(data));
+  for (const [key, data] of Object.entries(saved.chests ?? {})) chests.set(key, Chest.fromJSON(data));
   // Old saves have no armour. Only accept ids that are real armour pieces.
   if (saved.armour) {
     for (const part of PARTS) {
@@ -369,7 +429,7 @@ if (saved) {
 }
 
 function persist() {
-  saveGame(world, player, inventory, timeOfDay, furnaces);
+  saveGame(world, player, inventory, timeOfDay, furnaces, chests);
 }
 
 setInterval(persist, 30000);
@@ -384,7 +444,11 @@ function frame(now) {
   // The player does not move while a panel is open or while asleep.
   if (!anyPanelOpen() && !sleep.isSleeping()) player.update(dt);
   // Every furnace in the world keeps smelting, even with its panel closed.
-  for (const f of furnaces.values()) f.update(dt);
+  // Every furnace in the world keeps smelting. A furnace shows its fire in the world while it is smelting.
+  for (const [key, f] of furnaces) {
+    f.update(dt);
+    setFurnaceLit(key, f.isSmelting());
+  }
   furnaceUI.refresh();
   recipeBook.refresh();
   // While asleep, time stands still until the sleep timer ends. Then it jumps to sunrise.
@@ -424,12 +488,17 @@ function frame(now) {
   camera.rotation.x = player.pitch;
 
   const hit = targetHit();
+  // Crack overlay: hard blocks show a slower crack build-up, easy ones a fast one. The label names the difficulty.
+  const mineFrac = mining.fraction();
+  const mineNeed = hit ? breakTime(hit.id, inventory.selectedItem.id) : 0;
+  hud.setCrack(mineFrac, crackLabel(hit, mineNeed));
   hud.update({
     inventory,
     target: hit ? BLOCK_DEFS[hit.id]?.name : null,
     health: player.health,
     maxHealth: player.maxHealth,
     hunger: player.hunger.value,
+    armour: defencePoints(player.armour),
     timeOfDay,
     pos: player.pos,
     chunks: world.chunks.size,

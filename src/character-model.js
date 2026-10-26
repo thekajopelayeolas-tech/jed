@@ -66,45 +66,93 @@ export function buildPlayerModel() {
   group.add(legR);
   parts.legRight = legR;
 
-  // Armour shells: one per part, hidden until a piece is worn. Each is a little larger than the body part.
+  // Armour shells: one per part, hidden until a piece is worn. Each shell is a group of boxes shaped like the
+  // real piece (a helmet with a visor, a chestplate with shoulders, leggings with a belt, boots with a cuff),
+  // so it reads as armour and not as a block. All boxes in one shell share a colour, set by applyArmour.
   const shellSpec = {
-    helmet: { parent: head, w: 0.56, h: 0.56, d: 0.56, x: 0, y: 0.02, z: 0 },
-    chest: { parent: body, w: 0.56, h: 0.74, d: 0.36, x: 0, y: 0, z: 0 },
-    legs: { parent: body, w: 0.56, h: 0.36, d: 0.36, x: 0, y: -0.52, z: 0 },
-    boots: { parent: group, w: 0.24, h: 0.2, d: 0.24, x: 0, y: 0.1, z: 0 },
+    helmet: { parent: head, y: 0.02, build: buildHelmet },
+    chest: { parent: body, y: 0, build: buildChestplate },
+    legs: { parent: body, y: -0.52, build: buildLeggings },
   };
   for (const [part, s] of Object.entries(shellSpec)) {
-    const shell = new THREE.Mesh(
-      new THREE.BoxGeometry(s.w, s.h, s.d),
-      new THREE.MeshLambertMaterial({ color: 0xffffff }),
-    );
+    const shell = s.build();
     shell.visible = false;
-    shell.position.set(s.x, s.y, s.z);
+    shell.position.set(0, s.y, 0);
     s.parent.add(shell);
     shells[part] = shell;
   }
   // Boots sit on the feet: one shell per leg.
-  const bootL = shells.boots.clone();
+  const bootL = buildBoots();
+  bootL.visible = false;
   bootL.position.set(-0.13, 0.04, 0);
   legL.add(bootL);
-  const bootR = shells.boots.clone();
+  const bootR = buildBoots();
+  bootR.visible = false;
   bootR.position.set(0.13, 0.04, 0);
   legR.add(bootR);
   shells.bootsLeft = bootL;
   shells.bootsRight = bootR;
-  group.remove(shells.boots);
-  delete shells.boots;
 
   return { group, parts, hand, shells };
 }
 
+// Armour pieces. Each returns a group of boxes. Sizes are a little larger than the body part they cover.
+// A box with a material for the armour colour, added to a group.
+function piece(group, w, h, d, x, y, z) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  mesh.position.set(x, y, z);
+  group.add(mesh);
+  return mesh;
+}
+
+// Helmet: a domed cap over the head, a brim at the front, and a dark visor slot.
+function buildHelmet() {
+  const g = new THREE.Group();
+  piece(g, 0.58, 0.44, 0.58, 0, 0.1, 0);
+  piece(g, 0.6, 0.06, 0.2, 0, 0.0, 0.2);
+  piece(g, 0.46, 0.08, 0.02, 0, 0.06, 0.3);
+  return g;
+}
+
+// Chestplate: a front and back plate, shoulder pads on each side, and a waist band.
+function buildChestplate() {
+  const g = new THREE.Group();
+  piece(g, 0.58, 0.72, 0.38, 0, 0, 0);
+  piece(g, 0.2, 0.16, 0.4, -0.38, 0.28, 0);
+  piece(g, 0.2, 0.16, 0.4, 0.38, 0.28, 0);
+  piece(g, 0.6, 0.08, 0.4, 0, -0.34, 0);
+  return g;
+}
+
+// Leggings: a waist band and two leg plates, with a seam down the middle.
+function buildLeggings() {
+  const g = new THREE.Group();
+  piece(g, 0.58, 0.12, 0.38, 0, 0.14, 0);
+  piece(g, 0.26, 0.36, 0.38, -0.14, -0.1, 0);
+  piece(g, 0.26, 0.36, 0.38, 0.14, -0.1, 0);
+  return g;
+}
+
+// One boot: a shaft over the ankle, a wider sole, and a cuff at the top.
+function buildBoots() {
+  const g = new THREE.Group();
+  piece(g, 0.26, 0.2, 0.26, 0, 0.0, 0);
+  piece(g, 0.28, 0.06, 0.3, 0, -0.1, 0.02);
+  piece(g, 0.28, 0.04, 0.28, 0, 0.1, 0);
+  return g;
+}
+
 // Applies the worn armour to the shells: a material's colour shows, and no armour hides the shell.
+// A shell is a group, so the colour goes to every box in it.
 export function applyArmour(model, worn) {
   const look = armourLook(worn);
   const set = (shell, entry) => {
     if (!shell) return;
     shell.visible = !!entry;
-    if (entry) shell.material.color.setRGB(entry.colour[0], entry.colour[1], entry.colour[2]);
+    if (!entry) return;
+    shell.traverse((o) => {
+      if (o.material) o.material.color.setRGB(entry.colour[0], entry.colour[1], entry.colour[2]);
+    });
   };
   set(model.shells.helmet, look.helmet);
   set(model.shells.chest, look.chest);

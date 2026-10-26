@@ -15,6 +15,23 @@ export const BUILD = {
   CONCRETE_STAIRS: 64,
 };
 
+// Doors are kept apart from the building blocks, since they are not crafted. A closed door blocks movement,
+// and an open door is passable. Right-click switches between them. Ids 76 and 77 are new and never reused.
+export const DOOR = {
+  DOOR: 76,
+  OPEN_DOOR: 77,
+};
+
+// The furnace while it is smelting: the same block, drawn with a glowing fire in its firebox.
+export const FURNACE_STATE = {
+  LIT: 79,
+};
+
+// A chest holds 27 items. It is a placeable block, opened with right-click, and it keeps its contents when saved.
+export const STORAGE = {
+  CHEST: 78,
+};
+
 // Shape of a placed block as boxes inside the cell, in 0..1 units.
 // A full cube is one box. A slab is the lower half. Stairs are a lower slab plus an upper back step.
 export const FULL_BOX = [[0, 0, 0, 1, 1, 1]];
@@ -24,6 +41,12 @@ export const STAIR_BOXES = [
   [0, 0, 0, 1, 0.5, 1],
   [0, 0.5, 0, 0.5, 1, 1],
 ];
+
+// A closed door is a thin panel across the middle of its cell. An open door is a thin panel pushed against
+// the west edge of its cell, so it is still visible. Open doors are not solid (see blocks.js), so the
+// player and mobs walk through them, whatever box is drawn.
+export const DOOR_BOX = [[0, 0, 0.4, 1, 1, 0.6]];
+export const OPEN_DOOR_BOX = [[0, 0, 0, 0.12, 1, 1]];
 
 // Which shape each building block uses. Full cubes are missing from this table and use FULL_BOX.
 export const SHAPE = {
@@ -35,6 +58,8 @@ export const SHAPE = {
   [BUILD.STONE_STAIRS]: 'stairs',
   [BUILD.BRICK_STAIRS]: 'stairs',
   [BUILD.CONCRETE_STAIRS]: 'stairs',
+  [DOOR.DOOR]: 'door',
+  [DOOR.OPEN_DOOR]: 'open',
 };
 
 // Returns the collision and rendering boxes for a block id. Full cubes return one box.
@@ -42,6 +67,8 @@ export function boxesFor(id) {
   const shape = SHAPE[id];
   if (shape === 'slab') return SLAB_BOX;
   if (shape === 'stairs') return STAIR_BOXES;
+  if (shape === 'door') return DOOR_BOX;
+  if (shape === 'open') return OPEN_DOOR_BOX;
   return FULL_BOX;
 }
 

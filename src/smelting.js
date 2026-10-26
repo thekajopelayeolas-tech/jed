@@ -8,6 +8,10 @@ export const SMELT_TIME = 10;
 // What each input smelts into.
 export const SMELT = {
   [BLOCK.BEEF]: BLOCK.COOKED_BEEF,
+  [BLOCK.RAW_MUTTON]: BLOCK.COOKED_MUTTON,
+  [BLOCK.RAW_PORK]: BLOCK.COOKED_PORK,
+  [BLOCK.RAW_RABBIT]: BLOCK.COOKED_RABBIT,
+  [BLOCK.RAW_FISH]: BLOCK.COOKED_FISH,
   [BLOCK.IRON_ORE]: BLOCK.IRON_INGOT,
 };
 
@@ -82,6 +86,12 @@ export class Furnace {
       this.output.count += 1;
     }
     return true;
+  }
+
+  // True while the furnace is actually smelting: fuel is burning and an item is being cooked.
+  // The fire shows only then, so an idle furnace with fuel in it stays dark.
+  isSmelting() {
+    return this.burnLeft > 0 && smeltResult(this.input.id) !== null && this.input.count > 0 && this.hasRoomFor(smeltResult(this.input.id));
   }
 
   // Serialises the furnace for saving.

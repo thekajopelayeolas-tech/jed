@@ -9,6 +9,8 @@ const HEART_EMPTY = '#3a0a0a';
 const HUNGER_BUN = '#d9a04f';
 const HUNGER_PATTY = '#6b3a1e';
 const HUNGER_EMPTY = '#2e2516';
+// Ten shields cover up to 20 defence points, more than the full diamond set (12).
+const MAX_ARMOUR_SHIELDS = 10;
 
 // A heart: two round lobes over a downward point, drawn with CSS so its colour is exact.
 function heartIcon(full) {
@@ -35,22 +37,50 @@ function hungerIcon(full) {
   return el;
 }
 
-// A row of nine icons for one meter. set(filled, total, kind) rebuilds only when the count changes.
+// The crack pattern for one stage: more dark cracks appear as the stage grows. Drawn as SVG lines over a square.
+function crackPattern(stage) {
+  const lines = [
+    [24, 24, 10, 8], [24, 24, 38, 10], [24, 24, 14, 40], [24, 24, 42, 36],
+    [24, 24, 30, 46], [24, 24, 6, 26], [24, 24, 40, 22], [24, 24, 22, 4],
+    [24, 24, 46, 46], [24, 24, 2, 46],
+  ];
+  const shown = lines.slice(0, stage + 1);
+  const paths = shown.map(([x1, y1, x2, y2]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#000" stroke-width="2" stroke-opacity="0.85"/>`).join('');
+  return `<svg width="48" height="48" viewBox="0 0 48 48">${paths}</svg>`;
+}
+
+// A shield: a rounded top over a point, drawn with CSS. Full shields are steel grey, empty ones are dark.
+const ARMOUR_FULL = '#b8c2cc';
+const ARMOUR_EMPTY = '#2a2f36';
+function armourIcon(full) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:relative;width:12px;height:14px;';
+  const color = full ? ARMOUR_FULL : ARMOUR_EMPTY;
+  el.innerHTML =
+    `<div style="position:absolute;left:0;top:0;width:12px;height:7px;border-radius:3px 3px 0 0;background:${color};"></div>` +
+    `<div style="position:absolute;left:2px;top:5px;width:8px;height:9px;border-radius:0 0 6px 6px;background:${color};"></div>`;
+  return el;
+}
+
+// A row of icons for one meter. set(filled, total, kind) rebuilds only when the count changes.
 function makeMeter(parent) {
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:2px;';
   parent.appendChild(row);
   let shown = -1;
   let shownTotal = -1;
+  let shownKind = '';
   return {
     set(filled, total, kind) {
-      if (filled === shown && total === shownTotal) return;
+      if (filled === shown && total === shownTotal && kind === shownKind) return;
       shown = filled;
       shownTotal = total;
+      shownKind = kind;
       row.innerHTML = '';
       for (let i = 0; i < total; i++) {
         const isFull = i < filled;
-        row.appendChild(kind === 'heart' ? heartIcon(isFull) : hungerIcon(isFull));
+        const icon = kind === 'heart' ? heartIcon(isFull) : kind === 'armour' ? armourIcon(isFull) : hungerIcon(isFull);
+        row.appendChild(icon);
       }
     },
   };
@@ -75,7 +105,9 @@ export function createHud() {
   const stats = document.createElement('div');
   stats.style.cssText = 'position:absolute;left:50%;bottom:86px;transform:translateX(-50%);display:flex;gap:24px;';
   root.appendChild(stats);
+  // Armour sits between hearts and hunger: each shield is 2 defence points, so the row shows the worn armour.
   const heartBar = makeMeter(stats);
+  const armourBar = makeMeter(stats);
   const hungerBar = makeMeter(stats);
 
   const hotbar = document.createElement('div');
@@ -89,6 +121,17 @@ export function createHud() {
     hotbar.appendChild(el);
     slotEls.push(el);
   }
+
+  // Crack overlay over the block being mined. It shows 10 stages, from none to almost broken.
+  // `setCrack(fraction, hardness)` sets how far mining has got (0 to 1). The hardness label says how hard the block is.
+  const crackEl = document.createElement('div');
+  crackEl.style.cssText = 'position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;' +
+    'pointer-events:none;display:none;';
+  root.appendChild(crackEl);
+  const crackLabel = document.createElement('div');
+  crackLabel.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,28px);font-size:11px;white-space:nowrap;';
+  root.appendChild(crackLabel);
+  let crackStage = -1;
 
   // Central status line for sleep and other messages.
   const status = document.createElement('div');
@@ -113,12 +156,28 @@ export function createHud() {
       element.style.marginTop = '16px';
       pause.appendChild(element);
     },
+    // Shows the crack stage over the block being mined. `fraction` 0 hides it. `label` names the difficulty.
+    setCrack(fraction, label) {
+      if (fraction <= 0) {
+        crackEl.style.display = 'none';
+        crackLabel.textContent = '';
+        crackStage = -1;
+        return;
+      }
+      const stage = Math.min(9, Math.floor(fraction * 10));
+      if (stage !== crackStage) {
+        crackStage = stage;
+        crackEl.innerHTML = crackPattern(stage);
+      }
+      crackEl.style.display = 'block';
+      crackLabel.textContent = label;
+    },
     // `status` is text to show centre-screen, or an empty string to hide it.
     setStatus(text) {
       status.textContent = text;
       status.style.display = text ? 'block' : 'none';
     },
-    update({ inventory, target, health: hp, maxHealth, hunger, timeOfDay, pos, chunks }) {
+    update({ inventory, target, health: hp, maxHealth, hunger, armour, timeOfDay, pos, chunks }) {
       info.textContent =
         `XYZ: ${pos.x.toFixed(1)} ${pos.y.toFixed(1)} ${pos.z.toFixed(1)}\n` +
         `Chunks: ${chunks}\n` +
@@ -126,6 +185,9 @@ export function createHud() {
         (target ? `\nLooking at: ${target}` : '');
       // Each heart is 2 health; each hunger icon is 1 point out of 9.
       heartBar.set(Math.ceil(hp / 2), Math.ceil(maxHealth / 2), 'heart');
+      // Armour shows as shields, one per 2 defence points, up to 10 shields (a full diamond set is 12 points).
+      const armourShields = Math.min(MAX_ARMOUR_SHIELDS, Math.ceil(armour / 2));
+      armourBar.set(armourShields, MAX_ARMOUR_SHIELDS, 'armour');
       hungerBar.set(hunger, MAX_HUNGER, 'hunger');
 
       for (let i = 0; i < HOTBAR_SIZE; i++) {

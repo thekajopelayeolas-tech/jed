@@ -1,7 +1,9 @@
 // Recipe book logic. Pure functions with no DOM or three.js, so tests run in Node.
 // Every recipe comes from RECIPES in inventory.js, so the book always matches the crafting grid.
-import { BLOCK, BLOCK_DEFS } from './blocks.js';
+import { BLOCK, BLOCK_DEFS, TOOL_ITEMS } from './blocks.js';
 import { RECIPES } from './inventory.js';
+import { BUILD, DOOR, STORAGE } from './building.js';
+import { armourInfo } from './armour.js';
 
 // Per-recipe ingredients as { id, count }, counted from the pattern. Each pattern cell uses one item.
 export function recipeIngredients(recipe) {
@@ -16,6 +18,22 @@ export function recipeIngredients(recipe) {
   return [...counts].map(([id, count]) => ({ id, count }));
 }
 
+// Recipe categories shown as headings in the book. A recipe belongs to the first category whose test it passes.
+const BASIC_IDS = [BLOCK.PLANKS, BLOCK.STICK, BLOCK.CRAFTING_TABLE, BLOCK.FURNACE, BLOCK.TORCH, BLOCK.GLASS, BLOCK.BED];
+const DOOR_AND_STORAGE_IDS = [DOOR.DOOR, DOOR.OPEN_DOOR, STORAGE.CHEST];
+const BUILD_IDS = Object.values(BUILD);
+export const CATEGORIES = [
+  { name: 'Basics and doors', test: (id) => BASIC_IDS.includes(id) || DOOR_AND_STORAGE_IDS.includes(id) },
+  { name: 'Tools', test: (id) => TOOL_ITEMS[id] !== undefined },
+  { name: 'Armour', test: (id) => armourInfo(id) !== null },
+  { name: 'Building', test: (id) => BUILD_IDS.includes(id) },
+];
+
+// The category name for a recipe result. Anything not matched goes to 'Other'.
+export function categoryOf(resultId) {
+  return CATEGORIES.find((c) => c.test(resultId))?.name ?? 'Other';
+}
+
 // Every recipe, in the order they are defined, with its ingredients and result. The book shows them all.
 // Each entry keeps the raw RECIPES shape: `result` is the item id and `count` is how many it makes.
 export function allRecipes() {
@@ -24,6 +42,7 @@ export function allRecipes() {
     result: r.result,
     count: r.count,
     resultName: BLOCK_DEFS[r.result]?.name ?? 'Unknown',
+    category: categoryOf(r.result),
     pattern: r.pattern,
     key: r.key,
     ingredients: recipeIngredients(r),

@@ -1,11 +1,12 @@
 import { BLOCK, TOOL, TOOL_ITEMS } from './blocks.js';
+import { STORAGE, FURNACE_STATE } from './building.js';
 
 // Hardness: seconds to mine with bare hands. Tool class and minimum tier decide the drop and speed.
 // `tool` is the class that mines this block fastest. `tier` is the lowest tool tier that yields its drop.
 const HARDNESS = {
-  [BLOCK.GRASS]: { hardness: 0.6, tool: null, tier: 0 },
-  [BLOCK.DIRT]: { hardness: 0.5, tool: null, tier: 0 },
-  [BLOCK.SAND]: { hardness: 0.5, tool: null, tier: 0 },
+  [BLOCK.GRASS]: { hardness: 0.6, tool: TOOL.SHOVEL, tier: 0 },
+  [BLOCK.DIRT]: { hardness: 0.5, tool: TOOL.SHOVEL, tier: 0 },
+  [BLOCK.SAND]: { hardness: 0.5, tool: TOOL.SHOVEL, tier: 0 },
   [BLOCK.WOOD]: { hardness: 2.0, tool: TOOL.AXE, tier: 0 },
   [BLOCK.LEAVES]: { hardness: 0.2, tool: null, tier: 0 },
   [BLOCK.PLANKS]: { hardness: 2.0, tool: TOOL.AXE, tier: 0 },
@@ -21,6 +22,10 @@ const HARDNESS = {
   [BLOCK.WOOL]: { hardness: 0.8, tool: null, tier: 0 },
   [BLOCK.BED]: { hardness: 0.6, tool: null, tier: 0 },
   [BLOCK.TORCH]: { hardness: 0, tool: null, tier: 0 },
+  // The lit furnace is mined like the furnace it is.
+  [FURNACE_STATE.LIT]: { hardness: 3.5, tool: TOOL.PICKAXE, tier: 1 },
+  // A chest is wood, so it breaks faster with an axe, like planks.
+  [STORAGE.CHEST]: { hardness: 2.5, tool: TOOL.AXE, tier: 0 },
   // Building blocks. Wood breaks with an axe, and the stone-based ones with a pickaxe, like their raw materials.
   [BLOCK.STONE_BRICKS]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },
   [BLOCK.POLISHED_STONE]: { hardness: 2.0, tool: TOOL.PICKAXE, tier: 1 },

@@ -2,13 +2,14 @@
 // The world is split into square regions. Each region gets at most one village, chosen by a seeded hash,
 // so every chunk that needs it computes the same answer without storing anything.
 import { BLOCK } from './blocks.js';
+import { DOOR } from './building.js';
 import { valueNoise2D } from './noise.js';
 
 export const REGION = 64;
-// Chance that a region contains a village.
-export const VILLAGE_CHANCE = 0.35;
-// Half-size of the flat area a village needs around its centre.
-const FLAT_RADIUS = 9;
+// Chance that a region contains a village. Villages are rare: most regions have none.
+export const VILLAGE_CHANCE = 0.12;
+// Half-size of the flat area a village needs around its centre. It is large enough for ten houses.
+export const FLAT_RADIUS = 18;
 // Maximum height difference allowed across the flat area.
 const MAX_SLOPE = 2;
 
@@ -41,13 +42,29 @@ export function isFlatEnough(centre, heightAt, seaLevel) {
   return hi - lo <= MAX_SLOPE;
 }
 
+// The area around a village centre whose ground is levelled to the village height. It covers every house and road.
+// Offsets are relative to the centre: x from x0 to x1, z from z0 to z1.
+export const LEVEL_BOX = { x0: -16, x1: 20, z0: -14, z1: 13 };
+
 // The houses in a village, as boxes on the flat ground. Each house is a small plank house with a door.
-// Offsets are relative to the centre. Two houses and a path keep the village readable.
+// Offsets are relative to the centre. Ten houses sit in two rows of five, with a road running between
+// the rows and a road along the south edge. `doorZ` is the front wall the door sits in, facing the road.
 export const HOUSES = [
-  { x: -6, z: -4, w: 5, d: 5 },
-  { x: 2, z: -4, w: 5, d: 5 },
-  { x: -2, z: 3, w: 5, d: 4 },
+  ...[-12, -6, 0, 6, 12].map((x) => ({ x, z: -12, w: 5, d: 5, doorZ: 4 })),
+  ...[-12, -6, 0, 6, 12].map((x) => ({ x, z: 6, w: 5, d: 5, doorZ: 0 })),
 ];
+
+// Every village centre within `radius` blocks of (x, z). Only regions near that point are checked.
+export function villagesNear(x, z, seed, radius) {
+  const out = [];
+  for (let rx = Math.floor((x - radius) / REGION); rx <= Math.floor((x + radius) / REGION); rx++) {
+    for (let rz = Math.floor((z - radius) / REGION); rz <= Math.floor((z + radius) / REGION); rz++) {
+      const c = villageCentre(rx, rz, seed);
+      if (c && Math.hypot(c.x - x, c.z - z) <= radius) out.push(c);
+    }
+  }
+  return out;
+}
 
 // Describes how to build one house at a given ground height. Returns a list of { dx, dy, dz, id } cells.
 // The walls are cobblestone at the base and planks above, with a glass window, a door gap, and a roof of planks.
@@ -67,8 +84,12 @@ export function houseCells(house, groundY) {
       }
       for (let h = 0; h < wallHeight; h++) {
         // Door: a two-high gap in the middle of the front (z = 0) wall.
-        const isDoor = dz === 0 && dx === Math.floor(house.w / 2) && h < 2;
-        if (isDoor) continue;
+        // The doorway is a closed wooden door, so the house can be entered by opening it.
+        const isDoor = dz === house.doorZ && dx === Math.floor(house.w / 2) && h < 2;
+        if (isDoor) {
+          cells.push({ dx: house.x + dx, dy: y0 + h, dz: house.z + dz, id: DOOR.DOOR });
+          continue;
+        }
         // Windows: glass in the middle of the two side walls (the walls along z), at head height.
         const isSideWall = edgeX && !edgeZ;
         const isWindow = isSideWall && h === 1 && dz === Math.floor(house.d / 2);
@@ -80,11 +101,13 @@ export function houseCells(house, groundY) {
   return cells;
 }
 
-// The cobblestone path from the door of one house toward the village centre, at ground level.
+// The cobblestone roads at ground level: one between the two rows of houses, and one along the south edge.
 export function pathCells(groundY) {
   const cells = [];
-  for (let z = -1; z <= 4; z++) {
-    cells.push({ dx: 0, dy: groundY, dz: z, id: BLOCK.COBBLESTONE });
+  for (const z of [-7, 5]) {
+    for (let x = -14; x <= 18; x++) {
+      cells.push({ dx: x, dy: groundY, dz: z, id: BLOCK.COBBLESTONE });
+    }
   }
   return cells;
 }

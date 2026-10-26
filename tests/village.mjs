@@ -1,6 +1,7 @@
 import { Chunk, surfaceHeight } from '../src/chunk.js';
-import { villageCentre, isFlatEnough, houseCells, pathCells, HOUSES, REGION } from '../src/village.js';
+import { villageCentre, houseCells, pathCells, HOUSES, REGION, LEVEL_BOX } from '../src/village.js';
 import { BLOCK } from '../src/blocks.js';
+import { DOOR } from '../src/building.js';
 
 let failed = 0;
 const check = (name, cond) => {
@@ -11,17 +12,18 @@ const check = (name, cond) => {
 const SEED = 1337;
 const SEA = 30;
 
-// Find villages across a band of regions: some must exist, and each must be flat and above water.
+// Find villages across a band of regions: some must exist, and each centre must be above water.
+// Ground under a village is levelled to its centre height, so the terrain itself no longer has to be flat.
 const found = [];
 for (let rx = -6; rx < 6; rx++) {
   for (let rz = -6; rz < 6; rz++) {
     const c = villageCentre(rx, rz, SEED);
     if (!c) continue;
-    if (isFlatEnough(c, (x, z) => surfaceHeight(SEED, x, z), SEA)) found.push(c);
+    if (surfaceHeight(SEED, c.x, c.z) > SEA + 1) found.push(c);
   }
 }
-check('some flat villages are placed across the map', found.length > 0);
-check('villages appear in a fair share of regions (over 2 in 144)', found.length >= 2);
+check('some villages are placed across the map', found.length > 0);
+check('villages are rare: at least one, but under a third of regions (over 0 in 144)', found.length >= 1 && found.length < 144 / 3);
 
 // Each village centre lies inside its own region with margin, so one region never overlaps another.
 const insideRegion = found.every((c) => {
@@ -37,15 +39,13 @@ check('every village centre sits inside its region with margin', insideRegion);
 const v = found[0];
 const groundY = surfaceHeight(SEED, v.x, v.z);
 const cells = HOUSES.flatMap((h) => houseCells(h, groundY));
-const doorGaps = HOUSES.map((h) => {
-  // The door is at the front wall centre, at head and foot height, so those cells must not be walls.
+// Each doorway holds a closed door (not a wall), so the house can be entered by opening it.
+const doorsPlaced = HOUSES.map((h) => {
   const dx = h.x + Math.floor(h.w / 2);
-  const dz = h.z;
-  const atFoot = cells.some((c) => c.dx === dx && c.dz === dz && c.dy === groundY + 1);
-  const atHead = cells.some((c) => c.dx === dx && c.dz === dz && c.dy === groundY + 2);
-  return !atFoot && !atHead;
+  const dz = h.z + h.doorZ;
+  return cells.some((c) => c.dx === dx && c.dz === dz && c.dy === groundY + 1 && c.id === DOOR.DOOR);
 });
-check('each house has a door gap in its front wall', doorGaps.every(Boolean));
+check('each house doorway holds a closed door', doorsPlaced.every(Boolean));
 check('houses include planks, cobblestone and glass', ['PLANKS', 'COBBLESTONE', 'GLASS'].every((n) => cells.some((c) => c.id === BLOCK[n])));
 
 // Chunk generation: a village's cells land in the generated chunks, with the ground at its height.
@@ -66,8 +66,8 @@ check('the village is built into the generated chunks', placed > 0);
 // A village that crosses a chunk border is built in full. Generate every chunk around the village, then
 // count the village blocks at every village cell. Every cell must hold its intended block, so none is cut off.
 const villageChunks = new Map();
-for (let cx = Math.floor((v.x - 12) / 16); cx <= Math.floor((v.x + 12) / 16); cx++) {
-  for (let cz = Math.floor((v.z - 12) / 16); cz <= Math.floor((v.z + 12) / 16); cz++) {
+for (let cx = Math.floor((v.x - 22) / 16); cx <= Math.floor((v.x + 22) / 16); cx++) {
+  for (let cz = Math.floor((v.z - 22) / 16); cz <= Math.floor((v.z + 22) / 16); cz++) {
     const c = new Chunk(cx, cz);
     c.generate(SEED);
     villageChunks.set(`${cx},${cz}`, c);

@@ -22,6 +22,13 @@ export function createRecipeBookUI(inventory) {
   title.style.cssText = 'font-size:16px;font-weight:bold;';
   panel.appendChild(title);
 
+  // Search box: type part of a name (for example "door") to show only matching recipes.
+  const search = document.createElement('input');
+  search.type = 'text';
+  search.placeholder = 'Search recipes, e.g. door';
+  search.style.cssText = 'font-family:monospace;font-size:13px;padding:4px 6px;border:2px solid #555;';
+  panel.appendChild(search);
+
   const list = document.createElement('div');
   list.style.cssText = 'display:flex;flex-direction:column;gap:6px;overflow-y:auto;';
   panel.appendChild(list);
@@ -31,8 +38,18 @@ export function createRecipeBookUI(inventory) {
   hint.style.cssText = 'font-size:12px;';
   panel.appendChild(hint);
 
-  // One row per recipe. Rows are built once; their colours and craft handler are refreshed in render().
+  // One row per recipe, grouped under a heading per category. Rows are built once. Their colours, craft
+  // handler, and visibility (from the search box) are refreshed in render().
+  let lastCategory = null;
   const rows = recipes.map((r) => {
+    if (r.category !== lastCategory) {
+      lastCategory = r.category;
+      const heading = document.createElement('div');
+      heading.textContent = r.category;
+      heading.dataset.heading = r.category;
+      heading.style.cssText = 'font-size:14px;font-weight:bold;margin-top:6px;';
+      list.appendChild(heading);
+    }
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px;border:2px solid #555;background:#b0b0b0;cursor:pointer;';
     row.addEventListener('click', () => {
@@ -41,6 +58,7 @@ export function createRecipeBookUI(inventory) {
     list.appendChild(row);
     return { r, row };
   });
+  search.addEventListener('input', () => render());
 
   // Draws one ingredient as a small icon with its count, coloured by whether you have enough.
   function ingredientNode(need) {
@@ -55,7 +73,12 @@ export function createRecipeBookUI(inventory) {
   }
 
   function render() {
+    const query = search.value.trim().toLowerCase();
     for (const { r, row } of rows) {
+      // Hide recipes that do not match the search. An empty search shows everything.
+      const match = !query || r.resultName.toLowerCase().includes(query) || r.category.toLowerCase().includes(query);
+      row.style.display = match ? 'flex' : 'none';
+      if (!match) continue;
       row.innerHTML = '';
       const result = document.createElement('div');
       result.style.cssText = 'display:flex;align-items:center;gap:6px;min-width:200px;';

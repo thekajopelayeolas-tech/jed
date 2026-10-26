@@ -1,4 +1,5 @@
 import { BLOCK } from './blocks.js';
+import { DOOR, STORAGE, FURNACE_STATE } from './building.js';
 
 // Procedural 16x16 pixel textures packed into one atlas. No image files are needed.
 export const TILE = 16;
@@ -65,6 +66,14 @@ const PAINTERS = {
   // Furnace: grey stone with a dark firebox opening on the front.
   furnaceSide: (x, y) => (x >= 4 && x <= 11 && y >= 6 && y <= 12 ? [0.12, 0.1, 0.09, 1] : jitter([0.45, 0.45, 0.45], noise(x, y, 24), 0.14)),
   furnaceTop: (x, y) => jitter([0.42, 0.42, 0.42], noise(x, y, 25), 0.14),
+  // Lit furnace front: the same stone, with a bright fire inside the firebox opening.
+  furnaceLitSide: (x, y) => {
+    if (x >= 4 && x <= 11 && y >= 6 && y <= 12) {
+      const hot = (x + y) % 3 === 0 ? [1, 0.9, 0.4, 1] : [0.98, 0.45, 0.12, 1];
+      return hot;
+    }
+    return jitter([0.45, 0.45, 0.45], noise(x, y, 26), 0.14);
+  },
   // Diamond ore: stone with pale cyan gems.
   diamondOre: (x, y) => (noise(x, y, 26) > 0.9 ? [0.45, 0.92, 0.95, 1] : jitter(STONE, noise(x, y, 27), 0.18)),
   // Stone bricks: grey stone laid in offset rows with dark mortar.
@@ -83,6 +92,25 @@ const PAINTERS = {
   },
   // Concrete: even light grey with fine speckles.
   concrete: (x, y) => jitter([0.6, 0.6, 0.6], noise(x, y, 43), 0.12),
+  // Chest: planks with a dark band, iron corner bands, and a clasp on the front.
+  chestSide: (x, y) => {
+    const band = y === 5 || y === 10 || x === 0 || x === 15;
+    if (band) return jitter([0.25, 0.22, 0.2], noise(x, y, 80), 0.05);
+    if (x >= 7 && x <= 8 && y >= 6 && y <= 9) return [0.85, 0.75, 0.3, 1];
+    return jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 81), 0.08);
+  },
+  chestTop: (x, y) => {
+    const edge = x === 0 || x === 15 || y === 0 || y === 15;
+    if (edge) return jitter([0.25, 0.22, 0.2], noise(x, y, 82), 0.05);
+    return jitter(PLANK, noise(x, y, 83), 0.08);
+  },
+  // Door: wooden planks with a frame, and a small handle near the edge.
+  door: (x, y) => {
+    const frame = x < 2 || x > 13 || y < 2 || y > 13;
+    if (frame) return jitter([0.36, 0.25, 0.12], noise(x, y, 70), 0.06);
+    if (x >= 10 && x <= 11 && y >= 7 && y <= 8) return [0.85, 0.75, 0.3, 1];
+    return jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 71), 0.08);
+  },
   // Rainbow ore: stone with small gems in a rainbow of colours.
   rainbowOre: (x, y) => {
     const n = noise(x, y, 28);
@@ -116,6 +144,7 @@ export const BLOCK_TILES = {
   [BLOCK.BED]: { top: 'bedTop', side: 'bedSide', bottom: 'planks' },
   [BLOCK.WOOL]: { top: 'wool', side: 'wool', bottom: 'wool' },
   [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', bottom: 'furnaceTop' },
+  [FURNACE_STATE.LIT]: { top: 'furnaceTop', side: 'furnaceLitSide', bottom: 'furnaceTop' },
   [BLOCK.DIAMOND_ORE]: { top: 'diamondOre', side: 'diamondOre', bottom: 'diamondOre' },
   [BLOCK.RAINBOW_ORE]: { top: 'rainbowOre', side: 'rainbowOre', bottom: 'rainbowOre' },
   [BLOCK.STONE_BRICKS]: { top: 'stoneBricks', side: 'stoneBricks', bottom: 'stoneBricks' },
@@ -130,6 +159,9 @@ export const BLOCK_TILES = {
   [BLOCK.STONE_STAIRS]: { top: 'stone', side: 'stone', bottom: 'stone' },
   [BLOCK.BRICK_STAIRS]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },
   [BLOCK.CONCRETE_STAIRS]: { top: 'concrete', side: 'concrete', bottom: 'concrete' },
+  [STORAGE.CHEST]: { top: 'chestTop', side: 'chestSide', bottom: 'chestTop' },
+  [DOOR.DOOR]: { top: 'door', side: 'door', bottom: 'door' },
+  [DOOR.OPEN_DOOR]: { top: 'door', side: 'door', bottom: 'door' },
 };
 
 // Builds the atlas canvas as a Uint8ClampedArray of RGBA pixels, ready for THREE.DataTexture.

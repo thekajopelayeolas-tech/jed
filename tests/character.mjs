@@ -57,7 +57,10 @@ check('no item holds nothing', heldLook(null) === null);
   check('a worn chest is not shown when empty', m.shells.chest.visible === false);
   check('worn leggings show their shell', m.shells.legs.visible === true);
   check('no boots means both boot shells are hidden', m.shells.bootsLeft.visible === false && m.shells.bootsRight.visible === false);
-  check('the armour colour is applied to the helmet shell', Math.abs(m.shells.helmet.material.color.r - MATERIAL_COLOURS.iron[0]) < 0.01);
+  // A shell is a group of boxes now, so check the colour on every box in it.
+  const boxes = [];
+  m.shells.helmet.traverse((o) => { if (o.material) boxes.push(o); });
+  check('the armour colour is applied to every helmet box', boxes.length > 1 && boxes.every((o) => Math.abs(o.material.color.r - MATERIAL_COLOURS.iron[0]) < 0.01));
 }
 
 // Taking armour off hides the shell again.

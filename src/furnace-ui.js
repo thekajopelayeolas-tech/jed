@@ -77,8 +77,13 @@ export function createFurnaceUI(inventory) {
   const middle = document.createElement('div');
   middle.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;width:90px;';
   topRow.appendChild(middle);
+  // The fire: three flame tongues over a glowing base. It shows only while the furnace is smelting.
   const flame = document.createElement('div');
-  flame.style.cssText = 'width:24px;height:24px;background:#444;border:1px solid #000;';
+  flame.style.cssText = 'position:relative;width:28px;height:28px;display:none;';
+  flame.innerHTML =
+    '<div style="position:absolute;left:4px;bottom:4px;width:20px;height:20px;border-radius:50% 50% 40% 40%;background:#e0622a;"></div>' +
+    '<div style="position:absolute;left:8px;bottom:6px;width:12px;height:16px;border-radius:50% 50% 40% 40%;background:#f6b13b;"></div>' +
+    '<div style="position:absolute;left:11px;bottom:8px;width:6px;height:9px;border-radius:50% 50% 40% 40%;background:#fff3a0;"></div>';
   middle.appendChild(flame);
   const bar = document.createElement('div');
   bar.style.cssText = 'width:80px;height:10px;background:#555;border:1px solid #000;';
@@ -192,8 +197,8 @@ export function createFurnaceUI(inventory) {
     } else {
       held.style.display = 'none';
     }
-    // The flame is lit while fuel is burning. The bar fills as an item smelts.
-    flame.style.background = furnace.burnLeft > 0 ? '#e0622a' : '#444';
+    // The fire shows while the furnace is smelting, and goes out when it stops. The bar fills as an item smelts.
+    flame.style.display = furnace.isSmelting() ? 'block' : 'none';
     barFill.style.width = `${Math.min(100, (furnace.progress / SMELT_TIME) * 100)}%`;
   }
 

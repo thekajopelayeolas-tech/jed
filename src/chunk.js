@@ -3,7 +3,7 @@ import { CHUNK_SIZE, CHUNK_HEIGHT, SEA_LEVEL } from './constants.js';
 import { fbm2D, valueNoise2D } from './noise.js';
 import { BIOME, BIOME_DEFS, biomeAt } from './biomes.js';
 import { LIGHT } from './lighting.js';
-import { REGION, villageCentre, isFlatEnough, houseCells, pathCells, HOUSES } from './village.js';
+import { REGION, villageCentre, houseCells, pathCells, HOUSES, LEVEL_BOX } from './village.js';
 
 // Caves: a 3D noise field. Cells where it is near its peak become air, so tunnels wind through the rock.
 // Two octaves give irregular cave shapes. Noise is sampled per cell using a flattened 2D lookup on (x+z, y).
@@ -25,9 +25,31 @@ export function surfaceHeight(seed, wx, wz) {
 }
 
 // How far a village's footprint reaches from its centre, so chunks know which regions to check.
-const FLAT_REACH = 16;
-// Radius around a village centre where trees are not planted. It covers the houses and the path.
-const VILLAGE_CLEAR = 12;
+const FLAT_REACH = 22;
+// Radius around a village centre where trees are not planted. It covers the houses and the roads.
+const VILLAGE_CLEAR = 22;
+
+// The ground height a village levels to, or null if the centre is underwater (no village there).
+function villageGroundY(seed, centre) {
+  const y = surfaceHeight(seed, centre.x, centre.z);
+  return y > SEA_LEVEL + 1 ? y : null;
+}
+
+// If a column lies inside a village's levelled area, returns the village's ground height. Otherwise null.
+// Every chunk computes the same answer for a column, so the ground joins up across chunk borders.
+function villageGround(seed, wx, wz) {
+  for (let rx = Math.floor((wx - FLAT_REACH) / REGION); rx <= Math.floor((wx + FLAT_REACH) / REGION); rx++) {
+    for (let rz = Math.floor((wz - FLAT_REACH) / REGION); rz <= Math.floor((wz + FLAT_REACH) / REGION); rz++) {
+      const centre = villageCentre(rx, rz, seed);
+      if (!centre) continue;
+      const dx = wx - centre.x;
+      const dz = wz - centre.z;
+      if (dx < LEVEL_BOX.x0 || dx > LEVEL_BOX.x1 || dz < LEVEL_BOX.z0 || dz > LEVEL_BOX.z1) continue;
+      return villageGroundY(seed, centre);
+    }
+  }
+  return null;
+}
 
 export class Chunk {
   constructor(cx, cz) {
@@ -78,7 +100,8 @@ export class Chunk {
       for (let z = 0; z < CHUNK_SIZE; z++) {
         const wx = ox + x;
         const wz = oz + z;
-        const surface = surfaceHeight(seed, wx, wz);
+        // Inside a village, the ground is levelled to the village height so its houses sit flat.
+        const surface = villageGround(seed, wx, wz) ?? surfaceHeight(seed, wx, wz);
         const biome = biomeAt(wx, wz, seed);
         this.biomes[x + CHUNK_SIZE * z] = biome;
         const sandy = biome === BIOME.DESERT || valueNoise2D(wx * 0.03, wz * 0.03, seed + 7) > 0.62;
@@ -123,8 +146,8 @@ export class Chunk {
         const centre = villageCentre(rx, rz, seed);
         if (!centre) continue;
         // The ground height of the village is decided once, at its centre, so every chunk builds it at the same height.
-        const groundY = surfaceHeight(seed, centre.x, centre.z);
-        if (!isFlatEnough(centre, (x, z) => surfaceHeight(seed, x, z), SEA_LEVEL)) continue;
+        const groundY = villageGroundY(seed, centre);
+        if (groundY === null) continue;
         // Trees are kept out of the village footprint, so their leaves do not cover the houses.
         if (this.clearForVillage === undefined) this.clearForVillage = new Set();
         for (let dx = -VILLAGE_CLEAR; dx <= VILLAGE_CLEAR; dx++) {

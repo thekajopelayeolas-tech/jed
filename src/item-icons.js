@@ -82,13 +82,22 @@ function swordSprite(blade) {
   ]);
 }
 
+// A pickaxe: a long curved head with a point at each end, set across the top of a diagonal handle.
 function pickaxeSprite(head) {
   return layered([
+    // The head is an arc over the top of the handle, thick enough to read as metal.
     {
-      inside: (px, py) => Math.abs(Math.hypot(px - 8, py - 9) - 5.5) < 1 && py < 9.2,
-      color: (px, py) => pick(head, py < 6.5, px, py),
+      inside: (px, py) => {
+        const d = Math.hypot(px - 8, py - 11);
+        return d > 4.6 && d < 6.6 && py < 9.5;
+      },
+      color: (px, py) => pick(head, py < 7, px, py),
     },
-    stroke(8, 9, 2.5, 14.5, 0.9, HANDLE),
+    // Pick points: short stubs at each end of the arc, so it reads as a pick and not a bow.
+    stroke(2.2, 7.4, 3.8, 9.6, 0.9, head),
+    stroke(13.8, 7.4, 12.2, 9.6, 0.9, head),
+    // Handle: a diagonal stick from the middle of the head down to the bottom left.
+    stroke(8, 10.5, 3, 15, 0.9, HANDLE),
   ]);
 }
 
@@ -97,6 +106,23 @@ function axeSprite(head) {
   return layered([
     poly(edge, (px, py) => pick(head, py < 5, px, py)),
     stroke(8, 7.5, 2, 14, 0.9, HANDLE),
+  ]);
+}
+
+// A spade: a rounded blade at the top that narrows to a point, on a handle. The blade is wide at the
+// bottom and rounds off at the top, so it reads as a spade and not a paddle.
+function shovelSprite(head) {
+  return layered([
+    {
+      inside: (px, py) => {
+        // Blade spans y from 1 to 9. Its width is widest near y 6 and tapers toward the top.
+        if (py < 1 || py > 9.5) return false;
+        const half = py < 6 ? 3.2 : 3.2 - ((py - 6) / 3.5) ** 2 * 3.2;
+        return Math.abs(px - 8) < Math.max(0.5, half);
+      },
+      color: (px, py) => pick(head, px < 8, px, py),
+    },
+    stroke(8, 9, 8, 14.5, 0.9, HANDLE),
   ]);
 }
 
@@ -171,6 +197,20 @@ const SPRITES = new Map([
     if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
     return tint(py < 6.5 ? [0.86, 0.42, 0.42] : [0.7, 0.2, 0.22], grain(px, py) * 0.1);
   })],
+  [BLOCK.RAW_PORK, ellipse(8, 8.5, 6, 4.6, (px, py) => tint([0.95, 0.6, 0.6], grain(px, py) * 0.1))],
+  [BLOCK.COOKED_PORK, ellipse(8, 8.5, 6, 4.6, (px, py) => tint([0.7, 0.45, 0.25], grain(px, py) * 0.1))],
+  [BLOCK.RAW_RABBIT, ellipse(8, 9, 5.4, 4.2, (px, py) => tint([0.85, 0.7, 0.65], grain(px, py) * 0.1))],
+  [BLOCK.COOKED_RABBIT, ellipse(8, 9, 5.4, 4.2, (px, py) => tint([0.7, 0.5, 0.3], grain(px, py) * 0.1))],
+  [BLOCK.RAW_FISH, poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => tint(py < 8 ? [0.6, 0.75, 0.9] : [0.45, 0.6, 0.78], grain(px, py) * 0.08))],
+  [BLOCK.COOKED_FISH, poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => tint(py < 8 ? [0.8, 0.6, 0.35] : [0.6, 0.42, 0.22], grain(px, py) * 0.08))],
+  [BLOCK.RAW_MUTTON, ellipse(8, 8.5, 6, 4.6, (px, py) => {
+    if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
+    return tint(py < 6.5 ? [0.9, 0.5, 0.5] : [0.75, 0.3, 0.3], grain(px, py) * 0.1);
+  })],
+  [BLOCK.COOKED_MUTTON, ellipse(8, 8.5, 6, 4.6, (px, py) => {
+    if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
+    return tint(py < 6.5 ? [0.66, 0.4, 0.22] : [0.45, 0.25, 0.14], grain(px, py) * 0.1);
+  })],
   [BLOCK.ROTTEN_FLESH, ellipse(8, 8, 6, 5.5, (px, py) => {
     if (grain(px, py) > 0.2) return [0.3, 0.4, 0.22];
     return py < 7 ? [0.52, 0.64, 0.42] : [0.4, 0.5, 0.32];
@@ -178,6 +218,9 @@ const SPRITES = new Map([
   [BLOCK.WOODEN_PICKAXE, pickaxeSprite(WOOD_HEAD)],
   [BLOCK.WOODEN_AXE, axeSprite(WOOD_HEAD)],
   [BLOCK.WOODEN_SWORD, swordSprite(WOOD_HEAD)],
+  [BLOCK.WOODEN_SHOVEL, shovelSprite(WOOD_HEAD)],
+  [BLOCK.STONE_SHOVEL, shovelSprite(STONE)],
+  [BLOCK.IRON_SHOVEL, shovelSprite(IRON)],
   [BLOCK.STONE_PICKAXE, pickaxeSprite(STONE)],
   [BLOCK.STONE_AXE, axeSprite(STONE)],
   [BLOCK.STONE_SWORD, swordSprite(STONE)],

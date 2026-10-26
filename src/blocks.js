@@ -1,5 +1,5 @@
 // Block registry. id 0 is air. Colors are per face: [top, side, bottom].
-import { BUILD } from './building.js';
+import { BUILD, DOOR, STORAGE, FURNACE_STATE } from './building.js';
 
 export const BLOCK = {
   AIR: 0,
@@ -57,6 +57,18 @@ export const BLOCK = {
   DIAMOND_CHEST: 50,
   DIAMOND_LEGS: 51,
   DIAMOND_BOOTS: 52,
+  // Shovels were added last. Ids are fixed so existing saves still load.
+  WOODEN_SHOVEL: 65,
+  STONE_SHOVEL: 66,
+  IRON_SHOVEL: 67,
+  RAW_MUTTON: 68,
+  COOKED_MUTTON: 69,
+  RAW_PORK: 70,
+  COOKED_PORK: 71,
+  RAW_RABBIT: 72,
+  COOKED_RABBIT: 73,
+  RAW_FISH: 74,
+  COOKED_FISH: 75,
   // Building blocks (see building.js). These ids are placeable, so they are not items.
   STONE_BRICKS: BUILD.STONE_BRICKS,
   POLISHED_STONE: BUILD.POLISHED_STONE,
@@ -74,7 +86,7 @@ export const BLOCK = {
 
 // Tool classes and tiers. Used by mining speed and weapon damage.
 // `tool` is the class a block is best mined with; `tier` is the minimum tier to harvest drops.
-export const TOOL = { PICKAXE: 'pickaxe', AXE: 'axe', SWORD: 'sword' };
+export const TOOL = { PICKAXE: 'pickaxe', AXE: 'axe', SWORD: 'sword', SHOVEL: 'shovel' };
 export const TOOL_ITEMS = {
   [BLOCK.WOODEN_PICKAXE]: { tool: TOOL.PICKAXE, tier: 1, speed: 2, damage: 2, item: true },
   [BLOCK.WOODEN_AXE]: { tool: TOOL.AXE, tier: 1, speed: 2, damage: 3, item: true },
@@ -84,6 +96,9 @@ export const TOOL_ITEMS = {
   [BLOCK.STONE_SWORD]: { tool: TOOL.SWORD, tier: 2, speed: 1.5, damage: 5, item: true },
   [BLOCK.IRON_PICKAXE]: { tool: TOOL.PICKAXE, tier: 3, speed: 6, damage: 4, item: true },
   [BLOCK.IRON_SWORD]: { tool: TOOL.SWORD, tier: 3, speed: 1.5, damage: 7, item: true },
+  [BLOCK.WOODEN_SHOVEL]: { tool: TOOL.SHOVEL, tier: 1, speed: 2, damage: 2, item: true },
+  [BLOCK.STONE_SHOVEL]: { tool: TOOL.SHOVEL, tier: 2, speed: 4, damage: 3, item: true },
+  [BLOCK.IRON_SHOVEL]: { tool: TOOL.SHOVEL, tier: 3, speed: 6, damage: 4, item: true },
 };
 
 // Items are things that cannot be placed in the world. Placeable blocks are everything else.
@@ -145,6 +160,17 @@ export const BLOCK_DEFS = {
   [BLOCK.DIAMOND_CHEST]: { name: 'Diamond Chestplate', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
   [BLOCK.DIAMOND_LEGS]: { name: 'Diamond Leggings', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
   [BLOCK.DIAMOND_BOOTS]: { name: 'Diamond Boots', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
+  [BLOCK.RAW_PORK]: { name: 'Raw Pork', top: [0.95, 0.6, 0.6], side: [0.95, 0.6, 0.6], bottom: [0.95, 0.6, 0.6], solid: false, transparent: true, item: true },
+  [BLOCK.COOKED_PORK]: { name: 'Cooked Pork', top: [0.7, 0.45, 0.25], side: [0.7, 0.45, 0.25], bottom: [0.7, 0.45, 0.25], solid: false, transparent: true, item: true },
+  [BLOCK.RAW_RABBIT]: { name: 'Raw Rabbit', top: [0.85, 0.7, 0.65], side: [0.85, 0.7, 0.65], bottom: [0.85, 0.7, 0.65], solid: false, transparent: true, item: true },
+  [BLOCK.COOKED_RABBIT]: { name: 'Cooked Rabbit', top: [0.7, 0.5, 0.3], side: [0.7, 0.5, 0.3], bottom: [0.7, 0.5, 0.3], solid: false, transparent: true, item: true },
+  [BLOCK.RAW_FISH]: { name: 'Raw Fish', top: [0.55, 0.7, 0.85], side: [0.55, 0.7, 0.85], bottom: [0.55, 0.7, 0.85], solid: false, transparent: true, item: true },
+  [BLOCK.COOKED_FISH]: { name: 'Cooked Fish', top: [0.8, 0.6, 0.35], side: [0.8, 0.6, 0.35], bottom: [0.8, 0.6, 0.35], solid: false, transparent: true, item: true },
+  [BLOCK.RAW_MUTTON]: { name: 'Raw Mutton', top: [0.85, 0.42, 0.42], side: [0.85, 0.42, 0.42], bottom: [0.85, 0.42, 0.42], solid: false, transparent: true, item: true },
+  [BLOCK.COOKED_MUTTON]: { name: 'Cooked Mutton', top: [0.62, 0.38, 0.22], side: [0.62, 0.38, 0.22], bottom: [0.62, 0.38, 0.22], solid: false, transparent: true, item: true },
+  [BLOCK.WOODEN_SHOVEL]: { name: 'Wooden Shovel', top: [0.7, 0.55, 0.3], side: [0.7, 0.55, 0.3], bottom: [0.7, 0.55, 0.3], solid: false, transparent: true, item: true },
+  [BLOCK.STONE_SHOVEL]: { name: 'Stone Shovel', top: [0.55, 0.55, 0.55], side: [0.55, 0.55, 0.55], bottom: [0.55, 0.55, 0.55], solid: false, transparent: true, item: true },
+  [BLOCK.IRON_SHOVEL]: { name: 'Iron Shovel', top: [0.85, 0.85, 0.9], side: [0.85, 0.85, 0.9], bottom: [0.85, 0.85, 0.9], solid: false, transparent: true, item: true },
   [BUILD.STONE_BRICKS]: { name: 'Stone Bricks', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },
   [BUILD.POLISHED_STONE]: { name: 'Polished Stone', top: [0.62, 0.62, 0.62], side: [0.62, 0.62, 0.62], bottom: [0.62, 0.62, 0.62], solid: true, transparent: false },
   [BUILD.BRICKS]: { name: 'Bricks', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
@@ -156,6 +182,10 @@ export const BLOCK_DEFS = {
   [BUILD.WOOD_STAIRS]: { name: 'Wood Stairs', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },
   [BUILD.STONE_STAIRS]: { name: 'Stone Stairs', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },
   [BUILD.BRICK_STAIRS]: { name: 'Brick Stairs', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
+  [DOOR.DOOR]: { name: 'Door', top: [0.5, 0.36, 0.2], side: [0.5, 0.36, 0.2], bottom: [0.5, 0.36, 0.2], solid: true, transparent: false },
+  [FURNACE_STATE.LIT]: { name: 'Lit Furnace', top: [0.45, 0.45, 0.45], side: [0.9, 0.45, 0.12], bottom: [0.45, 0.45, 0.45], solid: true, transparent: false },
+  [STORAGE.CHEST]: { name: 'Chest', top: [0.6, 0.45, 0.25], side: [0.55, 0.4, 0.22], bottom: [0.6, 0.45, 0.25], solid: true, transparent: false },
+  [DOOR.OPEN_DOOR]: { name: 'Open Door', top: [0.5, 0.36, 0.2], side: [0.5, 0.36, 0.2], bottom: [0.5, 0.36, 0.2], solid: false, transparent: true },
   [BUILD.CONCRETE_STAIRS]: { name: 'Concrete Stairs', top: [0.6, 0.6, 0.6], side: [0.6, 0.6, 0.6], bottom: [0.6, 0.6, 0.6], solid: true, transparent: false },
 };
 
