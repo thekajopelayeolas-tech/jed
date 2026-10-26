@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { isSolid } from './blocks.js';
+import { Hunger } from './hunger.js';
+import { emptyArmour, damageReduction } from './armour.js';
+import { bodyInWater, swimVelocityY, SWIM_SPEED_MULT } from './swimming.js';
 
 const WALK_SPEED = 4.3;
 const SPRINT_MULT = 1.3;
@@ -8,6 +11,10 @@ const GRAVITY = 28;
 const HALF_WIDTH = 0.3;
 const HEIGHT = 1.8;
 const EYE = 1.62;
+// Health regeneration while hunger is full: 3 hearts every 5 seconds. One heart is 2 HP.
+const HP_PER_HEART = 2;
+const REGEN_INTERVAL = 5;
+const REGEN_HEARTS = 3;
 
 // First-person player with AABB collision against the voxel world.
 export class Player {
@@ -24,25 +31,41 @@ export class Player {
     this.fallStartY = y;
     this.regenTimer = 0;
     this.hurtCooldown = 0;
+    this.hunger = new Hunger();
+    // Worn armour, one item id per part (helmet, chest, legs, boots). 0 means the slot is empty.
+    this.armour = emptyArmour();
+  }
+
+  // True while the sprint key is held. Sprinting also drains hunger faster.
+  isSprinting() {
+    return !!(this.keys.ShiftLeft || this.keys.ShiftRight);
   }
 
   // Damages the player. Ignores hits during the short invulnerability window after a hit.
+  // Every hit that lands also costs one hunger point.
   hurt(amount) {
     if (this.hurtCooldown > 0 || this.health <= 0) return false;
-    this.health = Math.max(0, this.health - amount);
+    // Worn armour blocks a share of the damage. Hunger still drops by one point per hit.
+    const taken = amount * (1 - damageReduction(this.armour));
+    this.health = Math.max(0, this.health - taken);
     this.hurtCooldown = 0.5;
     this.regenTimer = 0;
+    this.hunger.onDamage();
     return true;
   }
 
-  // Restores one heart every 4 seconds once the player has gone 4 seconds without taking damage.
+  // While hunger is full, every REGEN_INTERVAL seconds restores REGEN_HEARTS hearts.
+  // Losing a point of hunger or taking damage restarts the timer.
   tickHealth(dt) {
     this.hurtCooldown = Math.max(0, this.hurtCooldown - dt);
-    if (this.health <= 0 || this.health >= this.maxHealth) return;
-    this.regenTimer += dt;
-    if (this.regenTimer >= 4) {
+    if (this.health <= 0 || this.health >= this.maxHealth || !this.hunger.full) {
       this.regenTimer = 0;
-      this.health = Math.min(this.maxHealth, this.health + 1);
+      return;
+    }
+    this.regenTimer += dt;
+    if (this.regenTimer >= REGEN_INTERVAL) {
+      this.regenTimer -= REGEN_INTERVAL;
+      this.health = Math.min(this.maxHealth, this.health + REGEN_HEARTS * HP_PER_HEART);
     }
   }
 
@@ -92,17 +115,25 @@ export class Player {
     if (this.keys.KeyA) move.sub(right);
     if (move.lengthSq() > 0) move.normalize();
 
-    const sprint = this.keys.ShiftLeft || this.keys.ShiftRight;
-    const speed = WALK_SPEED * (sprint ? SPRINT_MULT : 1);
+    const sprint = this.isSprinting();
+    const swimming = bodyInWater(this.world, this.pos, HALF_WIDTH, HEIGHT);
+    // In water you move slower, and sprinting does not apply.
+    const speed = WALK_SPEED * (swimming ? SWIM_SPEED_MULT : sprint ? SPRINT_MULT : 1);
 
     this.vel.x = move.x * speed;
     this.vel.z = move.z * speed;
-    if (this.keys.Space && this.onGround) {
-      this.vel.y = JUMP_VEL;
+    if (swimming) {
+      // Space swims up. Without it you sink slowly, so you can stay at the surface by holding Space.
+      this.vel.y = swimVelocityY(this.vel.y, dt, GRAVITY, !!this.keys.Space);
       this.onGround = false;
+    } else {
+      if (this.keys.Space && this.onGround) {
+        this.vel.y = JUMP_VEL;
+        this.onGround = false;
+      }
+      this.vel.y -= GRAVITY * dt;
+      if (this.vel.y < -50) this.vel.y = -50;
     }
-    this.vel.y -= GRAVITY * dt;
-    if (this.vel.y < -50) this.vel.y = -50;
 
     this.moveAxis('x', this.vel.x * dt);
     this.moveAxis('z', this.vel.z * dt);
@@ -110,11 +141,17 @@ export class Player {
     const blockedY = this.moveAxis('y', this.vel.y * dt);
     // Landed if vertical movement was stopped while falling.
     this.onGround = blockedY && fallingBeforeMove;
+    // Water breaks a fall: while the body is in water, the fall start follows the player, so landing
+    // in water does not count as a long fall.
+    if (swimming) this.fallStartY = this.pos.y;
 
     if (!wasOnGround && this.onGround) {
       const fall = this.fallStartY - this.pos.y;
-      if (fall > 3) this.health = Math.max(0, this.health - Math.floor(fall - 3));
-      if (fall > 3) this.regenTimer = 0;
+      if (fall > 3) {
+        this.health = Math.max(0, this.health - Math.floor(fall - 3));
+        this.regenTimer = 0;
+        this.hunger.onDamage();
+      }
     }
     if (this.onGround || this.vel.y > 0) this.fallStartY = this.pos.y;
   }
@@ -123,6 +160,7 @@ export class Player {
     this.pos.set(x, y, z);
     this.vel.set(0, 0, 0);
     this.health = this.maxHealth;
+    this.hunger = new Hunger();
     this.fallStartY = y;
   }
 

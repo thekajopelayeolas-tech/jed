@@ -1,15 +1,11 @@
 import { BLOCK, BLOCK_DEFS } from './blocks.js';
 import { HOTBAR_SIZE, INV_SIZE, matchRecipe } from './inventory.js';
 import { placeStack, splitStack, moveStack } from './stacks.js';
+import { iconCanvas } from './icons.js';
+import { PARTS, armourInfo } from './armour.js';
 
 const GRID_SIZE = 3;
 const STACK_MAX = 64;
-
-// Solid background for an item icon, using the block's side colour.
-function iconCSS(id) {
-  const c = BLOCK_DEFS[id]?.side ?? [1, 1, 1];
-  return `background:rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)});`;
-}
 
 function makeSlot(onClick) {
   const el = document.createElement('div');
@@ -19,20 +15,28 @@ function makeSlot(onClick) {
   return el;
 }
 
-// Draws a stack into a slot element: an icon swatch and the count in the corner.
+// Stack size shown in the corner of a slot.
+function countNode(count) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:absolute;right:3px;bottom:1px;font-size:11px;color:#fff;text-shadow:1px 1px 0 #000';
+  el.textContent = count > 1 ? count : '';
+  return el;
+}
+
+// Draws a stack into a slot element: the block or item icon and the count in the corner.
 function paint(el, stack) {
   const def = BLOCK_DEFS[stack.id];
-  el.innerHTML = stack.id !== BLOCK.AIR && def
-    ? `<div style="width:26px;height:26px;${iconCSS(stack.id)}border:1px solid #000"></div>` +
-      `<div style="position:absolute;right:3px;bottom:1px;font-size:11px;color:#fff;text-shadow:1px 1px 0 #000">` +
-      `${stack.count > 1 ? stack.count : ''}</div>`
-    : '';
+  el.innerHTML = '';
+  if (stack.id === BLOCK.AIR || !def) return;
+  el.appendChild(iconCanvas(stack.id, 32));
+  el.appendChild(countNode(stack.count));
 }
 
 // Mouse-driven inventory screen (press E). Left click picks up a stack or places it. Right click
 // splits a stack or drops one item. Shift click moves a stack between the hotbar and the main grid.
-// The 3x3 crafting grid and its output are shown next to the inventory.
-export function createInventoryUI(inventory) {
+// The 3x3 crafting grid and its output are shown next to the inventory. The four armour slots sit
+// beside the crafting grid. `player` holds the worn armour, which reduces incoming damage.
+export function createInventoryUI(inventory, player) {
   let open = false;
   const craftGrid = Array.from({ length: GRID_SIZE * GRID_SIZE }, () => ({ id: BLOCK.AIR, count: 0 }));
   // The stack held by the mouse cursor.
@@ -63,6 +67,18 @@ export function createInventoryUI(inventory) {
 
   const outEl = makeSlot(() => takeOutput());
   topRow.appendChild(outEl);
+
+  // Armour column: helmet, chest, legs, boots from top to bottom.
+  const armourWrap = document.createElement('div');
+  armourWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-left:12px;';
+  topRow.appendChild(armourWrap);
+  const armourEls = {};
+  for (const part of PARTS) {
+    const el = makeSlot(() => clickArmour(part));
+    el.title = part;
+    armourWrap.appendChild(el);
+    armourEls[part] = el;
+  }
 
   const mainWrap = document.createElement('div');
   mainWrap.style.cssText = 'display:grid;grid-template-columns:repeat(9,52px);gap:4px;';
@@ -99,13 +115,16 @@ export function createInventoryUI(inventory) {
   function render() {
     craftGrid.forEach((s, i) => paint(gridEls[i], s));
     inventory.slots.forEach((s, i) => paint(invEls[i], s));
+    for (const part of PARTS) {
+      paint(armourEls[part], { id: player.armour[part], count: 1 });
+    }
     const out = matchRecipe(craftGrid.map((s) => s.id), GRID_SIZE);
     paint(outEl, out ? { id: out.result, count: out.count } : { id: BLOCK.AIR, count: 0 });
     if (cursor.id !== BLOCK.AIR) {
       held.style.display = 'flex';
-      held.innerHTML = `<div style="width:30px;height:30px;${iconCSS(cursor.id)}border:1px solid #000"></div>` +
-        `<div style="position:absolute;right:0;bottom:0;font-size:11px;color:#fff;text-shadow:1px 1px 0 #000">` +
-        `${cursor.count > 1 ? cursor.count : ''}</div>`;
+      held.innerHTML = '';
+      held.appendChild(iconCanvas(cursor.id, 30));
+      held.appendChild(countNode(cursor.count));
     } else {
       held.style.display = 'none';
     }
@@ -130,6 +149,25 @@ export function createInventoryUI(inventory) {
 
   function clickCraft(i) {
     placeStack(craftGrid[i], cursor);
+    render();
+  }
+
+  // Armour slot click. With matching armour on the cursor, it is worn. With an empty cursor, the worn piece is taken off.
+  function clickArmour(part) {
+    const info = armourInfo(cursor.id);
+    if (cursor.id === BLOCK.AIR) {
+      const worn = player.armour[part];
+      if (worn === BLOCK.AIR) return;
+      player.armour[part] = BLOCK.AIR;
+      cursor.id = worn;
+      cursor.count = 1;
+    } else if (info && info.part === part && player.armour[part] === BLOCK.AIR) {
+      player.armour[part] = cursor.id;
+      cursor.count -= 1;
+      if (cursor.count === 0) cursor.id = BLOCK.AIR;
+    } else {
+      return;
+    }
     render();
   }
 

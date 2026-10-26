@@ -58,7 +58,8 @@ export function buildChunkGeometry(chunk, world) {
     for (let z = 0; z < CHUNK_SIZE; z++) {
       for (let x = 0; x < CHUNK_SIZE; x++) {
         const id = chunk.get(x, y, z);
-        if (id === BLOCK.AIR) continue;
+        // Skip air and any id without a block texture, such as an item from a bad save.
+        if (id === BLOCK.AIR || !BLOCK_TILES[id]) continue;
         const def = BLOCK_DEFS[id];
         const target = def.transparent ? trans : opaque;
         const wx = ox + x;

@@ -4,6 +4,7 @@ import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { buildChunkGeometry, createChunkMeshes } from './mesher.js';
 import { updateLightAt, lightChunk, LIGHT, MAX_LIGHT } from './lighting.js';
 import { biomeAt } from './biomes.js';
+import { BLOCK_TILES } from './textures.js';
 
 export class World {
   constructor(scene, seed, opaqueMat, transMat) {
@@ -45,6 +46,8 @@ export class World {
     const lx = wx - cx * CHUNK_SIZE;
     const lz = wz - cz * CHUNK_SIZE;
     if (chunk.get(lx, wy, lz) === BLOCK.BEDROCK) return false;
+    // Only ids with a block texture can exist in the world. Items and unknown ids are refused.
+    if (!BLOCK_TILES[id] && id !== BLOCK.AIR) return false;
     chunk.set(lx, wy, lz, id);
     chunk.modified = true;
     updateLightAt(this, wx, wy, wz);

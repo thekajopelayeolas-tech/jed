@@ -23,6 +23,26 @@ export const RECIPES = [
   // Iron tools (iron ingots + sticks).
   { result: BLOCK.IRON_PICKAXE, count: 1, shaped: true, pattern: ['III', ' S ', ' S '], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
   { result: BLOCK.IRON_SWORD, count: 1, shaped: true, pattern: ['I', 'I', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  // Furnace: a ring of eight cobblestone around an empty centre.
+  { result: BLOCK.FURNACE, count: 1, shaped: true, pattern: ['CCC', 'C C', 'CCC'], key: { C: BLOCK.COBBLESTONE } },
+  // Armour. Each material has a helmet, chestplate, leggings, and boots, built in the usual shapes.
+  // Wood uses planks, stone uses cobblestone, iron uses ingots, and diamond uses diamonds.
+  { result: BLOCK.WOODEN_HELMET, count: 1, shaped: true, pattern: ['PPP', 'P P'], key: { P: BLOCK.PLANKS } },
+  { result: BLOCK.WOODEN_CHEST, count: 1, shaped: true, pattern: ['P P', 'PPP', 'PPP'], key: { P: BLOCK.PLANKS } },
+  { result: BLOCK.WOODEN_LEGS, count: 1, shaped: true, pattern: ['PPP', 'P P', 'P P'], key: { P: BLOCK.PLANKS } },
+  { result: BLOCK.WOODEN_BOOTS, count: 1, shaped: true, pattern: ['P P', 'P P'], key: { P: BLOCK.PLANKS } },
+  { result: BLOCK.STONE_HELMET, count: 1, shaped: true, pattern: ['CCC', 'C C'], key: { C: BLOCK.COBBLESTONE } },
+  { result: BLOCK.STONE_CHEST, count: 1, shaped: true, pattern: ['C C', 'CCC', 'CCC'], key: { C: BLOCK.COBBLESTONE } },
+  { result: BLOCK.STONE_LEGS, count: 1, shaped: true, pattern: ['CCC', 'C C', 'C C'], key: { C: BLOCK.COBBLESTONE } },
+  { result: BLOCK.STONE_BOOTS, count: 1, shaped: true, pattern: ['C C', 'C C'], key: { C: BLOCK.COBBLESTONE } },
+  { result: BLOCK.IRON_HELMET, count: 1, shaped: true, pattern: ['III', 'I I'], key: { I: BLOCK.IRON_INGOT } },
+  { result: BLOCK.IRON_CHEST, count: 1, shaped: true, pattern: ['I I', 'III', 'III'], key: { I: BLOCK.IRON_INGOT } },
+  { result: BLOCK.IRON_LEGS, count: 1, shaped: true, pattern: ['III', 'I I', 'I I'], key: { I: BLOCK.IRON_INGOT } },
+  { result: BLOCK.IRON_BOOTS, count: 1, shaped: true, pattern: ['I I', 'I I'], key: { I: BLOCK.IRON_INGOT } },
+  { result: BLOCK.DIAMOND_HELMET, count: 1, shaped: true, pattern: ['DDD', 'D D'], key: { D: BLOCK.DIAMOND } },
+  { result: BLOCK.DIAMOND_CHEST, count: 1, shaped: true, pattern: ['D D', 'DDD', 'DDD'], key: { D: BLOCK.DIAMOND } },
+  { result: BLOCK.DIAMOND_LEGS, count: 1, shaped: true, pattern: ['DDD', 'D D', 'D D'], key: { D: BLOCK.DIAMOND } },
+  { result: BLOCK.DIAMOND_BOOTS, count: 1, shaped: true, pattern: ['D D', 'D D'], key: { D: BLOCK.DIAMOND } },
 ];
 
 // Items are {id, count}. Returns a 2D grid recipe match or null.

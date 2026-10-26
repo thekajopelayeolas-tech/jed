@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BLOCK, BLOCK_DEFS } from './blocks.js';
+import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory } from './inventory.js';
@@ -9,11 +9,15 @@ import { setupInput } from './input.js';
 import { updateDayNight, createSky } from './sky.js';
 import { DropManager } from './drops.js';
 import { createInventoryUI } from './inventory-ui.js';
+import { createFurnaceUI } from './furnace-ui.js';
+import { Furnace, emptyFurnaceInto } from './smelting.js';
+import { PARTS, armourInfo } from './armour.js';
 import { MobManager } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
 import { createSleep } from './sleep.js';
+import { foodPoints } from './hunger.js';
 
 const SEED = 1337;
 
@@ -34,7 +38,7 @@ const world = new World(scene, SEED, opaqueMat, transMat);
 const player = new Player(world, 8, 80, 8);
 const inventory = new Inventory();
 const hud = createHud();
-const drops = new DropManager(scene, world);
+const drops = new DropManager(scene, world, opaqueMat);
 const mobs = new MobManager(scene, world);
 
 // Starter items so the hotbar is useful immediately.
@@ -67,7 +71,14 @@ function targetHit() {
 }
 
 // What a broken block leaves behind. Blocks not listed here drop themselves.
-const DROP_FOR = { [BLOCK.GRASS]: BLOCK.DIRT, [BLOCK.STONE]: BLOCK.COBBLESTONE };
+// Coal and iron ore drop the item they are mined into, so the furnace and crafting use real materials.
+const DROP_FOR = {
+  [BLOCK.GRASS]: BLOCK.DIRT,
+  [BLOCK.STONE]: BLOCK.COBBLESTONE,
+  [BLOCK.COAL_ORE]: BLOCK.COAL,
+  [BLOCK.DIAMOND_ORE]: BLOCK.DIAMOND,
+  [BLOCK.RAINBOW_ORE]: BLOCK.RAINBOW_GEM,
+};
 
 // Left click: hit a mob in front of the player with the held weapon. Otherwise start mining the block.
 // A click on a mob does not start mining. Mining runs in the frame loop while the button is held.
@@ -93,9 +104,24 @@ function attack() {
 function finishBreak(hit) {
   const held = inventory.selectedItem.id;
   const drop = canHarvest(hit.id, held);
-  if (world.setBlock(hit.block.x, hit.block.y, hit.block.z, BLOCK.AIR) && drop) {
-    drops.spawn(DROP_FOR[hit.id] ?? hit.id, hit.block.x, hit.block.y, hit.block.z);
+  const { x, y, z } = hit.block;
+  if (world.setBlock(x, y, z, BLOCK.AIR)) {
+    if (drop) drops.spawn(DROP_FOR[hit.id] ?? hit.id, x, y, z);
+    // A furnace also gives back everything it held, so breaking it never loses items.
+    if (hit.id === BLOCK.FURNACE) {
+      const key = furnaceKey(x, y, z);
+      const f = furnaces.get(key);
+      if (f) {
+        dropFurnaceContents(f, x, y, z);
+        furnaces.delete(key);
+      }
+    }
   }
+}
+
+// Spawns one drop for each item the furnace held, so they scatter and can be picked up.
+function dropFurnaceContents(f, x, y, z) {
+  emptyFurnaceInto(f, (id, dx, dy, dz) => drops.spawn(id, dx, dy, dz), x, y, z);
 }
 
 // Hold-to-mine state. Progress is in seconds and resets when the target changes or the button is released.
@@ -140,13 +166,32 @@ const mining = {
   },
 };
 
-// Right click: sleep if the target is a bed, otherwise place the held block.
+// Furnaces keep their contents per block position. Each one is created when first opened.
+const furnaces = new Map();
+const furnaceKey = (x, y, z) => `${x},${y},${z}`;
+
+function furnaceAt(x, y, z) {
+  const key = furnaceKey(x, y, z);
+  if (!furnaces.has(key)) furnaces.set(key, new Furnace());
+  return furnaces.get(key);
+}
+
+// Right click: sleep if the target is a bed, open a furnace, eat if the held item is food, otherwise place the held block.
 function useOrPlace() {
   const hit = targetHit();
   if (hit && hit.id === BLOCK.BED) {
     if (!sleep.start(timeOfDay)) showMessage('You can only sleep at night.');
     return;
   }
+  if (hit && hit.id === BLOCK.FURNACE) {
+    const { x, y, z } = hit.block;
+    // Only one panel at a time: close the crafting panel before opening the furnace.
+    if (crafting.isOpen()) crafting.toggle();
+    furnaceUI.open(furnaceAt(x, y, z));
+    document.exitPointerLock();
+    return;
+  }
+  if (eat()) return;
   placeBlock();
 }
 
@@ -158,11 +203,27 @@ function showMessage(text, seconds = 2.5) {
   messageUntil = performance.now() + seconds * 1000;
 }
 
+// Eats one of the held food item. Returns true if something was eaten.
+function eat() {
+  const item = inventory.selectedItem;
+  const points = foodPoints(item.id);
+  if (points === 0 || item.count <= 0) return false;
+  if (player.hunger.value >= player.hunger.max) {
+    showMessage('You are full.');
+    return true;
+  }
+  player.hunger.eat(points);
+  inventory.consumeSelected(1);
+  return true;
+}
+
 function placeBlock() {
   const hit = targetHit();
   if (!hit) return;
   const item = inventory.selectedItem;
   if (item.id === BLOCK.AIR || item.count <= 0) return;
+  // Items such as sticks, food, and tools have no block texture, so they cannot be placed in the world.
+  if (isItem(item.id)) return;
   const { x, y, z } = hit.place;
   const target = world.getBlock(x, y, z);
   if (target !== BLOCK.AIR && target !== BLOCK.WATER) return;
@@ -180,20 +241,30 @@ function overlapsPlayer(bx, by, bz) {
 }
 
 const sleep = createSleep();
-const crafting = createInventoryUI(inventory);
+const crafting = createInventoryUI(inventory, player);
+const furnaceUI = createFurnaceUI(inventory);
+
+// True while any inventory-style panel is open. Movement and mining pause while one is open.
+const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen();
 
 setupInput(renderer.domElement, player, inventory, {
   onBreak: attack,
   onRelease: () => mining.stop(),
   onPlace: useOrPlace,
   onRespawn: respawn,
-  onPauseChange: (paused) => hud.setPaused(paused && !crafting.isOpen()),
+  onPauseChange: (paused) => hud.setPaused(paused && !anyPanelOpen()),
   onToggleCrafting: () => {
+    // E closes whichever panel is open. Otherwise it opens the crafting panel.
+    if (furnaceUI.isOpen()) {
+      furnaceUI.close();
+      renderer.domElement.requestPointerLock();
+      return;
+    }
     // Opening the panel frees the mouse. Closing it grabs the mouse again.
     if (crafting.toggle()) document.exitPointerLock();
     else renderer.domElement.requestPointerLock();
   },
-  isUIOpen: () => crafting.isOpen(),
+  isUIOpen: () => anyPanelOpen(),
 });
 
 // Restore a saved game if one exists, otherwise start fresh at spawn.
@@ -210,14 +281,23 @@ if (saved) {
   world.update(p.x, p.z, RENDER_DISTANCE, 16);
   player.respawn(p.x, p.y, p.z);
   player.health = p.health ?? player.maxHealth;
+  player.hunger.value = Math.max(0, Math.min(player.hunger.max, Math.floor(p.hunger ?? player.hunger.max)));
   player.yaw = p.yaw ?? 0;
   player.pitch = p.pitch ?? 0;
+  for (const [key, data] of Object.entries(saved.furnaces ?? {})) furnaces.set(key, Furnace.fromJSON(data));
+  // Old saves have no armour. Only accept ids that are real armour pieces.
+  if (saved.armour) {
+    for (const part of PARTS) {
+      const id = saved.armour[part];
+      if (armourInfo(id)?.part === part) player.armour[part] = id;
+    }
+  }
 } else {
   respawn();
 }
 
 function persist() {
-  saveGame(world, player, inventory, timeOfDay);
+  saveGame(world, player, inventory, timeOfDay, furnaces);
 }
 
 setInterval(persist, 30000);
@@ -229,8 +309,11 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
 
-  // The player does not move while the inventory is open or while asleep.
-  if (!crafting.isOpen() && !sleep.isSleeping()) player.update(dt);
+  // The player does not move while a panel is open or while asleep.
+  if (!anyPanelOpen() && !sleep.isSleeping()) player.update(dt);
+  // Every furnace in the world keeps smelting, even with its panel closed.
+  for (const f of furnaces.values()) f.update(dt);
+  furnaceUI.refresh();
   // While asleep, time stands still until the sleep timer ends. Then it jumps to sunrise.
   const wakeTime = sleep.update(dt, timeOfDay);
   if (wakeTime !== null) {
@@ -244,8 +327,8 @@ function frame(now) {
   }
   world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
   drops.update(dt, player.pos, inventory);
-  if (!crafting.isOpen()) mining.update(dt);
-  if (!crafting.isOpen()) {
+  if (!anyPanelOpen()) mining.update(dt);
+  if (!anyPanelOpen()) {
     mobs.update(dt, player.pos, timeOfDay, (mob, damage) => {
       if (player.hurt(damage)) {
         const away = player.pos.clone().sub(mob.pos);
@@ -255,6 +338,7 @@ function frame(now) {
     });
   }
   player.tickHealth(dt);
+  if (!sleep.isSleeping()) player.hunger.update(dt, player.isSprinting());
 
   camera.position.copy(player.eye);
   camera.rotation.order = 'YXZ';
@@ -267,6 +351,7 @@ function frame(now) {
     target: hit ? BLOCK_DEFS[hit.id]?.name : null,
     health: player.health,
     maxHealth: player.maxHealth,
+    hunger: player.hunger.value,
     timeOfDay,
     pos: player.pos,
     chunks: world.chunks.size,

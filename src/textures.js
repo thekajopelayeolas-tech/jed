@@ -60,6 +60,20 @@ const PAINTERS = {
   bedTop: (x, y) => (y < 6 ? jitter([0.95, 0.95, 0.92], noise(x, y, 20), 0.06) : jitter([0.8, 0.15, 0.15], noise(x, y, 21), 0.08)),
   // Bed side: red blanket over a wood frame at the bottom.
   bedSide: (x, y) => (y >= 13 ? jitter([0.4, 0.28, 0.14], noise(x, y, 22), 0.1) : jitter([0.7, 0.12, 0.12], noise(x, y, 23), 0.08)),
+  // Wool: soft white fibres with a little grain.
+  wool: (x, y) => jitter([0.92, 0.92, 0.9], noise(x, y, 31), 0.1),
+  // Furnace: grey stone with a dark firebox opening on the front.
+  furnaceSide: (x, y) => (x >= 4 && x <= 11 && y >= 6 && y <= 12 ? [0.12, 0.1, 0.09, 1] : jitter([0.45, 0.45, 0.45], noise(x, y, 24), 0.14)),
+  furnaceTop: (x, y) => jitter([0.42, 0.42, 0.42], noise(x, y, 25), 0.14),
+  // Diamond ore: stone with pale cyan gems.
+  diamondOre: (x, y) => (noise(x, y, 26) > 0.9 ? [0.45, 0.92, 0.95, 1] : jitter(STONE, noise(x, y, 27), 0.18)),
+  // Rainbow ore: stone with small gems in a rainbow of colours.
+  rainbowOre: (x, y) => {
+    const n = noise(x, y, 28);
+    if (n < 0.88) return jitter(STONE, noise(x, y, 29), 0.18);
+    const hues = [[1, 0.3, 0.3, 1], [1, 0.8, 0.2, 1], [0.3, 1, 0.4, 1], [0.3, 0.6, 1, 1], [0.8, 0.4, 1, 1]];
+    return hues[Math.floor(noise(x, y, 30) * hues.length) % hues.length];
+  },
 };
 
 // Tile index for each named painter, in atlas order.
@@ -84,6 +98,10 @@ export const BLOCK_TILES = {
   [BLOCK.TORCH]: { top: 'torch', side: 'torch', bottom: 'torch' },
   [BLOCK.CRAFTING_TABLE]: { top: 'craftTop', side: 'craftSide', bottom: 'planks' },
   [BLOCK.BED]: { top: 'bedTop', side: 'bedSide', bottom: 'planks' },
+  [BLOCK.WOOL]: { top: 'wool', side: 'wool', bottom: 'wool' },
+  [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', bottom: 'furnaceTop' },
+  [BLOCK.DIAMOND_ORE]: { top: 'diamondOre', side: 'diamondOre', bottom: 'diamondOre' },
+  [BLOCK.RAINBOW_ORE]: { top: 'rainbowOre', side: 'rainbowOre', bottom: 'rainbowOre' },
 };
 
 // Builds the atlas canvas as a Uint8ClampedArray of RGBA pixels, ready for THREE.DataTexture.
@@ -109,6 +127,22 @@ export function buildAtlasPixels() {
     }
   });
   return { data, width, height, size, rows };
+}
+
+// Returns one tile as RGBA bytes with row 0 at the top, so it can be drawn on a 2D canvas (inventory icons).
+export function tileImageData(name) {
+  const data = new Uint8ClampedArray(TILE * TILE * 4);
+  for (let y = 0; y < TILE; y++) {
+    for (let x = 0; x < TILE; x++) {
+      const [r, g, b, a] = PAINTERS[name](x, y);
+      const i = (y * TILE + x) * 4;
+      data[i] = r * 255;
+      data[i + 1] = g * 255;
+      data[i + 2] = b * 255;
+      data[i + 3] = a * 255;
+    }
+  }
+  return data;
 }
 
 // Creates a THREE.DataTexture for the atlas with nearest-neighbour filtering, so pixels stay crisp.

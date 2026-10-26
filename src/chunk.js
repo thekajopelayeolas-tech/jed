@@ -4,6 +4,14 @@ import { fbm2D, valueNoise2D } from './noise.js';
 import { BIOME, BIOME_DEFS, biomeAt } from './biomes.js';
 import { LIGHT } from './lighting.js';
 
+// Caves: a 3D noise field. Cells where it is near its peak become air, so tunnels wind through the rock.
+// Two octaves give irregular cave shapes. Noise is sampled per cell using a flattened 2D lookup on (x+z, y).
+export function isCave(wx, y, wz, seed) {
+  const a = valueNoise2D(wx * 0.06 + y * 0.11, wz * 0.06 - y * 0.07, seed + 61);
+  const b = valueNoise2D(wx * 0.13 - y * 0.05, wz * 0.13 + y * 0.09, seed + 67);
+  return a > 0.7 && b > 0.55;
+}
+
 export class Chunk {
   constructor(cx, cz) {
     this.cx = cx;
@@ -55,7 +63,10 @@ export class Chunk {
         const wz = oz + z;
         const continent = fbm2D(wx * 0.01, wz * 0.01, seed, 3);
         const detail = fbm2D(wx * 0.05, wz * 0.05, seed + 99, 4);
-        const height = Math.floor(SEA_LEVEL - 4 + continent * 28 + detail * 8);
+        // Basins: low-lying regions sink below sea level, so the water above them forms lakes and oceans.
+        const basin = valueNoise2D(wx * 0.008, wz * 0.008, seed + 113);
+        const sink = basin < 0.5 ? (0.5 - basin) * 120 : 0;
+        const height = Math.floor(SEA_LEVEL - 4 + continent * 28 + detail * 8 - sink);
         const surface = Math.min(CHUNK_HEIGHT - 2, Math.max(4, height));
         const biome = biomeAt(wx, wz, seed);
         this.biomes[x + CHUNK_SIZE * z] = biome;
@@ -66,10 +77,7 @@ export class Chunk {
           if (y === 0) {
             id = BLOCK.BEDROCK;
           } else if (y < surface - 3) {
-            const r = valueNoise2D(wx * 0.2, y * 0.2 + wz * 0.2, seed + 31);
-            if (y < 12 && r > 0.82) id = BLOCK.COAL_ORE;
-            else if (y < 8 && r < 0.12) id = BLOCK.IRON_ORE;
-            else id = BLOCK.STONE;
+            id = this.stoneOrOre(wx, y, wz, seed);
           } else if (y < surface) {
             id = sandy ? BLOCK.SAND : BLOCK.DIRT;
           } else if (y === surface) {
@@ -78,12 +86,31 @@ export class Chunk {
           } else if (y <= SEA_LEVEL) {
             id = BLOCK.WATER;
           }
+          // Caves carve through solid ground below the surface, leaving the bedrock floor alone.
+          if (y > 0 && id !== BLOCK.AIR && id !== BLOCK.WATER && y < surface - 1 && isCave(wx, y, wz, seed)) {
+            id = BLOCK.AIR;
+          }
           if (id !== BLOCK.AIR) this.blocks[Chunk.index(x, y, z)] = id;
         }
       }
     }
     this.placeTrees(seed, ox, oz);
     this.dirty = true;
+  }
+
+  // Picks stone or an ore for an underground cell. Each ore has its own noise field, so they do not overlap.
+  // Coal is common near the top. Iron is more common than before. Diamond is uncommon and only deep.
+  // Rainbow is rare and deepest.
+  stoneOrOre(wx, y, wz, seed) {
+    const coal = valueNoise2D(wx * 0.2, y * 0.2 + wz * 0.2, seed + 31);
+    const iron = valueNoise2D(wx * 0.2, y * 0.2 + wz * 0.2, seed + 37);
+    const diamond = valueNoise2D(wx * 0.25, y * 0.25 + wz * 0.25, seed + 41);
+    const rainbow = valueNoise2D(wx * 0.3, y * 0.3 + wz * 0.3, seed + 43);
+    if (y < 12 && coal > 0.78) return BLOCK.COAL_ORE;
+    if (y < 16 && iron > 0.8) return BLOCK.IRON_ORE;
+    if (y < 10 && diamond > 0.96) return BLOCK.DIAMOND_ORE;
+    if (y < 6 && rainbow > 0.985) return BLOCK.RAINBOW_ORE;
+    return BLOCK.STONE;
   }
 
   placeTrees(seed, ox, oz) {

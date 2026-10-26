@@ -1,5 +1,5 @@
 import { World } from '../src/world.js';
-import { MobManager, MOB } from '../src/mobs.js';
+import { MobManager, MOB, Mob } from '../src/mobs.js';
 import { Inventory } from '../src/inventory.js';
 import { Player } from '../src/player.js';
 import { saveGame, loadGame } from '../src/save.js';
@@ -22,13 +22,15 @@ const mockMat = {};
 const w = new World(scene, 1337, mockMat, mockMat);
 w.update(8, 8, 2, 25);
 
-// Mobs: spawn a zombie on the surface and damage it to death.
+// Mobs: zombies must not spawn in daylight. A surface cell in the open is lit by the sky, so the spawn is refused.
 const mm = new MobManager(scene, w);
 const spawnPos = new THREE.Vector3(8, 0, 8);
-mm.trySpawn(spawnPos, 0.8);
-console.log('mobs after spawn attempt:', mm.mobs.length);
-const zombie = { type: MOB.ZOMBIE, def: { hostile: true } };
-const z = new (mm.mobs[0]?.constructor ?? Object)(scene, w, MOB.ZOMBIE, 0.5, 60, 0.5);
+for (let i = 0; i < 200; i++) mm.trySpawn(spawnPos, 0.8);
+const zombiesInLight = mm.mobs.filter((m) => m.type === MOB.ZOMBIE).length;
+console.log('zombies spawned on open ground at night:', zombiesInLight, '(expect 0)');
+
+// Damage a zombie to death. Built directly, so the test does not depend on where spawns land.
+const z = new Mob(scene, w, MOB.ZOMBIE, 0.5, 60, 0.5);
 console.log('zombie health:', z.health, 'hostile:', z.def.hostile);
 z.takeHit(4, 0, 0);
 console.log('after 4 damage:', z.health, 'dead:', z.dead);

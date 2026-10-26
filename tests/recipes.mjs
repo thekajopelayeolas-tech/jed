@@ -9,7 +9,13 @@ const grid = (rows) => {
 };
 const P = BLOCK.PLANKS, S = BLOCK.STICK, C = BLOCK.COBBLESTONE, W = BLOCK.WOOL, I = BLOCK.IRON_INGOT;
 
+const CB = BLOCK.COBBLESTONE, D = BLOCK.DIAMOND;
 const cases = {
+  'furnace': [[CB, CB, CB], [CB, 0, CB], [CB, CB, CB]],
+  'wooden helmet': [[P, P, P], [P, 0, P]],
+  'stone chestplate': [[CB, 0, CB], [CB, CB, CB], [CB, CB, CB]],
+  'iron boots': [[I, 0, I], [I, 0, I]],
+  'diamond leggings': [[D, D, D], [D, 0, D], [D, 0, D]],
   'wooden pickaxe': [[P, P, P], [0, S, 0], [0, S, 0]],
   'wooden axe': [[P, P, 0], [P, S, 0], [0, S, 0]],
   'wooden sword': [[P], [P], [S]],

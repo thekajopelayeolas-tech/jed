@@ -3,6 +3,7 @@ import { BLOCK, isSolid } from './blocks.js';
 import { CHUNK_HEIGHT } from './constants.js';
 import { shouldBurn, burnStep } from './burning.js';
 import { buildMobModel } from './mob-model.js';
+import { LIGHT } from './lighting.js';
 
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
@@ -18,6 +19,16 @@ const MOB_DEFS = {
   [MOB.COW]: { size: [0.9, 0.9, 0.9], color: 0xf2f2f2, health: 6, speed: 1.4, hostile: false, drop: BLOCK.BEEF },
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drop: BLOCK.ROTTEN_FLESH, burnsInSun: true },
 };
+
+// A cell is dark enough for a zombie when neither sky light nor block light reaches it.
+// Any light at all (a torch, the open sky) means no zombie can spawn there.
+export function isDarkEnough(world, x, y, z) {
+  const sky = world.getLight(x, y, z, LIGHT.SKY);
+  const block = world.getLight(x, y, z, LIGHT.BLOCK);
+  // Unloaded cells report -1 and are not safe to spawn in.
+  if (sky < 0 || block < 0) return false;
+  return sky === 0 && block === 0;
+}
 
 // A single mob with a box body, simple physics against the voxel world, and AI.
 export class Mob {
@@ -190,6 +201,7 @@ export class MobManager {
   }
 
   // Tries one spawn near the player. Zombies favour night, cows favour day.
+  // Zombies only spawn in the dark: a cell with any light (sky or block) is too bright for a zombie.
   trySpawn(playerPos, timeOfDay) {
     const night = timeOfDay > 0.5;
     const type = night || Math.random() < 0.3 ? MOB.ZOMBIE : MOB.COW;
@@ -201,6 +213,7 @@ export class MobManager {
       const id = this.world.getBlock(x, y, z);
       if (id === 0 || id === 7) continue;
       if (this.world.getBlock(x, y + 1, z) !== 0) return;
+      if (type === MOB.ZOMBIE && !isDarkEnough(this.world, x, y + 1, z)) return;
       this.mobs.push(new Mob(this.scene, this.world, type, x + 0.5, y + 1, z + 0.5));
       return;
     }

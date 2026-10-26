@@ -1,9 +1,62 @@
 import { BLOCK_DEFS } from './blocks.js';
 import { HOTBAR_SIZE } from './inventory.js';
+import { iconCanvas } from './icons.js';
+import { MAX_HUNGER } from './hunger.js';
 
-const COLOR_CSS = (c) => `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
+// Colours for the meter icons. Full icons are filled, empty icons are dark outlines.
+const HEART_FULL = '#e02020';
+const HEART_EMPTY = '#3a0a0a';
+const HUNGER_BUN = '#d9a04f';
+const HUNGER_PATTY = '#6b3a1e';
+const HUNGER_EMPTY = '#2e2516';
 
-// DOM overlay: crosshair, hotbar, health, debug info, and pause text.
+// A heart: two round lobes over a downward point, drawn with CSS so its colour is exact.
+function heartIcon(full) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:relative;width:14px;height:13px;';
+  const color = full ? HEART_FULL : HEART_EMPTY;
+  el.innerHTML =
+    `<div style="position:absolute;left:0;top:0;width:8px;height:8px;border-radius:50%;background:${color};"></div>` +
+    `<div style="position:absolute;left:6px;top:0;width:8px;height:8px;border-radius:50%;background:${color};"></div>` +
+    `<div style="position:absolute;left:3px;top:4px;width:8px;height:8px;background:${color};transform:rotate(45deg);"></div>`;
+  return el;
+}
+
+// A burger: a domed top bun, a patty, and a flat bottom bun. Empty points keep the same shapes in dark colours.
+function hungerIcon(full) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:relative;width:14px;height:14px;';
+  const bun = full ? HUNGER_BUN : HUNGER_EMPTY;
+  const patty = full ? HUNGER_PATTY : HUNGER_EMPTY;
+  el.innerHTML =
+    `<div style="position:absolute;left:1px;top:0px;width:12px;height:6px;border-radius:6px 6px 2px 2px;background:${bun};"></div>` +
+    `<div style="position:absolute;left:0px;top:6px;width:14px;height:3px;border-radius:1px;background:${patty};"></div>` +
+    `<div style="position:absolute;left:1px;top:9px;width:12px;height:4px;border-radius:2px 2px 4px 4px;background:${bun};"></div>`;
+  return el;
+}
+
+// A row of nine icons for one meter. set(filled, total, kind) rebuilds only when the count changes.
+function makeMeter(parent) {
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:2px;';
+  parent.appendChild(row);
+  let shown = -1;
+  let shownTotal = -1;
+  return {
+    set(filled, total, kind) {
+      if (filled === shown && total === shownTotal) return;
+      shown = filled;
+      shownTotal = total;
+      row.innerHTML = '';
+      for (let i = 0; i < total; i++) {
+        const isFull = i < filled;
+        row.appendChild(kind === 'heart' ? heartIcon(isFull) : hungerIcon(isFull));
+      }
+    },
+  };
+}
+
+// DOM overlay: crosshair, hotbar, hearts and hunger, debug info, and pause text.
 export function createHud() {
   const root = document.createElement('div');
   root.style.cssText = 'position:fixed;inset:0;pointer-events:none;color:#fff;text-shadow:1px 1px 0 #000;';
@@ -18,9 +71,12 @@ export function createHud() {
   info.style.cssText = 'position:absolute;left:8px;top:8px;font-size:13px;line-height:1.4;white-space:pre;';
   root.appendChild(info);
 
-  const health = document.createElement('div');
-  health.style.cssText = 'position:absolute;left:50%;bottom:86px;transform:translateX(-50%);font-size:16px;';
-  root.appendChild(health);
+  // Hearts and hunger sit above the hotbar: hearts on the left, hunger on the right, nine icons each.
+  const stats = document.createElement('div');
+  stats.style.cssText = 'position:absolute;left:50%;bottom:86px;transform:translateX(-50%);display:flex;gap:24px;';
+  root.appendChild(stats);
+  const heartBar = makeMeter(stats);
+  const hungerBar = makeMeter(stats);
 
   const hotbar = document.createElement('div');
   hotbar.style.cssText = 'position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:4px;';
@@ -54,13 +110,15 @@ export function createHud() {
       status.textContent = text;
       status.style.display = text ? 'block' : 'none';
     },
-    update({ inventory, target, health: hp, maxHealth, timeOfDay, pos, chunks }) {
+    update({ inventory, target, health: hp, maxHealth, hunger, timeOfDay, pos, chunks }) {
       info.textContent =
         `XYZ: ${pos.x.toFixed(1)} ${pos.y.toFixed(1)} ${pos.z.toFixed(1)}\n` +
         `Chunks: ${chunks}\n` +
         `Time: ${(timeOfDay * 100).toFixed(0)}%` +
         (target ? `\nLooking at: ${target}` : '');
-      health.textContent = '♥'.repeat(Math.ceil((hp / maxHealth) * 10)) + ` ${hp}/${maxHealth}`;
+      // Each heart is 2 health; each hunger icon is 1 point out of 9.
+      heartBar.set(Math.ceil(hp / 2), Math.ceil(maxHealth / 2), 'heart');
+      hungerBar.set(hunger, MAX_HUNGER, 'hunger');
 
       for (let i = 0; i < HOTBAR_SIZE; i++) {
         const slot = inventory.slots[i];
@@ -68,10 +126,13 @@ export function createHud() {
         const def = BLOCK_DEFS[id];
         const selected = i === inventory.selected;
         slotEls[i].style.borderColor = selected ? '#fff' : '#555';
-        slotEls[i].innerHTML = id && def
-          ? `<div style="width:24px;height:24px;background:${COLOR_CSS(def.side)};border:1px solid #000"></div>` +
-            `<div>${slot.count}</div>`
-          : '';
+        slotEls[i].innerHTML = '';
+        if (id && def) {
+          slotEls[i].appendChild(iconCanvas(id, 32));
+          const count = document.createElement('div');
+          count.textContent = slot.count;
+          slotEls[i].appendChild(count);
+        }
       }
     },
   };
