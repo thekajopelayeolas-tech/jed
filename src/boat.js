@@ -9,9 +9,19 @@ export const BOAT_TURN_RATE = 2.5;
 // The boat sits on the water surface. It floats at the top of the water cell it is in.
 export const BOAT_DRAFT = 0.5;
 
-// True if a boat can sit at (x, y, z): the cell is water and the cell above is clear (so the boat is not inside a block).
-export function canFloatAt(world, x, y, z) {
-  return world.getBlock(x, y, z) === BLOCK.WATER && world.getBlock(x, y + 1, z) === BLOCK.AIR;
+// Where a boat goes when placed from the cell (x, y, z) the player aimed at. A boat can be placed anywhere:
+// on land, on a block, or on water. If the aim is in water, the boat sits on the surface above it.
+// It needs a free cell with room above, and something under it to sit on (a block or water).
+// Returns the cell { x, y, z } the boat occupies, or null if it cannot be placed there.
+export function boatSpotAt(world, x, y, z) {
+  let cy = y;
+  // Aimed at water: climb to the first air cell above the surface.
+  while (world.getBlock(x, cy, z) === BLOCK.WATER) cy++;
+  if (world.getBlock(x, cy, z) !== BLOCK.AIR) return null;
+  if (world.getBlock(x, cy + 1, z) !== BLOCK.AIR) return null;
+  // Nothing under it means the boat would hang in the air.
+  if (world.getBlock(x, cy - 1, z) === BLOCK.AIR) return null;
+  return { x, y: cy, z };
 }
 
 // The rider's next position along their facing, if that cell is water. Returns null when the move would leave

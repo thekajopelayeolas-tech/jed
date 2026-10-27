@@ -5,7 +5,7 @@ import { RECIPES } from '../src/inventory.js';
 import { BLOCK_TILES } from '../src/textures.js';
 import { itemPixels } from '../src/item-icons.js';
 import { breakTime, canHarvest, attackDamage } from '../src/mining.js';
-import { canFloatAt, nextBoatPosition, BOAT_ID } from '../src/boat.js';
+import { boatSpotAt, nextBoatPosition, BOAT_ID } from '../src/boat.js';
 import { World } from '../src/world.js';
 
 let failed = 0;
@@ -58,22 +58,45 @@ check('a boat has a recipe made from planks', RECIPES.some((r) => r.result === B
 const scene = { add() {}, remove() {} };
 const w = new World(scene, 1337, {}, {});
 w.update(8, 8, 2, 25);
-// A water cell with air above floats a boat; a dry cell or a blocked cell does not.
-w.setBlock(20, 60, 20, BLOCK.WATER);
-w.setBlock(20, 61, 20, BLOCK.AIR);
-check('a boat floats on water with air above', canFloatAt(w, 20, 60, 20));
-w.setBlock(21, 60, 21, BLOCK.STONE);
-check('a boat does not float on land', !canFloatAt(w, 21, 60, 21));
-w.setBlock(22, 60, 22, BLOCK.WATER);
-w.setBlock(22, 61, 22, BLOCK.STONE);
-check('a boat does not float under a block', !canFloatAt(w, 22, 60, 22));
+// A boat can be placed anywhere it has room: on land, on a block, or on water. These cells are in the loaded area
+// around (8, 8), since writes outside loaded chunks are refused.
+const bx = 8, bz = 8;
+w.setBlock(bx, 60, bz, BLOCK.STONE);
+w.setBlock(bx, 61, bz, BLOCK.AIR);
+w.setBlock(bx, 62, bz, BLOCK.AIR);
+check('a boat places on land (the ground cell below)', boatSpotAt(w, bx, 61, bz) !== null);
+check('a boat placed on land sits where it was aimed', boatSpotAt(w, bx, 61, bz).y === 61);
+
+// On water: aimed at the air cell above the surface, the boat sits there.
+w.setBlock(bx + 1, 60, bz, BLOCK.WATER);
+w.setBlock(bx + 1, 61, bz, BLOCK.AIR);
+w.setBlock(bx + 1, 62, bz, BLOCK.AIR);
+check('a boat places on water', boatSpotAt(w, bx + 1, 61, bz) !== null);
+// Aimed into the water itself: the boat climbs to the surface above it.
+check('aimed into water, the boat sits on the surface', boatSpotAt(w, bx + 1, 60, bz).y === 61);
+
+// A boat does not place where there is no room above it.
+w.setBlock(bx + 2, 60, bz, BLOCK.STONE);
+w.setBlock(bx + 2, 61, bz, BLOCK.AIR);
+w.setBlock(bx + 2, 62, bz, BLOCK.STONE);
+check('no boat where the cell above is blocked', boatSpotAt(w, bx + 2, 61, bz) === null);
+
+// A boat does not hang in the air with nothing under it.
+w.setBlock(bx + 3, 59, bz, BLOCK.AIR);
+w.setBlock(bx + 3, 60, bz, BLOCK.AIR);
+w.setBlock(bx + 3, 61, bz, BLOCK.AIR);
+check('no boat over empty air', boatSpotAt(w, bx + 3, 61, bz) === null);
 
 // Riding: a boat moves only over water, and stops at the shore.
-w.setBlock(30, 60, 30, BLOCK.WATER);
-w.setBlock(31, 60, 30, BLOCK.WATER);
-const moved = nextBoatPosition(w, { x: 30.5, y: 61, z: 30.5 }, 0, 0.1);
+// A pond of water, and dry land beside it, inside the loaded area.
+for (let x = 0; x <= 3; x++) w.setBlock(x, 60, 0, BLOCK.WATER);
+for (let x = 0; x <= 3; x++) w.setBlock(x, 60, 3, BLOCK.STONE);
+// A boat on the water at (1.5, 61, 0.5) moves along the water when pushed east (yaw points -x, so use -PI/2).
+const moved = nextBoatPosition(w, { x: 1.5, y: 61, z: 0.5 }, -Math.PI / 2, 0.1);
 check('a boat moves across water', moved !== null);
-const shore = nextBoatPosition(w, { x: 30.5, y: 61, z: 30.5 }, Math.PI / 2, 10);
+// Yaw PI heads toward +z. The pond is z = 0 and the land starts at z = 3, so the boat is stopped before the shore
+// and cannot move onto the land.
+const shore = nextBoatPosition(w, { x: 1.5, y: 61, z: 0.5 }, Math.PI, 10);
 check('a boat does not move onto land', shore === null);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);

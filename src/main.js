@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
 import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
-import { BOAT_ID, BOAT_TURN_RATE, canFloatAt, nextBoatPosition } from './boat.js';
+import { BOAT_ID, BOAT_TURN_RATE, boatSpotAt, nextBoatPosition } from './boat.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory } from './inventory.js';
@@ -271,7 +271,7 @@ function useOrPlace() {
   // Holding a boat: right-click on water places it. Right-click on a placed boat gets in it.
   if (inventory.selectedItem.id === BOAT_ID && inventory.selectedItem.count > 0) {
     if (hit && placeBoat(hit)) return;
-    if (hit) showMessage('A boat needs open water to float on.');
+    if (hit) showMessage('No room for a boat here.');
     return;
   }
   if (rideBoat === null) {
@@ -360,10 +360,11 @@ const boats = [];
 
 // Right-click with a boat held places one on the water in front of the player.
 function placeBoat(hit) {
-  // The boat floats on the water cell it is aimed at. canFloatAt checks it is water with air above.
-  const water = hit.block;
-  if (!canFloatAt(world, water.x, water.y, water.z)) return false;
-  boats.push({ x: water.x + 0.5, y: water.y + 1, z: water.z + 0.5, yaw: player.yaw });
+  // The boat goes in the cell in front of what the player aimed at, the same spot a block would use.
+  // It can sit anywhere: on land, on a block, or on water (where it floats).
+  const spot = boatSpotAt(world, hit.place.x, hit.place.y, hit.place.z);
+  if (!spot) return false;
+  boats.push({ x: spot.x + 0.5, y: spot.y, z: spot.z + 0.5, yaw: player.yaw });
   inventory.consumeSelected(1);
   return true;
 }
