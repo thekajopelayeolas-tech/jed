@@ -123,7 +123,10 @@ function finishBreak(hit) {
   const held = inventory.selectedItem.id;
   const drop = canHarvest(hit.id, held);
   const { x, y, z } = hit.block;
-  if (world.setBlock(x, y, z, BLOCK.AIR)) {
+  // Two-part blocks (doors, beds) clear both halves, so breaking either one removes the whole block.
+  const cleared = world.breakWhole(x, y, z);
+  if (cleared.length > 0) {
+    // One item per block, not one per cell, so a two-part block still gives a single door or bed.
     if (drop) drops.spawn(DROP_FOR[hit.id] ?? hit.id, x, y, z);
     // A furnace also gives back everything it held, so breaking it never loses items.
     if (hit.id === BLOCK.FURNACE || hit.id === FURNACE_STATE.LIT) {
@@ -243,8 +246,15 @@ function useOrPlace() {
   if (hit && (hit.id === DOOR.DOOR || hit.id === DOOR.OPEN_DOOR)) {
     const { x, y, z } = hit.block;
     // The door keeps its facing when it opens or closes, so it still turns the same way.
+    // Both halves change together, so the whole door opens or closes at once.
     const facing = world.facingAt(x, y, z);
-    world.setBlock(x, y, z, hit.id === DOOR.DOOR ? DOOR.OPEN_DOOR : DOOR.DOOR, facing);
+    const next = hit.id === DOOR.DOOR ? DOOR.OPEN_DOOR : DOOR.DOOR;
+    // Find the lower half: if a door is directly below the hit cell, the hit cell is the upper half.
+    // Then toggle both halves, from either side.
+    const lowerY = world.getBlock(x, y - 1, z) === hit.id ? y - 1 : y;
+    const upperY = lowerY + 1;
+    world.setBlock(x, lowerY, z, next, facing);
+    world.setBlock(x, upperY, z, next, facing);
     return;
   }
   // A chest opens its storage panel. Only one panel at a time, so the others are closed first.
@@ -303,7 +313,8 @@ function placeBlock() {
   if (overlapsPlayer(x, y, z)) return;
   // The block faces the player who places it, so its front points back toward them.
   const facing = facingToward(x, z, player.pos.x, player.pos.z);
-  if (world.setBlock(x, y, z, item.id, facing)) inventory.consumeSelected(1);
+  // Doors and beds take two cells. placeWhole writes both, or neither if the second cell is blocked.
+  if (world.placeWhole(x, y, z, item.id, facing)) inventory.consumeSelected(1);
 }
 
 // True if the block cell at (bx, by, bz) intersects the player's body.

@@ -27,6 +27,21 @@ export const FURNACE_STATE = {
   LIT: 79,
 };
 
+// Two-part blocks take two cells. A door is two blocks tall, and a bed is two blocks long, along its facing.
+// `partOffsets(id, facing)` gives the other cells a block occupies, relative to the cell it was placed in.
+// Single-cell blocks return an empty list.
+// The bed's block id, repeated here because blocks.js imports this file, so importing BLOCK back would be a cycle.
+// It is fixed (BLOCK.BED is 21 in blocks.js) and checked by a test.
+const BED_ID = 21;
+export function partOffsets(id, facing) {
+  if (id === DOOR.DOOR || id === DOOR.OPEN_DOOR) return [{ dx: 0, dy: 1, dz: 0 }];
+  if (id === BED_ID) {
+    const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
+    return [{ dx: sx, dy: 0, dz: sz }];
+  }
+  return [];
+}
+
 // A chest holds 27 items. It is a placeable block, opened with right-click, and it keeps its contents when saved.
 export const STORAGE = {
   CHEST: 78,

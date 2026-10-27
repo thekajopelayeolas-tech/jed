@@ -1,4 +1,5 @@
 import { BLOCK } from './blocks.js';
+import { partOffsets } from './building.js';
 import { Chunk } from './chunk.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { buildChunkGeometry, createChunkMeshes } from './mesher.js';
@@ -37,6 +38,48 @@ export class World {
     const lx = wx - cx * CHUNK_SIZE;
     const lz = wz - cz * CHUNK_SIZE;
     return chunk.get(lx, wy, lz);
+  }
+
+  // Places a two-part block (a door or a bed) across its two cells. Both cells must be free, or nothing is placed.
+  // Returns true if the block was placed. Single-cell blocks behave as setBlock does.
+  placeWhole(wx, wy, wz, id, facing = 0) {
+    const parts = partOffsets(id, facing);
+    for (const p of parts) {
+      const cur = this.getBlock(wx + p.dx, wy + p.dy, wz + p.dz);
+      if (cur !== BLOCK.AIR && cur !== BLOCK.WATER) return false;
+    }
+    if (!this.setBlock(wx, wy, wz, id, facing)) return false;
+    for (const p of parts) this.setBlock(wx + p.dx, wy + p.dy, wz + p.dz, id, facing);
+    return true;
+  }
+
+  // Removes a two-part block from either of its cells. Both cells are cleared, so no half is left behind.
+  // Returns the list of cells that were cleared, so the caller can drop items for each.
+  breakWhole(wx, wy, wz) {
+    const id = this.getBlock(wx, wy, wz);
+    const cells = [{ x: wx, y: wy, z: wz }];
+    // The other half of a two-part block is one of the cells next to it. Keep the neighbours whose own offsets
+    // point back at this cell, so they are the same block's other half and not a neighbouring block.
+    // A door's other half is directly above or below it. A bed's other half is along its facing, in either
+    // direction (the same facing is stored on both halves, so the bed's first half is the one behind).
+    const facing = this.facingAt(wx, wy, wz);
+    const candidates = [[0, -1, 0], [0, 1, 0]];
+    if (id === 21) {
+      const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
+      candidates.push([sx, 0, sz], [-sx, 0, -sz]);
+    }
+    for (const [dx, dy, dz] of candidates) {
+      const ox = wx + dx;
+      const oy = wy + dy;
+      const oz = wz + dz;
+      if (this.getBlock(ox, oy, oz) !== id) continue;
+      cells.push({ x: ox, y: oy, z: oz });
+    }
+    const cleared = [];
+    for (const c of cells) {
+      if (this.setBlock(c.x, c.y, c.z, BLOCK.AIR)) cleared.push(c);
+    }
+    return cleared;
   }
 
   // `facing` is which way the block's front points (0..3, see facing.js). It defaults to south.
