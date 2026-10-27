@@ -311,10 +311,15 @@ function useUtility() {
   const held = inventory.selectedItem.id;
   const hit = targetHit();
   if (held === BLOCK.BUCKET || held === BLOCK.WATER_BUCKET) {
-    if (held === BLOCK.BUCKET && hit && hit.id === BLOCK.WATER) {
-      useBucket(world, held, hit.block.x, hit.block.y, hit.block.z, null);
-      inventory.consumeSelected(1);
-      inventory.add(BLOCK.WATER_BUCKET, 1);
+    // An empty bucket looks for water in front of the player, even though normal targeting skips water.
+    const waterHit = world.raycast(player.eye, player.lookDir(), REACH, true);
+    if (held === BLOCK.BUCKET && waterHit && waterHit.id === BLOCK.WATER) {
+      // Filling takes the water out of the world, and the bucket becomes a water bucket.
+      const r = useBucket(world, held, waterHit.block.x, waterHit.block.y, waterHit.block.z, null);
+      if (r) {
+        inventory.consumeSelected(1);
+        inventory.add(BLOCK.WATER_BUCKET, 1);
+      }
       return true;
     }
     if (held === BLOCK.WATER_BUCKET && hit) {

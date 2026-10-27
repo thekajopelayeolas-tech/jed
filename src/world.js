@@ -260,7 +260,9 @@ export class World {
   }
 
   // Returns the first solid block along a ray (for picking). Uses a DDA voxel walk.
-  raycast(origin, dir, maxDist) {
+  // Water is skipped by default, so blocks behind a lake are picked. `stopOnWater` makes water count as a hit,
+  // which a bucket needs so it can fill from the water it is aimed at.
+  raycast(origin, dir, maxDist, stopOnWater = false) {
     let x = Math.floor(origin.x);
     let y = Math.floor(origin.y);
     let z = Math.floor(origin.z);
@@ -282,7 +284,7 @@ export class World {
 
     while (t <= maxDist) {
       const id = this.getBlock(x, y, z);
-      if (id !== BLOCK.AIR && id !== BLOCK.WATER) {
+      if (id !== BLOCK.AIR && (stopOnWater || id !== BLOCK.WATER)) {
         return { block: { x, y, z }, place: prev, id };
       }
       prev = { x, y, z };

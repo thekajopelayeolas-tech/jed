@@ -69,6 +69,23 @@ bw.setBlock(10, 80, 8, BLOCK.STONE);
 check('a water bucket does not pour into a solid block', useBucket(bw, BLOCK.WATER_BUCKET, 0, 0, 0, { x: 10, y: 80, z: 8 }) === null);
 check('a bucket only holds water (cannot fill from stone)', useBucket(bw, BLOCK.BUCKET, 10, 80, 8, null) === null);
 
+// ---- Aiming a bucket at water: a normal ray passes over water, a bucket's ray (stopOnWater) stops on it ----
+{
+  const aw = new World(scene, 1337, {}, {});
+  aw.update(8, 8, 2, 25);
+  // A water cell at (8, 80, 8), with air around it. A ray from above-and-west, looking east and down, passes through it.
+  aw.setBlock(8, 80, 8, BLOCK.WATER);
+  aw.setBlock(8, 79, 8, BLOCK.STONE);
+  const origin = { x: 6.5, y: 80.5, z: 8.5 };
+  const dir = { x: 1, y: 0, z: 0 };
+  const normal = aw.raycast(origin, dir, 6);
+  const bucketRay = aw.raycast(origin, dir, 6, true);
+  check('a normal ray skips over water', normal === null || normal.id !== BLOCK.WATER);
+  check('a bucket ray stops on the water it is aimed at', bucketRay !== null && bucketRay.id === BLOCK.WATER && bucketRay.block.x === 8);
+  const filled2 = useBucket(aw, BLOCK.BUCKET, bucketRay.block.x, bucketRay.block.y, bucketRay.block.z, null);
+  check('the bucket fills from the water the ray found', filled2 !== null && filled2.item === BLOCK.WATER_BUCKET);
+}
+
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
