@@ -24,16 +24,18 @@ export const RECIPES = [
   // Iron tools (iron ingots + sticks).
   { result: BLOCK.IRON_PICKAXE, count: 1, shaped: true, pattern: ['III', ' S ', ' S '], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
   { result: BLOCK.IRON_SWORD, count: 1, shaped: true, pattern: ['I', 'I', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  // Boat: five planks in a U shape, open at the top. Made to float on water.
+  { result: BLOCK.BOAT, count: 1, shaped: true, pattern: ['P P', 'PPP'], key: { P: BLOCK.PLANKS } },
+  // Diamond tools (diamonds on top of sticks), the same shapes as the iron tools.
+  { result: BLOCK.DIAMOND_PICKAXE, count: 1, shaped: true, pattern: ['DDD', ' S ', ' S '], key: { D: BLOCK.DIAMOND, S: BLOCK.STICK } },
+  { result: BLOCK.DIAMOND_AXE, count: 1, shaped: true, pattern: ['DD', 'DS', ' S'], key: { D: BLOCK.DIAMOND, S: BLOCK.STICK } },
+  { result: BLOCK.DIAMOND_SWORD, count: 1, shaped: true, pattern: ['D', 'D', 'S'], key: { D: BLOCK.DIAMOND, S: BLOCK.STICK } },
   // Chest: a ring of eight planks around an empty centre, like the furnace pattern but in planks.
   { result: STORAGE.CHEST, count: 1, shaped: true, pattern: ['PPP', 'P P', 'PPP'], key: { P: BLOCK.PLANKS } },
   // Door: six planks in two columns of three. Makes one closed door.
   { result: DOOR.DOOR, count: 1, shaped: true, pattern: ['PP', 'PP', 'PP'], key: { P: BLOCK.PLANKS } },
   // Furnace: a ring of eight cobblestone around an empty centre.
   { result: BLOCK.FURNACE, count: 1, shaped: true, pattern: ['CCC', 'C C', 'CCC'], key: { C: BLOCK.COBBLESTONE } },
-  // Shovels (one planks, cobblestone, or iron ingot on top of two sticks).
-  { result: BLOCK.WOODEN_SHOVEL, count: 1, shaped: true, pattern: ['P', 'S', 'S'], key: { P: BLOCK.PLANKS, S: BLOCK.STICK } },
-  { result: BLOCK.STONE_SHOVEL, count: 1, shaped: true, pattern: ['C', 'S', 'S'], key: { C: BLOCK.COBBLESTONE, S: BLOCK.STICK } },
-  { result: BLOCK.IRON_SHOVEL, count: 1, shaped: true, pattern: ['I', 'S', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
   // Armour. Each material has a helmet, chestplate, leggings, and boots, built in the usual shapes.
   // Wood uses planks, stone uses cobblestone, iron uses ingots, and diamond uses diamonds.
   { result: BLOCK.WOODEN_HELMET, count: 1, shaped: true, pattern: ['PPP', 'P P'], key: { P: BLOCK.PLANKS } },

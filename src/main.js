@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
 import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
+import { BOAT_ID, BOAT_TURN_RATE, canFloatAt, nextBoatPosition } from './boat.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory } from './inventory.js';
@@ -103,7 +104,32 @@ const DROP_FOR = {
 
 // Left click: hit a mob in front of the player with the held weapon. Otherwise start mining the block.
 // A click on a mob does not start mining. Mining runs in the frame loop while the button is held.
+// The placed boat the player is aiming at, within reach, or null. One rule for boarding and picking up.
+function boatAimedAt() {
+  const eye = player.eye;
+  const dir = player.lookDir();
+  return boats.find((b) => {
+    const to = { x: b.x - eye.x, y: b.y - eye.y, z: b.z - eye.z };
+    const along = to.x * dir.x + to.y * dir.y + to.z * dir.z;
+    if (along < 0 || along > REACH) return false;
+    const px = eye.x + dir.x * along - b.x;
+    const pz = eye.z + dir.z * along - b.z;
+    return Math.hypot(px, pz) < 0.9;
+  }) ?? null;
+}
+
+// Left-click on a placed boat picks it up, so a boat is never lost. If you are riding it, you get off first.
+function pickUpBoatAimed() {
+  const aimed = boatAimedAt();
+  if (!aimed) return false;
+  if (rideBoat === aimed) rideBoat = null;
+  boats.splice(boats.indexOf(aimed), 1);
+  inventory.add(BOAT_ID, 1);
+  return true;
+}
+
 function attack() {
+  if (pickUpBoatAimed()) return;
   const eye = player.eye;
   const dir = player.lookDir();
   const blockHit = targetHit();
@@ -242,6 +268,19 @@ function furnaceAt(x, y, z) {
 // Right click: sleep if the target is a bed, open a furnace, eat if the held item is food, otherwise place the held block.
 function useOrPlace() {
   const hit = targetHit();
+  // Holding a boat: right-click on water places it. Right-click on a placed boat gets in it.
+  if (inventory.selectedItem.id === BOAT_ID && inventory.selectedItem.count > 0) {
+    if (hit && placeBoat(hit)) return;
+    if (hit) showMessage('A boat needs open water to float on.');
+    return;
+  }
+  if (rideBoat === null) {
+    const aimed = boatAimedAt();
+    if (aimed) {
+      rideBoat = aimed;
+      return;
+    }
+  }
   // Either half of a bed starts sleep, so you can sleep from the head or the foot.
   if (hit && (hit.id === BLOCK.BED || hit.id === BED_FOOT)) {
     if (sleep.start(timeOfDay)) {
@@ -313,6 +352,22 @@ function eat() {
   return true;
 }
 
+// The boat the player is riding, or null. A placed boat is a water cell and a yaw. While riding, the player
+// rides on it and steers it, and it stays on the water.
+let rideBoat = null;
+// Boats placed in the world: each is { x, y, z, yaw }. Placed boats can be boarded with right-click.
+const boats = [];
+
+// Right-click with a boat held places one on the water in front of the player.
+function placeBoat(hit) {
+  // The boat floats on the water cell it is aimed at. canFloatAt checks it is water with air above.
+  const water = hit.block;
+  if (!canFloatAt(world, water.x, water.y, water.z)) return false;
+  boats.push({ x: water.x + 0.5, y: water.y + 1, z: water.z + 0.5, yaw: player.yaw });
+  inventory.consumeSelected(1);
+  return true;
+}
+
 function placeBlock() {
   const hit = targetHit();
   if (!hit) return;
@@ -325,7 +380,10 @@ function placeBlock() {
   if (target !== BLOCK.AIR && target !== BLOCK.WATER) return;
   if (overlapsPlayer(x, y, z)) return;
   // The block faces the player who places it, so its front points back toward them.
-  const facing = facingToward(x, z, player.pos.x, player.pos.z);
+  let facing = facingToward(x, z, player.pos.x, player.pos.z);
+  // A bed's head must be the cell nearest the player, with its foot further away. The foot is placed along the
+  // facing, so a bed faces away from the player (the foot lands behind the head, farther from them).
+  if (item.id === BLOCK.BED) facing = (facing + 2) & 3;
   // Doors and beds take two cells. placeWhole writes both, or neither if the second cell is blocked.
   if (world.placeWhole(x, y, z, item.id, facing)) inventory.consumeSelected(1);
 }
@@ -420,6 +478,27 @@ const mp = createMultiplayer(`${WS_SCHEME}://${LOBBY_HOST}`, (msg) => {
 mpUI.attach(mp);
 
 // Other players drawn as simple blocks, so they can be seen in the world.
+// Each placed boat is drawn as a wooden hull (a flat box). Meshes are created once per boat and kept with it.
+const boatMeshes = new Map();
+const boatGeo = new THREE.BoxGeometry(0.9, 0.25, 0.5);
+const boatMat = new THREE.MeshLambertMaterial({ color: 0x9c7a46 });
+function syncBoats() {
+  for (const b of boats) {
+    let mesh = boatMeshes.get(b);
+    if (!mesh) {
+      mesh = new THREE.Mesh(boatGeo, boatMat);
+      scene.add(mesh);
+      boatMeshes.set(b, mesh);
+    }
+    mesh.position.set(b.x, b.y - 0.1, b.z);
+    mesh.rotation.y = b.yaw;
+  }
+  // Drop the mesh of a boat that is no longer in the list (the rider left it or it was removed).
+  for (const [b, mesh] of boatMeshes) {
+    if (!boats.includes(b)) { scene.remove(mesh); boatMeshes.delete(b); }
+  }
+}
+
 const remotes = new Map();
 function syncRemotes() {
   const seen = new Set();
@@ -484,7 +563,30 @@ function frame(now) {
   last = now;
 
   // The player does not move while a panel is open or while asleep.
-  if (!anyPanelOpen() && !sleep.isSleeping()) player.update(dt);
+  // Riding a boat: the boat moves on the water, the player sits on it, and walking keys steer it.
+  // Shift gets off. Otherwise the player moves normally on land.
+  if (rideBoat) {
+    if (player.isSprinting()) {
+      rideBoat = null;
+    } else {
+      const forward = (player.keys.KeyW ? 1 : 0) - (player.keys.KeyS ? 1 : 0);
+      if (player.keys.KeyA) player.yaw += BOAT_TURN_RATE * dt;
+      if (player.keys.KeyD) player.yaw -= BOAT_TURN_RATE * dt;
+      if (forward !== 0) {
+        const next = nextBoatPosition(world, rideBoat, player.yaw, dt * forward);
+        if (next) {
+          rideBoat.x = next.x;
+          rideBoat.z = next.z;
+        }
+      }
+      rideBoat.yaw = player.yaw;
+      // The rider sits on the boat, so the feet follow the boat's position.
+      player.pos.set(rideBoat.x, rideBoat.y, rideBoat.z);
+      player.vel.set(0, 0, 0);
+    }
+  } else if (!anyPanelOpen() && !sleep.isSleeping()) {
+    player.update(dt);
+  }
   // Every furnace in the world keeps smelting, even with its panel closed.
   // Every furnace in the world keeps smelting. A furnace shows its fire in the world while it is smelting.
   for (const [key, f] of furnaces) {
@@ -532,6 +634,7 @@ function frame(now) {
   // Send this player's position to the lobby, and draw the others.
   if (mp.lobby) mp.sendMove(player);
   syncRemotes();
+  syncBoats();
 
   // Asleep, the view lowers to the mattress and tilts onto its side. Awake, it is the usual eye height and level.
   const lying = sleepPose(sleep.isSleeping() ? sleep.progress() : 0);

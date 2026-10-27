@@ -109,22 +109,6 @@ function axeSprite(head) {
   ]);
 }
 
-// A spade: a rounded blade at the top that narrows to a point, on a handle. The blade is wide at the
-// bottom and rounds off at the top, so it reads as a spade and not a paddle.
-function shovelSprite(head) {
-  return layered([
-    {
-      inside: (px, py) => {
-        // Blade spans y from 1 to 9. Its width is widest near y 6 and tapers toward the top.
-        if (py < 1 || py > 9.5) return false;
-        const half = py < 6 ? 3.2 : 3.2 - ((py - 6) / 3.5) ** 2 * 3.2;
-        return Math.abs(px - 8) < Math.max(0.5, half);
-      },
-      color: (px, py) => pick(head, px < 8, px, py),
-    },
-    stroke(8, 9, 8, 14.5, 0.9, HANDLE),
-  ]);
-}
 
 const coalColor = (px, py) => (grain(px, py) > 0.15 ? [0.32, 0.32, 0.32] : [0.1, 0.1, 0.11]);
 
@@ -218,14 +202,16 @@ const SPRITES = new Map([
   [BLOCK.WOODEN_PICKAXE, pickaxeSprite(WOOD_HEAD)],
   [BLOCK.WOODEN_AXE, axeSprite(WOOD_HEAD)],
   [BLOCK.WOODEN_SWORD, swordSprite(WOOD_HEAD)],
-  [BLOCK.WOODEN_SHOVEL, shovelSprite(WOOD_HEAD)],
-  [BLOCK.STONE_SHOVEL, shovelSprite(STONE)],
-  [BLOCK.IRON_SHOVEL, shovelSprite(IRON)],
   [BLOCK.STONE_PICKAXE, pickaxeSprite(STONE)],
   [BLOCK.STONE_AXE, axeSprite(STONE)],
   [BLOCK.STONE_SWORD, swordSprite(STONE)],
   [BLOCK.IRON_PICKAXE, pickaxeSprite(IRON)],
   [BLOCK.IRON_SWORD, swordSprite(IRON)],
+  // A boat: a wooden hull with a raised bow on the right and an open top.
+  [BLOCK.BOAT, poly([[2, 7], [4, 11], [12, 11], [14, 6], [13, 5], [3, 5]], (px, py) => pick(WOOD_HEAD, py < 8, px, py))],
+  [BLOCK.DIAMOND_PICKAXE, pickaxeSprite(DIAMOND)],
+  [BLOCK.DIAMOND_AXE, axeSprite(DIAMOND)],
+  [BLOCK.DIAMOND_SWORD, swordSprite(DIAMOND)],
 ]);
 
 // Builds RGBA bytes for a sprite: covered pixels take their colour, and empty pixels next to them get the outline.

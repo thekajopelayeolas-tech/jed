@@ -20,7 +20,8 @@ export function recipeIngredients(recipe) {
 
 // Recipe categories shown as headings in the book. A recipe belongs to the first category whose test it passes.
 const BASIC_IDS = [BLOCK.PLANKS, BLOCK.STICK, BLOCK.CRAFTING_TABLE, BLOCK.FURNACE, BLOCK.TORCH, BLOCK.GLASS, BLOCK.BED];
-const DOOR_AND_STORAGE_IDS = [DOOR.DOOR, DOOR.OPEN_DOOR, STORAGE.CHEST];
+// Doors, chests, and the boat sit under the basics: they are simple, everyday items.
+const DOOR_AND_STORAGE_IDS = [DOOR.DOOR, DOOR.OPEN_DOOR, STORAGE.CHEST, BLOCK.BOAT];
 const BUILD_IDS = Object.values(BUILD);
 export const CATEGORIES = [
   { name: 'Basics and doors', test: (id) => BASIC_IDS.includes(id) || DOOR_AND_STORAGE_IDS.includes(id) },

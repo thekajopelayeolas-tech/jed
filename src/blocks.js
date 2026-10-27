@@ -57,10 +57,12 @@ export const BLOCK = {
   DIAMOND_CHEST: 50,
   DIAMOND_LEGS: 51,
   DIAMOND_BOOTS: 52,
-  // Shovels were added last. Ids are fixed so existing saves still load.
-  WOODEN_SHOVEL: 65,
-  STONE_SHOVEL: 66,
-  IRON_SHOVEL: 67,
+  // Diamond tools (pickaxe, axe, sword, shovel are not kept: shovels were removed). Ids 81 to 84 are new.
+  DIAMOND_PICKAXE: 81,
+  DIAMOND_AXE: 82,
+  DIAMOND_SWORD: 83,
+  // A boat, made from planks. It is placed on water and ridden. Id 85 is new and never reused.
+  BOAT: 85,
   RAW_MUTTON: 68,
   COOKED_MUTTON: 69,
   RAW_PORK: 70,
@@ -86,7 +88,9 @@ export const BLOCK = {
 
 // Tool classes and tiers. Used by mining speed and weapon damage.
 // `tool` is the class a block is best mined with; `tier` is the minimum tier to harvest drops.
-export const TOOL = { PICKAXE: 'pickaxe', AXE: 'axe', SWORD: 'sword', SHOVEL: 'shovel' };
+// Shovels are gone as an item. `DIG` is the class for dirt-type blocks (grass, dirt, sand). No item uses it,
+// so these blocks are mined by hand at their normal speed, as they were before shovels were added.
+export const TOOL = { PICKAXE: 'pickaxe', AXE: 'axe', SWORD: 'sword', DIG: 'dig' };
 export const TOOL_ITEMS = {
   [BLOCK.WOODEN_PICKAXE]: { tool: TOOL.PICKAXE, tier: 1, speed: 2, damage: 2, item: true },
   [BLOCK.WOODEN_AXE]: { tool: TOOL.AXE, tier: 1, speed: 2, damage: 3, item: true },
@@ -96,9 +100,10 @@ export const TOOL_ITEMS = {
   [BLOCK.STONE_SWORD]: { tool: TOOL.SWORD, tier: 2, speed: 1.5, damage: 5, item: true },
   [BLOCK.IRON_PICKAXE]: { tool: TOOL.PICKAXE, tier: 3, speed: 6, damage: 4, item: true },
   [BLOCK.IRON_SWORD]: { tool: TOOL.SWORD, tier: 3, speed: 1.5, damage: 7, item: true },
-  [BLOCK.WOODEN_SHOVEL]: { tool: TOOL.SHOVEL, tier: 1, speed: 2, damage: 2, item: true },
-  [BLOCK.STONE_SHOVEL]: { tool: TOOL.SHOVEL, tier: 2, speed: 4, damage: 3, item: true },
-  [BLOCK.IRON_SHOVEL]: { tool: TOOL.SHOVEL, tier: 3, speed: 6, damage: 4, item: true },
+  // Diamond tools are the top tier (4): faster than iron and they do the most damage.
+  [BLOCK.DIAMOND_PICKAXE]: { tool: TOOL.PICKAXE, tier: 4, speed: 8, damage: 5, item: true },
+  [BLOCK.DIAMOND_AXE]: { tool: TOOL.AXE, tier: 4, speed: 8, damage: 6, item: true },
+  [BLOCK.DIAMOND_SWORD]: { tool: TOOL.SWORD, tier: 4, speed: 2, damage: 9, item: true },
 };
 
 // Items are things that cannot be placed in the world. Placeable blocks are everything else.
@@ -138,6 +143,10 @@ export const BLOCK_DEFS = {
   [BLOCK.STONE_SWORD]: { name: 'Stone Sword', top: [0.55, 0.55, 0.55], side: [0.55, 0.55, 0.55], bottom: [0.55, 0.55, 0.55], solid: false, transparent: true, item: true },
   [BLOCK.IRON_INGOT]: { name: 'Iron Ingot', top: [0.8, 0.8, 0.8], side: [0.8, 0.8, 0.8], bottom: [0.8, 0.8, 0.8], solid: false, transparent: true, item: true },
   [BLOCK.IRON_PICKAXE]: { name: 'Iron Pickaxe', top: [0.85, 0.85, 0.9], side: [0.85, 0.85, 0.9], bottom: [0.85, 0.85, 0.9], solid: false, transparent: true, item: true },
+  [BLOCK.BOAT]: { name: 'Boat', top: [0.7, 0.55, 0.3], side: [0.65, 0.5, 0.28], bottom: [0.6, 0.45, 0.25], solid: false, transparent: true, item: true },
+  [BLOCK.DIAMOND_PICKAXE]: { name: 'Diamond Pickaxe', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
+  [BLOCK.DIAMOND_AXE]: { name: 'Diamond Axe', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
+  [BLOCK.DIAMOND_SWORD]: { name: 'Diamond Sword', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
   [BLOCK.IRON_SWORD]: { name: 'Iron Sword', top: [0.85, 0.85, 0.9], side: [0.85, 0.85, 0.9], bottom: [0.85, 0.85, 0.9], solid: false, transparent: true, item: true },
   [BLOCK.FURNACE]: { name: 'Furnace', top: [0.45, 0.45, 0.45], side: [0.42, 0.42, 0.42], bottom: [0.45, 0.45, 0.45], solid: true, transparent: false },
   [BLOCK.DIAMOND_ORE]: { name: 'Diamond Ore', top: [0.5, 0.85, 0.9], side: [0.5, 0.85, 0.9], bottom: [0.5, 0.85, 0.9], solid: true, transparent: false },
@@ -169,9 +178,6 @@ export const BLOCK_DEFS = {
   [BLOCK.COOKED_FISH]: { name: 'Cooked Fish', top: [0.8, 0.6, 0.35], side: [0.8, 0.6, 0.35], bottom: [0.8, 0.6, 0.35], solid: false, transparent: true, item: true },
   [BLOCK.RAW_MUTTON]: { name: 'Raw Mutton', top: [0.85, 0.42, 0.42], side: [0.85, 0.42, 0.42], bottom: [0.85, 0.42, 0.42], solid: false, transparent: true, item: true },
   [BLOCK.COOKED_MUTTON]: { name: 'Cooked Mutton', top: [0.62, 0.38, 0.22], side: [0.62, 0.38, 0.22], bottom: [0.62, 0.38, 0.22], solid: false, transparent: true, item: true },
-  [BLOCK.WOODEN_SHOVEL]: { name: 'Wooden Shovel', top: [0.7, 0.55, 0.3], side: [0.7, 0.55, 0.3], bottom: [0.7, 0.55, 0.3], solid: false, transparent: true, item: true },
-  [BLOCK.STONE_SHOVEL]: { name: 'Stone Shovel', top: [0.55, 0.55, 0.55], side: [0.55, 0.55, 0.55], bottom: [0.55, 0.55, 0.55], solid: false, transparent: true, item: true },
-  [BLOCK.IRON_SHOVEL]: { name: 'Iron Shovel', top: [0.85, 0.85, 0.9], side: [0.85, 0.85, 0.9], bottom: [0.85, 0.85, 0.9], solid: false, transparent: true, item: true },
   [BUILD.STONE_BRICKS]: { name: 'Stone Bricks', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },
   [BUILD.POLISHED_STONE]: { name: 'Polished Stone', top: [0.62, 0.62, 0.62], side: [0.62, 0.62, 0.62], bottom: [0.62, 0.62, 0.62], solid: true, transparent: false },
   [BUILD.BRICKS]: { name: 'Bricks', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
