@@ -3,6 +3,13 @@ import { buildMobModel } from '../src/mob-model.js';
 import { BLOCK } from '../src/blocks.js';
 import * as THREE from 'three';
 
+// Spawning picks random spots, so use a fixed seed here. Then the test gives the same result every run.
+let seed = 12345;
+Math.random = () => {
+  seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+  return seed / 0x7fffffff;
+};
+
 let failed = 0;
 const check = (name, cond) => {
   if (!cond) failed++;

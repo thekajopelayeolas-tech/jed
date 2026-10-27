@@ -23,7 +23,7 @@ import { MobManager } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
-import { createSleep } from './sleep.js';
+import { createSleep, sleepPose } from './sleep.js';
 import { foodPoints } from './hunger.js';
 import { createMultiplayer } from './multiplayer.js';
 import { createLobbyUI } from './lobby-ui.js';
@@ -73,6 +73,9 @@ function findSpawn(x, z) {
 }
 
 function respawn() {
+  // Respawning ends any sleep, so the player is never left asleep at spawn.
+  sleep.stop();
+  sleepBed = null;
   const sx = 8;
   const sz = 8;
   // Load nearby terrain before searching for the surface.
@@ -241,7 +244,15 @@ function useOrPlace() {
   const hit = targetHit();
   // Either half of a bed starts sleep, so you can sleep from the head or the foot.
   if (hit && (hit.id === BLOCK.BED || hit.id === BED_FOOT)) {
-    if (!sleep.start(timeOfDay)) showMessage('You can only sleep at night.');
+    if (sleep.start(timeOfDay)) {
+      // Remember the bed and put the player on it, so the sleeping view lies on the mattress.
+      sleepBed = { x: hit.block.x, y: hit.block.y, z: hit.block.z, facing: world.facingAt(hit.block.x, hit.block.y, hit.block.z) };
+      // The feet stand on the top of the bed, so the body is not inside the block.
+      player.pos.set(hit.block.x + 0.5, hit.block.y + 1, hit.block.z + 0.5);
+      player.vel.set(0, 0, 0);
+    } else {
+      showMessage('You can only sleep at night.');
+    }
     return;
   }
   // A door swaps between closed and open. Opening it lets you through, and closing it blocks you again.
@@ -329,6 +340,8 @@ function overlapsPlayer(bx, by, bz) {
 }
 
 const sleep = createSleep();
+// The bed the player is sleeping in, or null. Set when sleep starts, cleared when the player wakes.
+let sleepBed = null;
 const crafting = createInventoryUI(inventory, player, opaqueMat);
 const furnaceUI = createFurnaceUI(inventory);
 const chestUI = createChestUI(inventory);
@@ -485,6 +498,16 @@ function frame(now) {
   if (wakeTime !== null) {
     timeOfDay = wakeTime;
     showMessage('Good morning!');
+    // Getting up puts the player back beside the bed, standing, and clears the sleeping view.
+    if (sleepBed) player.pos.set(sleepBed.x + 0.5, sleepBed.y + 1, sleepBed.z - 1.2);
+    sleepBed = null;
+  }
+  // Moving while asleep gets the player up early. The key press is read from the held keys.
+  if (sleep.isSleeping() && (player.keys.KeyW || player.keys.KeyA || player.keys.KeyS || player.keys.KeyD || player.keys.Space)) {
+    sleep.stop();
+    if (sleepBed) player.pos.set(sleepBed.x + 0.5, sleepBed.y + 1, sleepBed.z - 1.2);
+    sleepBed = null;
+    showMessage('You got up.');
   }
   if (!sleep.isSleeping()) {
     timeOfDay = updateDayNight(scene, sky, timeOfDay, dt, RENDER_DISTANCE);
@@ -510,11 +533,15 @@ function frame(now) {
   if (mp.lobby) mp.sendMove(player);
   syncRemotes();
 
+  // Asleep, the view lowers to the mattress and tilts onto its side. Awake, it is the usual eye height and level.
+  const lying = sleepPose(sleep.isSleeping() ? sleep.progress() : 0);
   camera.position.copy(player.eye);
+  camera.position.y -= lying.drop;
   heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem);
   camera.rotation.order = 'YXZ';
   camera.rotation.y = player.yaw;
   camera.rotation.x = player.pitch;
+  camera.rotation.z = lying.roll;
 
   const hit = targetHit();
   // Crack overlay: hard blocks show a slower crack build-up, easy ones a fast one. The label names the difficulty.

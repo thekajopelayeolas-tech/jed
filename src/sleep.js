@@ -8,6 +8,18 @@ export function isNight(timeOfDay) {
   return timeOfDay >= 0.5 && timeOfDay < 1;
 }
 
+// The sleeping view: the camera drops from standing eye height down to the mattress, and tilts onto its side.
+// `progress` is 0 (just lay down) to 1 (fully lying down). The transition eases in and out.
+// Returns { drop, roll } in metres and radians. drop is how far the eye lowers, roll is the sideways tilt.
+export const LYING_EYE_DROP = 1.2;
+export const LYING_ROLL = Math.PI / 2;
+export function sleepPose(progress) {
+  const t = Math.max(0, Math.min(1, progress));
+  // Smoothstep, so the body eases into the bed and back up without a sudden jump.
+  const eased = t * t * (3 - 2 * t);
+  return { drop: LYING_EYE_DROP * eased, roll: LYING_ROLL * eased };
+}
+
 // Sleep state machine. Call start() from a bed click, update(dt) each frame, and stop() to wake early.
 export function createSleep() {
   let sleeping = false;
