@@ -72,6 +72,10 @@ export const STAIR_BOXES = [
 export const DOOR_BOX = [[0, 0, 0.4, 1, 1, 0.6]];
 export const OPEN_DOOR_BOX = [[0, 0, 0, 0.12, 1, 1]];
 
+// A torch is a thin upright post in the middle of its cell, not a full cube. Its id is 14 (BLOCK.TORCH in blocks.js).
+const TORCH_ID = 14;
+export const POST_BOX = [[0.42, 0, 0.42, 0.58, 1, 0.58]];
+
 // Rotates one box about the centre of its cell, by a facing (0 south, 1 west, 2 north, 3 east).
 // Each quarter turn maps (x, z) about (0.5, 0.5). Box ends are kept ordered (min, then max).
 export function rotateBox(box, facing) {
@@ -112,6 +116,7 @@ export const SHAPE = {
   [BUILD.CONCRETE_STAIRS]: 'stairs',
   [DOOR.DOOR]: 'door',
   [DOOR.OPEN_DOOR]: 'open',
+  [TORCH_ID]: 'post',
 };
 
 // Returns the collision and rendering boxes for a block id. Full cubes return one box.
@@ -122,6 +127,7 @@ export function boxesFor(id, facing = 0) {
   if (shape === 'stairs') return STAIR_BOXES;
   if (shape === 'door') return doorBoxes(false, facing);
   if (shape === 'open') return doorBoxes(true, facing);
+  if (shape === 'post') return POST_BOX;
   return FULL_BOX;
 }
 

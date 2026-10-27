@@ -101,6 +101,44 @@ export function houseCells(house, groundY) {
   return cells;
 }
 
+// Farm plots and an animal pen, beside the houses. Offsets are relative to the centre. Each farm plot is a
+// row of wheat blocks on a planks base. The pen is a square fence of planks with an open gate on its east side.
+// Placed clear of the houses (x -12..16, z -12..10) and the roads (z -7 and z 5), inside the level box.
+export const FARM_PLOTS = [
+  { x: -16, z: -3, w: 3, d: 6 },
+  { x: -16, z: 6, w: 3, d: 5 },
+];
+export const PEN = { x: 6, z: -4, w: 7, d: 5 };
+
+// Cells for the farm plots at ground level: a planks base, with wheat blocks on top.
+export function farmCells(groundY) {
+  const cells = [];
+  for (const f of FARM_PLOTS) {
+    for (let dx = 0; dx < f.w; dx++) {
+      for (let dz = 0; dz < f.d; dz++) {
+        cells.push({ dx: f.x + dx, dy: groundY, dz: f.z + dz, id: BLOCK.PLANKS });
+        cells.push({ dx: f.x + dx, dy: groundY + 1, dz: f.z + dz, id: BLOCK.WHEAT_BLOCK });
+      }
+    }
+  }
+  return cells;
+}
+
+// Cells for the animal pen: a fence of planks around the edge, with a one-cell gap on the east side for a gate.
+export function penCells(groundY) {
+  const cells = [];
+  for (let dx = 0; dx < PEN.w; dx++) {
+    for (let dz = 0; dz < PEN.d; dz++) {
+      const edge = dx === 0 || dz === 0 || dx === PEN.w - 1 || dz === PEN.d - 1;
+      if (!edge) continue;
+      const gate = dx === PEN.w - 1 && dz === Math.floor(PEN.d / 2);
+      if (gate) continue;
+      cells.push({ dx: PEN.x + dx, dy: groundY + 1, dz: PEN.z + dz, id: BLOCK.PLANKS });
+    }
+  }
+  return cells;
+}
+
 // The cobblestone roads at ground level: one between the two rows of houses, and one along the south edge.
 export function pathCells(groundY) {
   const cells = [];

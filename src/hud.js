@@ -133,6 +133,27 @@ export function createHud() {
   root.appendChild(crackLabel);
   let crackStage = -1;
 
+  // The death screen: shown when health reaches zero. It says you lost and has a Respawn button.
+  // The button calls the function given to setDeathHandler, and the screen is hidden again after respawning.
+  const death = document.createElement('div');
+  death.style.cssText = 'position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;' +
+    'background:rgba(90,0,0,0.6);pointer-events:auto;font-family:sans-serif;color:#fff;';
+  const deathTitle = document.createElement('div');
+  deathTitle.textContent = 'You lost';
+  deathTitle.style.cssText = 'font-size:56px;font-weight:bold;text-shadow:2px 2px 0 #000;margin-bottom:24px;';
+  const respawnButton = document.createElement('button');
+  respawnButton.textContent = 'Respawn';
+  respawnButton.style.cssText = 'font-size:22px;padding:12px 32px;cursor:pointer;border:2px solid #fff;' +
+    'background:#444;color:#fff;';
+  death.appendChild(deathTitle);
+  death.appendChild(respawnButton);
+  root.appendChild(death);
+  let onRespawnClick = () => {};
+  respawnButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onRespawnClick();
+  });
+
   // Central status line for sleep and other messages.
   const status = document.createElement('div');
   status.style.cssText = 'position:absolute;left:50%;top:30%;transform:translateX(-50%);font-size:20px;text-align:center;display:none;';
@@ -150,6 +171,17 @@ export function createHud() {
   return {
     setPaused(paused) {
       pause.style.display = paused ? 'flex' : 'none';
+    },
+    // Shows or hides the death screen. Showing it does not change the game state.
+    setDead(dead) {
+      death.style.display = dead ? 'flex' : 'none';
+    },
+    isDead() {
+      return death.style.display === 'flex';
+    },
+    // Sets what the Respawn button does.
+    setDeathHandler(fn) {
+      onRespawnClick = fn;
     },
     // Puts a panel (for example the lobby) on the pause screen, under the controls text.
     mountLobby(element) {

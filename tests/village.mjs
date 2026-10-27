@@ -1,5 +1,5 @@
 import { Chunk, surfaceHeight } from '../src/chunk.js';
-import { villageCentre, houseCells, pathCells, HOUSES, REGION, LEVEL_BOX } from '../src/village.js';
+import { villageCentre, houseCells, pathCells, farmCells, penCells, HOUSES, REGION, LEVEL_BOX } from '../src/village.js';
 import { BLOCK } from '../src/blocks.js';
 import { DOOR } from '../src/building.js';
 
@@ -38,7 +38,7 @@ check('every village centre sits inside its region with margin', insideRegion);
 // Build one village directly and confirm the houses have walls, floors, and a door gap.
 const v = found[0];
 const groundY = surfaceHeight(SEED, v.x, v.z);
-const cells = HOUSES.flatMap((h) => houseCells(h, groundY));
+const cells = [...HOUSES.flatMap((h) => houseCells(h, groundY)), ...farmCells(groundY), ...penCells(groundY)];
 // Each doorway holds a closed door (not a wall), so the house can be entered by opening it.
 const doorsPlaced = HOUSES.map((h) => {
   const dx = h.x + Math.floor(h.w / 2);

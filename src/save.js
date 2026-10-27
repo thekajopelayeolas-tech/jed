@@ -20,7 +20,7 @@ function fromBase64(str) {
 // Chunks that are loaded now are included, so the current state is saved too.
 // `furnaces` is an optional Map from "x,y,z" to Furnace. Each furnace's contents are kept.
 // `chests` is an optional Map from "x,y,z" to Chest. Each chest's 27 slots are kept.
-export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map(), chests = new Map()) {
+export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map(), chests = new Map(), spawnBed = null) {
   const chunks = {};
   const facing = {};
   for (const [key, data] of world.edits) chunks[key] = toBase64(data);
@@ -44,6 +44,8 @@ export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map
     armour: { ...player.armour },
     furnaces: furnaceData,
     timeOfDay,
+    // The bed the player respawns beside, or null for the default spawn point.
+    spawnBed: spawnBed ? { x: spawnBed.x, y: spawnBed.y, z: spawnBed.z } : null,
   };
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
@@ -65,7 +67,7 @@ export function loadGame() {
     // Facing is optional. Saves from before facing existed have none, so their blocks keep the default.
     const facingEdits = new Map();
     for (const [key, b64] of Object.entries(data.facing ?? {})) facingEdits.set(key, fromBase64(b64));
-    return { edits, facingEdits, player: data.player, inventory: data.inventory, armour: data.armour ?? null, furnaces: data.furnaces ?? {}, chests: data.chests ?? {}, timeOfDay: data.timeOfDay };
+    return { edits, facingEdits, player: data.player, inventory: data.inventory, armour: data.armour ?? null, furnaces: data.furnaces ?? {}, chests: data.chests ?? {}, timeOfDay: data.timeOfDay, spawnBed: data.spawnBed ?? null };
   } catch (err) {
     console.warn('Save could not be read', err);
     return null;

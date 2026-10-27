@@ -25,6 +25,12 @@ export const FOOD_POINTS = {
   [BLOCK.COOKED_RABBIT]: 4,
   [BLOCK.RAW_FISH]: 2,
   [BLOCK.COOKED_FISH]: 4,
+  [BLOCK.BREAD]: 5,
+  [BLOCK.CAKE]: 6,
+  [BLOCK.COOKIES]: 2,
+  [BLOCK.STEW]: 6,
+  [BLOCK.RAW_CHICKEN]: 2,
+  [BLOCK.COOKED_CHICKEN]: 6,
 };
 
 export function foodPoints(id) {

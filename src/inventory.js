@@ -79,6 +79,13 @@ export const RECIPES = [
   { result: BLOCK.STONE_STAIRS, count: 4, shaped: true, pattern: ['S  ', 'SS ', 'SSS'], key: { S: BLOCK.STONE } },
   { result: BLOCK.BRICK_STAIRS, count: 4, shaped: true, pattern: ['B  ', 'BB ', 'BBB'], key: { B: BLOCK.BRICKS } },
   { result: BLOCK.CONCRETE_STAIRS, count: 4, shaped: true, pattern: ['C  ', 'CC ', 'CCC'], key: { C: BLOCK.CONCRETE } },
+  // Farming and food. Nine wheat make one wheat block, and one wheat block gives back nine wheat.
+  { result: BLOCK.WHEAT_BLOCK, count: 1, shaped: true, pattern: ['WWW', 'WWW', 'WWW'], key: { W: BLOCK.WHEAT } },
+  { result: BLOCK.WHEAT, count: 9, shaped: true, pattern: ['W'], key: { W: BLOCK.WHEAT_BLOCK } },
+  { result: BLOCK.BREAD, count: 1, shaped: true, pattern: ['WWW'], key: { W: BLOCK.WHEAT } },
+  { result: BLOCK.CAKE, count: 1, shaped: true, pattern: ['EEE', 'WWW'], key: { E: BLOCK.EGG, W: BLOCK.WHEAT } },
+  { result: BLOCK.COOKIES, count: 4, shaped: true, pattern: ['WEW'], key: { W: BLOCK.WHEAT, E: BLOCK.EGG } },
+  { result: BLOCK.STEW, count: 1, shaped: true, pattern: ['C', 'W'], key: { C: BLOCK.COOKED_CHICKEN, W: BLOCK.WHEAT } },
 ];
 
 // Items are {id, count}. Returns a 2D grid recipe match or null.

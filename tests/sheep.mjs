@@ -52,7 +52,8 @@ check('wool is a block with a texture, so it can be placed and dropped', !!BLOCK
   check('passive spawns include cows', seen.has(MOB.COW));
   check('passive spawns include pigs', seen.has(MOB.PIG));
   check('passive spawns include rabbits', seen.has(MOB.RABBIT));
-  check('land passive spawns are cows, sheep, pigs, or rabbits', [...seen].every((t) => [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT].includes(t)));
+  check('land passive spawns are cows, sheep, pigs, rabbits, or chickens', [...seen].every((t) => [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT, MOB.CHICKEN].includes(t)));
+check('passive spawns include chickens', seen.has(MOB.CHICKEN));
 }
 
 // Wool is a placeable block, not an item, so it still behaves as the world's block.

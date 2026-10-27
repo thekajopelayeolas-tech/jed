@@ -4,7 +4,7 @@ import { CHUNK_HEIGHT } from './constants.js';
 import { shouldBurn, burnStep } from './burning.js';
 import { buildMobModel } from './mob-model.js';
 import { LIGHT } from './lighting.js';
-import { villagesNear, LEVEL_BOX } from './village.js';
+import { villagesNear, LEVEL_BOX, HOUSES } from './village.js';
 
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
@@ -20,6 +20,7 @@ export const MOB = {
   SHEEP: 'sheep',
   PIG: 'pig',
   RABBIT: 'rabbit',
+  CHICKEN: 'chicken',
   FISH: 'fish',
   SALMON: 'salmon',
   DOLPHIN: 'dolphin',
@@ -44,6 +45,8 @@ const MOB_DEFS = {
   [MOB.SHEEP]: { size: [0.9, 0.9, 0.9], color: 0xf5f5f0, health: 5, speed: 1.3, hostile: false, drops: [BLOCK.RAW_MUTTON, BLOCK.WOOL] },
   [MOB.PIG]: { size: [0.9, 0.8, 0.9], color: 0xf0a0a8, health: 5, speed: 1.3, hostile: false, drops: [BLOCK.RAW_PORK] },
   [MOB.RABBIT]: { size: [0.5, 0.6, 0.5], color: 0xb08a62, health: 3, speed: 2.0, hostile: false, drops: [BLOCK.RAW_RABBIT] },
+  // A chicken drops raw chicken (meat) and an egg when killed.
+  [MOB.CHICKEN]: { size: [0.4, 0.7, 0.4], color: 0xf5f5f5, health: 4, speed: 1.2, hostile: false, drops: [BLOCK.RAW_CHICKEN, BLOCK.EGG] },
   // Fish swim in water only. Their body is flat and low, and they do not walk on land.
   [MOB.FISH]: { size: [0.6, 0.3, 0.3], color: 0x5c8fc4, health: 2, speed: 1.0, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
   // Water mobs. All of them stay in the water. Salmon are a second kind of fish, dolphins are larger, and squid
@@ -53,12 +56,13 @@ const MOB_DEFS = {
   [MOB.SQUID]: { size: [0.6, 0.6, 0.6], color: 0x2c3e50, health: 4, speed: 0.8, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
   // Villagers are peaceful and drop nothing. Iron golems are large, peaceful guards that drop iron.
   [MOB.VILLAGER]: { size: [0.6, 1.9, 0.6], color: 0x6b4a2b, health: 20, speed: 1.0, hostile: false, drops: [] },
-  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25 },
+  // The iron golem stays peaceful until the player hits a villager. Then it attacks the player, with 7 damage.
+  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, damage: 7, guardDamage: 7 },
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true },
 };
 
 // Land passive mobs spawn evenly: cows, sheep, pigs, and rabbits. Fish are spawned in water separately.
-const LAND_PASSIVE = [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT];
+const LAND_PASSIVE = [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT, MOB.CHICKEN];
 export function pickPassiveMob() {
   return LAND_PASSIVE[Math.floor(Math.random() * LAND_PASSIVE.length)];
 }
@@ -93,6 +97,8 @@ export class Mob {
     this.knock = new THREE.Vector3();
     this.health = this.def.health;
     this.dead = false;
+    // An iron golem turns on the player once a villager of its village is hit.
+    this.angry = false;
     this.wanderTimer = 0;
     this.wanderDir = new THREE.Vector2();
     this.attackCooldown = 0;
@@ -182,9 +188,58 @@ export class Mob {
     return true;
   }
 
+  // The point a villager walks to at night: the centre of its village's nearest house doorway, from inside.
+  // Returns null during the day, or when the villager is already inside a house.
+  indoorTarget(night) {
+    if (!night) return null;
+    let best = null;
+    let bestDist = Infinity;
+    for (const h of HOUSES) {
+      const doorX = this.home.x + h.x + Math.floor(h.w / 2) + 0.5;
+      const doorZ = this.home.z + h.z + h.doorZ + 0.5;
+      const d = Math.hypot(doorX - this.pos.x, doorZ - this.pos.z);
+      if (d < bestDist) { bestDist = d; best = { x: doorX, z: doorZ }; }
+    }
+    return best;
+  }
+
+  // Picks what this mob goes for this frame, or null. `others` is the list of live mobs it can see.
+  // A returned target is { x, z, mob } for another mob, or { x, z, mob: null } for the player.
+  chooseTarget(playerPos, others) {
+    const playerDist = Math.hypot(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
+    if (this.type === MOB.ZOMBIE) {
+      // Zombies go for villagers that are close, and otherwise for the player.
+      let best = null;
+      let bestDist = 12;
+      for (const m of others) {
+        if (m.type !== MOB.VILLAGER || m.dead) continue;
+        const d = Math.hypot(m.pos.x - this.pos.x, m.pos.z - this.pos.z);
+        if (d < bestDist) { bestDist = d; best = m; }
+      }
+      if (best) return { x: best.pos.x, z: best.pos.z, mob: best };
+      if (this.def.hostile && playerDist < 16) return { x: playerPos.x, z: playerPos.z, mob: null };
+      return null;
+    }
+    if (this.type === MOB.IRON_GOLEM) {
+      // Golems attack zombies nearby, and the player only once they are angry.
+      let best = null;
+      let bestDist = 14;
+      for (const m of others) {
+        if (m.type !== MOB.ZOMBIE || m.dead) continue;
+        const d = Math.hypot(m.pos.x - this.pos.x, m.pos.z - this.pos.z);
+        if (d < bestDist) { bestDist = d; best = m; }
+      }
+      if (best) return { x: best.pos.x, z: best.pos.z, mob: best };
+      if (this.angry && playerDist < 16) return { x: playerPos.x, z: playerPos.z, mob: null };
+      return null;
+    }
+    return null;
+  }
+
   // Runs AI and physics for one frame. `playerPos` is the player's feet position.
   // `onAttack(mob, damage)` is called when a hostile mob strikes.
-  update(dt, playerPos, onAttack) {
+  // `others` is every other live mob, used for targets. `night` is true when villagers should stay indoors.
+  update(dt, playerPos, onAttack, others = [], night = false) {
     if (this.dead) return;
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
     // A sheared sheep grows its wool back after a while, and can be sheared again.
@@ -196,16 +251,18 @@ export class Mob {
 
     let mx = 0;
     let mz = 0;
-    const dx = playerPos.x - this.pos.x;
-    const dz = playerPos.z - this.pos.z;
-    const dist = Math.hypot(dx, dz);
-
-    if (this.def.hostile && dist < 16) {
-      // Zombie: chase the player and attack when close.
-      if (dist > 0.1) { mx = dx / dist; mz = dz / dist; }
-      if (dist < 1.2 && this.attackCooldown <= 0) {
+    // Hostile and angry mobs pick a target. Zombies attack the player and villagers. Iron golems attack zombies,
+    // and the player too once they are angry. Each target is a mob or the player, and a strike goes to whichever it is.
+    const target = this.chooseTarget(playerPos, others);
+    if (target) {
+      const tdx = target.x - this.pos.x;
+      const tdz = target.z - this.pos.z;
+      const tdist = Math.hypot(tdx, tdz);
+      if (tdist > 0.1) { mx = tdx / tdist; mz = tdz / tdist; }
+      if (tdist < 1.2 && this.attackCooldown <= 0) {
         this.attackCooldown = 1;
-        onAttack(this, this.def.damage);
+        if (target.mob) target.mob.takeHit(this.def.damage ?? this.def.guardDamage, this.pos.x, this.pos.z);
+        else onAttack(this, this.def.damage ?? this.def.guardDamage);
       }
     } else {
       // Cow: wander in a random direction and pause between walks.
@@ -218,6 +275,20 @@ export class Mob {
       }
       mx = this.wanderDir.x;
       mz = this.wanderDir.y;
+    }
+
+    // At night a villager walks to the nearest house door, opens it, and goes inside. It stays in until morning.
+    if (this.type === MOB.VILLAGER && this.home) {
+      const inside = this.indoorTarget(night);
+      if (inside) {
+        const idx = inside.x - this.pos.x;
+        const idz = inside.z - this.pos.z;
+        const idist = Math.hypot(idx, idz);
+        if (idist > 0.2) { mx = idx / idist; mz = idz / idist; }
+        else { mx = 0; mz = 0; }
+        // Standing at the door opens it, so the villager can walk through.
+        if (idist < 1.2) this.world.openDoorAt?.(Math.floor(inside.x), Math.floor(this.pos.y), Math.floor(inside.z));
+      }
     }
 
     // Water mobs stay in water: they turn back when the next step would leave the water.
@@ -356,7 +427,7 @@ export class MobManager {
       return;
     }
     const type = night || roll < 0.3 ? MOB.ZOMBIE : pickPassiveMob();
-    this.trySpawnOnLand(playerPos, type);
+    this.trySpawnOnLand(playerPos, type, night);
   }
 
   // Random ground cell near the player, used by both spawn paths.
@@ -371,7 +442,7 @@ export class MobManager {
 
   // Land mobs spawn on dry ground only. The top solid block of the column must be ground, not water.
   // If the column's top is water, the spot is refused, so a land mob is never placed under the water.
-  trySpawnOnLand(playerPos, type) {
+  trySpawnOnLand(playerPos, type, night = false) {
     const { x, z } = this.spawnCell(playerPos);
     for (let y = CHUNK_HEIGHT - 2; y > 0; y--) {
       const id = this.world.getBlock(x, y, z);
@@ -379,7 +450,8 @@ export class MobManager {
       // The first non-air cell decides it: water means no land spawn here.
       if (id === BLOCK.WATER) return;
       if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR) return;
-      if (type === MOB.ZOMBIE && !isDarkEnough(this.world, x, y + 1, z)) return;
+      // Zombies spawn on dry ground at night. By day they only spawn where it is dark, such as caves.
+      if (type === MOB.ZOMBIE && !night && !isDarkEnough(this.world, x, y + 1, z)) return;
       this.mobs.push(new Mob(this.scene, this.world, type, x + 0.5, y + 1, z + 0.5));
       return;
     }
@@ -436,9 +508,10 @@ export class MobManager {
       const near = villagesNear(playerPos.x, playerPos.z, this.seed, VILLAGE_SPAWN_RANGE);
       this.spawnVillagers(near);
     }
+    const night = timeOfDay > 0.5;
     for (let i = this.mobs.length - 1; i >= 0; i--) {
       const m = this.mobs[i];
-      m.update(dt, playerPos, onAttack);
+      m.update(dt, playerPos, onAttack, this.mobs.filter((o) => o !== m), night);
       // Sunlight damage: a burning zombie takes fire damage each tick until it dies or is shaded.
       const burning = shouldBurn(m, this.world, timeOfDay);
       const burnDamage = burnStep(m, dt, burning);
@@ -449,6 +522,15 @@ export class MobManager {
         m.dispose();
         this.mobs.splice(i, 1);
       }
+    }
+  }
+
+  // Called when the player hits a villager. Every iron golem of that village turns on the player.
+  angerGolemsOf(villager) {
+    if (villager.type !== MOB.VILLAGER || !villager.home) return;
+    for (const m of this.mobs) {
+      if (m.type !== MOB.IRON_GOLEM || m.dead || !m.home) continue;
+      if (m.home.x === villager.home.x && m.home.z === villager.home.z) m.angry = true;
     }
   }
 

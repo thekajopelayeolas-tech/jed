@@ -27,6 +27,7 @@ import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
 import { createSleep, sleepPose } from './sleep.js';
 import { foodPoints } from './hunger.js';
+import { spotBesideBed } from './bed-spawn.js';
 import { createMultiplayer } from './multiplayer.js';
 import { createLobbyUI } from './lobby-ui.js';
 
@@ -74,10 +75,22 @@ function findSpawn(x, z) {
   return SEA_LEVEL + 2;
 }
 
+// The bed the player last slept in, which is where they respawn. Null means the default spawn point.
+let spawnBed = null;
+
 function respawn() {
   // Respawning ends any sleep, so the player is never left asleep at spawn.
   sleep.stop();
   sleepBed = null;
+  // If the player has a bed, respawn beside it. If the bed was broken or is blocked, use the default spawn.
+  if (spawnBed) {
+    world.update(spawnBed.x, spawnBed.z, 2, 16);
+    const spot = spotBesideBed(spawnBed, (x, y, z) => world.getBlock(x, y, z));
+    if (spot) {
+      player.respawn(spot.x + 0.5, spot.y, spot.z + 0.5);
+      return;
+    }
+  }
   const sx = 8;
   const sz = 8;
   // Load nearby terrain before searching for the surface.
@@ -143,6 +156,8 @@ function attack() {
     // Shears never kill a sheep: they are for shearing with right-click, so a hit does nothing extra.
     if (inventory.selectedItem.id === BLOCK.SHEARS && mob.type === MOB.SHEEP) return;
     const dmg = attackDamage(inventory.selectedItem.id);
+    // Hitting a villager angers its village's iron golem.
+    mobs.angerGolemsOf(mob);
     mob.takeHit(dmg, player.pos.x, player.pos.z);
     if (mob.dead) for (const id of mob.def.drops) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
     return;
@@ -217,6 +232,8 @@ const mining = {
       finishBreak(hit);
       this.target = null;
       this.progress = 0;
+      // One break per press: holding the button does not carry on into the next block. Press again to mine it.
+      this.pressed = false;
     }
   },
   // Fraction 0..1 for the crack overlay on the HUD.
@@ -338,6 +355,8 @@ function useOrPlace() {
     if (sleep.start(timeOfDay)) {
       // Remember the bed and put the player on it, so the sleeping view lies on the mattress.
       sleepBed = { x: hit.block.x, y: hit.block.y, z: hit.block.z, facing: world.facingAt(hit.block.x, hit.block.y, hit.block.z) };
+      // Sleeping in a bed sets it as the respawn point, so death brings the player back here.
+      spawnBed = { x: hit.block.x, y: hit.block.y, z: hit.block.z };
       // The feet stand on the top of the bed, so the body is not inside the block.
       player.pos.set(hit.block.x + 0.5, hit.block.y + 1, hit.block.z + 0.5);
       player.vel.set(0, 0, 0);
@@ -571,6 +590,14 @@ function syncRemotes() {
   }
 }
 
+// Clicking Respawn on the death screen puts the player back where they were (beside their bed, or the default
+// spawn), with full health, and hides the screen. The mouse is grabbed again by the next click on the game.
+hud.setDeathHandler(() => {
+  respawn();
+  hud.setDead(false);
+  renderer.domElement.requestPointerLock();
+});
+
 // Restore a saved game if one exists, otherwise start fresh at spawn.
 const saved = loadGame();
 let timeOfDay = 0.25;
@@ -578,6 +605,7 @@ if (saved) {
   world.edits = saved.edits;
   world.facingEdits = saved.facingEdits ?? new Map();
   timeOfDay = saved.timeOfDay ?? timeOfDay;
+  spawnBed = saved.spawnBed ?? null;
   inventory.slots.forEach((s, i) => {
     const src = saved.inventory?.[i];
     if (src) { s.id = src.id; s.count = src.count; }
@@ -603,7 +631,7 @@ if (saved) {
 }
 
 function persist() {
-  saveGame(world, player, inventory, timeOfDay, furnaces, chests);
+  saveGame(world, player, inventory, timeOfDay, furnaces, chests, spawnBed);
 }
 
 setInterval(persist, 30000);
@@ -684,6 +712,12 @@ function frame(now) {
   }
   player.tickHealth(dt);
   if (!sleep.isSleeping()) player.hunger.update(dt, player.isSprinting());
+
+  // No hearts left: show the death screen. The mouse is freed so the Respawn button can be clicked.
+  if (player.health <= 0 && !hud.isDead()) {
+    hud.setDead(true);
+    if (document.pointerLockElement) document.exitPointerLock();
+  }
 
   // Send this player's position to the lobby, and draw the others.
   if (mp.lobby) mp.sendMove(player);

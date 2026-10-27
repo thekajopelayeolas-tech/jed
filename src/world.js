@@ -1,5 +1,8 @@
 import { BLOCK } from './blocks.js';
-import { partOffsets, BED_FOOT } from './building.js';
+import { partOffsets, BED_FOOT, DOOR } from './building.js';
+
+const DOOR_CLOSED = DOOR.DOOR;
+const DOOR_OPEN = DOOR.OPEN_DOOR;
 
 // The bed's head id, repeated from blocks.js (BLOCK.BED) because blocks.js imports building.js.
 const BED_ID = 21;
@@ -90,6 +93,17 @@ export class World {
       if (this.setBlock(c.x, c.y, c.z, BLOCK.AIR)) cleared.push(c);
     }
     return cleared;
+  }
+
+  // Opens a closed door at a cell, so a mob can walk through it. Both halves change together. Does nothing otherwise.
+  openDoorAt(wx, wy, wz) {
+    const id = this.getBlock(wx, wy, wz);
+    if (id !== DOOR_CLOSED) return false;
+    const facing = this.facingAt(wx, wy, wz);
+    const lowerY = this.getBlock(wx, wy - 1, wz) === DOOR_CLOSED ? wy - 1 : wy;
+    this.setBlock(wx, lowerY, wz, DOOR_OPEN, facing);
+    this.setBlock(wx, lowerY + 1, wz, DOOR_OPEN, facing);
+    return true;
   }
 
   // `facing` is which way the block's front points (0..3, see facing.js). It defaults to south.

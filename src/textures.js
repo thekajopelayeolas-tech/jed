@@ -50,9 +50,14 @@ const PAINTERS = {
   glass: (x, y) => (x === 0 || y === 0 || x === 15 || y === 15 ? [0.85, 0.92, 0.96, 0.95] : [0.8, 0.9, 0.95, 0.12]),
   coal: (x, y) => (noise(x, y, 16) > 0.85 ? [0.08, 0.08, 0.08, 1] : jitter(STONE, noise(x, y, 17), 0.18)),
   iron: (x, y) => (noise(x, y, 18) > 0.88 ? [0.85, 0.65, 0.5, 1] : jitter(STONE, noise(x, y, 19), 0.18)),
+  // Torch, drawn like tor.png: a chunky orange flame with a white core on top of a brown stick.
   torch: (x, y) => {
-    if (y < 5 && x >= 6 && x <= 9) return [1, 0.85, 0.2, 1];
-    if (y >= 5 && x >= 7 && x <= 8) return [0.45, 0.3, 0.15, 1];
+    if (y <= 4 && x >= 4 && x <= 11) {
+      if (y >= 1 && y <= 2 && x >= 6 && x <= 9) return [1, 0.97, 0.8, 1];
+      if (y <= 1 && x >= 5 && x <= 10) return [1, 0.85, 0.2, 1];
+      return [1, 0.5, 0.1, 1];
+    }
+    if (y >= 5 && x >= 6 && x <= 9) return x === 9 ? [0.3, 0.2, 0.1, 1] : [0.55, 0.4, 0.22, 1];
     return NONE;
   },
   craftTop: (x, y) => (x % 5 === 0 || y % 5 === 0 ? [0.35, 0.25, 0.12, 1] : PAINTERS.planks(x, y)),
@@ -65,6 +70,12 @@ const PAINTERS = {
   bedRed: (x, y) => jitter([0.8, 0.15, 0.15], noise(x, y, 24), 0.08),
   // Wool: soft white fibres with a little grain.
   wool: (x, y) => jitter([0.92, 0.92, 0.9], noise(x, y, 31), 0.1),
+  // Wheat block: a bundle of golden wheat stalks, bound with a darker band.
+  wheatBlock: (x, y) => {
+    const band = y === 5 || y === 10;
+    if (band) return jitter([0.55, 0.42, 0.2], noise(x, y, 90), 0.06);
+    return jitter([0.85, 0.72, 0.3], noise(x, y, 91), 0.1);
+  },
   // Furnace: grey stone with a dark firebox opening on the front.
   furnaceSide: (x, y) => (x >= 4 && x <= 11 && y >= 6 && y <= 12 ? [0.12, 0.1, 0.09, 1] : jitter([0.45, 0.45, 0.45], noise(x, y, 24), 0.14)),
   furnaceTop: (x, y) => jitter([0.42, 0.42, 0.42], noise(x, y, 25), 0.14),
@@ -163,6 +174,7 @@ export const BLOCK_TILES = {
   // The bed's foot is all red on every face, so it is a plain red tile.
   [BED_FOOT]: { top: 'bedRed', side: 'bedRed', bottom: 'bedRed' },
   [BLOCK.WOOL]: { top: 'wool', side: 'wool', bottom: 'wool' },
+  [BLOCK.WHEAT_BLOCK]: { top: 'wheatBlock', side: 'wheatBlock', bottom: 'wheatBlock' },
   // `front` is the tile for the side the block faces. Blocks without one look the same on every side.
   [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceFront', bottom: 'furnaceTop' },
   [FURNACE_STATE.LIT]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceLitSide', bottom: 'furnaceTop' },

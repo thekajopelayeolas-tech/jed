@@ -3,7 +3,7 @@ import { CHUNK_SIZE, CHUNK_HEIGHT, SEA_LEVEL } from './constants.js';
 import { fbm2D, valueNoise2D } from './noise.js';
 import { BIOME, BIOME_DEFS, biomeAt } from './biomes.js';
 import { LIGHT } from './lighting.js';
-import { REGION, villageCentre, houseCells, pathCells, HOUSES, LEVEL_BOX } from './village.js';
+import { REGION, villageCentre, houseCells, pathCells, farmCells, penCells, HOUSES, LEVEL_BOX } from './village.js';
 
 // Caves: a 3D noise field. Cells where it is near its peak become air, so tunnels wind through the rock.
 // Two octaves give irregular cave shapes. Noise is sampled per cell using a flattened 2D lookup on (x+z, y).
@@ -169,6 +169,8 @@ export class Chunk {
           for (const c of houseCells(house, groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
         }
         for (const c of pathCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
+        for (const c of farmCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
+        for (const c of penCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
         for (const c of cells) {
           const lx = c.x - ox;
           const lz = c.z - oz;
