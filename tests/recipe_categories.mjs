@@ -23,7 +23,6 @@ check('no recipe falls into Other', recipes.every((r) => names.has(r.category)))
 
 // Tools, armour, and building blocks each go to their own category.
 check('a pickaxe is a tool', categoryOf(BLOCK.WOODEN_PICKAXE) === 'Tools & Utilities');
-check('a fishing rod is a tool and utility', categoryOf(BLOCK.FISHING_ROD) === 'Tools & Utilities');
 check('a bucket is a tool and utility', categoryOf(BLOCK.BUCKET) === 'Tools & Utilities');
 check('shears are a tool and utility', categoryOf(BLOCK.SHEARS) === 'Tools & Utilities');
 // Shovels are back as a tool, so a recipe makes each one, and it sits in Tools & Utilities.

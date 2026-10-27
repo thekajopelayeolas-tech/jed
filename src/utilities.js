@@ -1,9 +1,5 @@
-// Tools and utilities: buckets and fishing. Pure rules with no DOM or three.js, so tests run in Node.
+// Tools and utilities: buckets. Pure rules with no DOM or three.js, so tests run in Node.
 import { BLOCK } from './blocks.js';
-
-export const CAST_WAIT = 4;
-// The raw fish a cast brings in. A cast that is still waiting catches nothing.
-export const CAUGHT_FISH = BLOCK.RAW_FISH;
 
 // Using a bucket. An empty bucket fills from a water block, and a water bucket places water into a free cell
 // and gives the empty bucket back. A bucket only ever holds water. Returns the result or null if nothing happens.
@@ -27,17 +23,3 @@ export function useBucket(world, heldId, x, y, z, placeAt) {
   return null;
 }
 
-// Fishing: a cast sets a float on the water, and after CAST_WAIT seconds a fish bites. `cast` is the state
-// { active, timer, cellKey }. Returns the next state and whether a fish was caught this step.
-export function stepFishing(cast, dt) {
-  if (!cast.active) return { cast, caught: false };
-  const timer = cast.timer - dt;
-  if (timer > 0) return { cast: { ...cast, timer }, caught: false };
-  return { cast: { active: false, timer: 0, cellKey: null }, caught: true };
-}
-
-// Starts a cast into a water cell. Only water can take a line.
-export function startCast(world, x, y, z) {
-  if (world.getBlock(x, y, z) !== BLOCK.WATER) return null;
-  return { active: true, timer: CAST_WAIT, cellKey: `${x},${y},${z}` };
-}

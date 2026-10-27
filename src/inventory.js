@@ -32,8 +32,6 @@ export const RECIPES = [
   { result: BLOCK.WOODEN_HOE, count: 1, shaped: true, pattern: ['PP', ' S', ' S'], key: { P: BLOCK.PLANKS, S: BLOCK.STICK } },
   { result: BLOCK.STONE_HOE, count: 1, shaped: true, pattern: ['CC', ' S', ' S'], key: { C: BLOCK.COBBLESTONE, S: BLOCK.STICK } },
   { result: BLOCK.IRON_HOE, count: 1, shaped: true, pattern: ['II', ' S', ' S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
-  // Fishing rod: a stick, with wool for the line at the tip.
-  { result: BLOCK.FISHING_ROD, count: 1, shaped: true, pattern: ['  S', ' SW', 'S W'], key: { S: BLOCK.STICK, W: BLOCK.WOOL } },
   // Bucket: three iron ingots in a V.
   { result: BLOCK.BUCKET, count: 1, shaped: true, pattern: ['I I', ' I '], key: { I: BLOCK.IRON_INGOT } },
   // Shears: two iron ingots over a stick.

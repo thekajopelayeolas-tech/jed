@@ -164,16 +164,6 @@ function hoeSprite(head) {
   ]);
 }
 
-// A fishing rod: a long diagonal rod with a line hanging from the tip.
-function fishingRodSprite() {
-  return layered([
-    // A bent rod: a grip at the bottom-left, a curved tip reaching up and right, a reel where they meet.
-    stroke(3, 13, 7, 9, 0.9, HANDLE),
-    stroke(7, 9, 13, 3, 0.6, HANDLE),
-    ellipse(7, 9, 1.6, 1.6, (px, py) => pick(IRON, px < 7, px, py)),
-    stroke(13, 3, 13, 11, 0.25, { light: [0.9, 0.9, 0.9], dark: [0.6, 0.6, 0.6] }),
-  ]);
-}
 
 // A bucket: a pail with a rim and a handle over the top.
 function bucketSprite(metal) {
@@ -278,7 +268,6 @@ const SPRITES = new Map([
   [BLOCK.WOODEN_HOE, hoeSprite(WOOD_HEAD)],
   [BLOCK.STONE_HOE, hoeSprite(STONE)],
   [BLOCK.IRON_HOE, hoeSprite(IRON)],
-  [BLOCK.FISHING_ROD, fishingRodSprite()],
   [BLOCK.BUCKET, bucketSprite(IRON)],
   [BLOCK.WATER_BUCKET, waterBucketSprite()],
   [BLOCK.SHEARS, shearsSprite()],

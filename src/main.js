@@ -3,7 +3,7 @@ import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
 import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
 import { BOAT_ID, BOAT_TURN_RATE, boatSpotAt, nextBoatPosition } from './boat.js';
-import { useBucket, startCast, stepFishing, CAUGHT_FISH } from './utilities.js';
+import { useBucket } from './utilities.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory } from './inventory.js';
@@ -289,10 +289,7 @@ function shearAimedSheep() {
   return true;
 }
 
-// The fishing line: while active, a float waits on the water and a fish bites after CAST_WAIT seconds.
-let fishing = { active: false, timer: 0, cellKey: null };
-
-// Buckets and the fishing rod. Returns true if the click was used by one of them.
+// Buckets. Returns true if the click was used by one of them.
 function useUtility() {
   const held = inventory.selectedItem.id;
   const hit = targetHit();
@@ -314,23 +311,6 @@ function useUtility() {
       return true;
     }
     return false;
-  }
-  if (held === BLOCK.FISHING_ROD) {
-    if (fishing.active) {
-      // Reel in early: the line is cleared and nothing is caught.
-      fishing = { active: false, timer: 0, cellKey: null };
-      return true;
-    }
-    if (hit) {
-      const cast = startCast(world, hit.block.x, hit.block.y, hit.block.z);
-      if (cast) {
-        fishing = cast;
-        showMessage('Waiting for a bite…');
-        return true;
-      }
-      showMessage('Cast the line onto water.');
-    }
-    return true;
   }
   return false;
 }
@@ -692,15 +672,7 @@ function frame(now) {
   world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
   drops.update(dt, player.pos, inventory);
   if (!anyPanelOpen()) mining.update(dt);
-  // The fishing line counts down. When a fish bites, it goes into the inventory as raw fish.
-  if (fishing.active) {
-    const step = stepFishing(fishing, dt);
-    fishing = step.cast;
-    if (step.caught) {
-      inventory.add(CAUGHT_FISH, 1);
-      showMessage('You caught a fish!');
-    }
-  }
+
   if (!anyPanelOpen()) {
     mobs.update(dt, player.pos, timeOfDay, (mob, damage) => {
       if (player.hurt(damage)) {

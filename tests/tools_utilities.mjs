@@ -4,7 +4,7 @@ import { BLOCK_TILES } from '../src/textures.js';
 import { itemPixels } from '../src/item-icons.js';
 import { breakTime, canHarvest } from '../src/mining.js';
 import { Mob, MOB } from '../src/mobs.js';
-import { useBucket, startCast, stepFishing, CAST_WAIT, CAUGHT_FISH } from '../src/utilities.js';
+import { useBucket } from '../src/utilities.js';
 import { World } from '../src/world.js';
 
 let failed = 0;
@@ -17,7 +17,7 @@ const check = (name, cond) => {
 const newItems = {
   'wooden shovel': BLOCK.WOODEN_SHOVEL, 'stone shovel': BLOCK.STONE_SHOVEL, 'iron shovel': BLOCK.IRON_SHOVEL,
   'wooden hoe': BLOCK.WOODEN_HOE, 'stone hoe': BLOCK.STONE_HOE, 'iron hoe': BLOCK.IRON_HOE,
-  'fishing rod': BLOCK.FISHING_ROD, bucket: BLOCK.BUCKET, 'water bucket': BLOCK.WATER_BUCKET, shears: BLOCK.SHEARS,
+  bucket: BLOCK.BUCKET, 'water bucket': BLOCK.WATER_BUCKET, shears: BLOCK.SHEARS,
 };
 for (const [name, id] of Object.entries(newItems)) {
   check(`${name} is an item with a name and sprite`, isItem(id) && !!BLOCK_DEFS[id]?.name && !!itemPixels(id));
@@ -69,19 +69,6 @@ bw.setBlock(10, 80, 8, BLOCK.STONE);
 check('a water bucket does not pour into a solid block', useBucket(bw, BLOCK.WATER_BUCKET, 0, 0, 0, { x: 10, y: 80, z: 8 }) === null);
 check('a bucket only holds water (cannot fill from stone)', useBucket(bw, BLOCK.BUCKET, 10, 80, 8, null) === null);
 
-// ---- Fishing: a cast waits, then catches a raw fish ----
-const cast = startCast(bw, 9, 80, 8);
-check('a cast needs water', startCast(bw, 10, 80, 8) === null && cast !== null);
-let state = cast;
-let caught = false;
-for (let t = 0; t < CAST_WAIT + 1; t += 0.5) {
-  const step = stepFishing(state, 0.5);
-  state = step.cast;
-  if (step.caught) caught = true;
-}
-check('a cast catches a fish after the wait', caught === true);
-check('the fish caught is raw fish', CAUGHT_FISH === BLOCK.RAW_FISH);
-check('the line is cleared after a catch', state.active === false);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;

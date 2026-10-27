@@ -63,7 +63,8 @@ export const BLOCK = {
   DIAMOND_SWORD: 83,
   // A boat, made from planks. It is placed on water and ridden. Id 85 is new and never reused.
   BOAT: 85,
-  // Tools and utilities. Ids 86 to 92 are new and never reused. Shovels use their old ids (65 to 67), which
+  // Tools and utilities. Ids 86 to 92 are new and never reused. Id 89 was the fishing rod, which was removed,
+  // so 89 stays unused. Shovels use their old ids (65 to 67), which
   // were never given to anything else.
   WOODEN_SHOVEL: 65,
   STONE_SHOVEL: 66,
@@ -71,7 +72,6 @@ export const BLOCK = {
   WOODEN_HOE: 86,
   STONE_HOE: 87,
   IRON_HOE: 88,
-  FISHING_ROD: 89,
   BUCKET: 90,
   WATER_BUCKET: 91,
   SHEARS: 92,
@@ -172,7 +172,6 @@ export const BLOCK_DEFS = {
   [BLOCK.WOODEN_HOE]: { name: 'Wooden Hoe', top: [0.7, 0.55, 0.3], side: [0.7, 0.55, 0.3], bottom: [0.7, 0.55, 0.3], solid: false, transparent: true, item: true },
   [BLOCK.STONE_HOE]: { name: 'Stone Hoe', top: [0.55, 0.55, 0.55], side: [0.55, 0.55, 0.55], bottom: [0.55, 0.55, 0.55], solid: false, transparent: true, item: true },
   [BLOCK.IRON_HOE]: { name: 'Iron Hoe', top: [0.85, 0.85, 0.9], side: [0.85, 0.85, 0.9], bottom: [0.85, 0.85, 0.9], solid: false, transparent: true, item: true },
-  [BLOCK.FISHING_ROD]: { name: 'Fishing Rod', top: [0.6, 0.45, 0.25], side: [0.6, 0.45, 0.25], bottom: [0.6, 0.45, 0.25], solid: false, transparent: true, item: true },
   [BLOCK.BUCKET]: { name: 'Bucket', top: [0.8, 0.8, 0.85], side: [0.8, 0.8, 0.85], bottom: [0.8, 0.8, 0.85], solid: false, transparent: true, item: true },
   [BLOCK.WATER_BUCKET]: { name: 'Water Bucket', top: [0.3, 0.55, 0.95], side: [0.3, 0.55, 0.95], bottom: [0.3, 0.55, 0.95], solid: false, transparent: true, item: true },
   [BLOCK.SHEARS]: { name: 'Shears', top: [0.75, 0.75, 0.8], side: [0.75, 0.75, 0.8], bottom: [0.75, 0.75, 0.8], solid: false, transparent: true, item: true },
