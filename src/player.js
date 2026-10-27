@@ -88,7 +88,7 @@ export class Player {
           const id = this.world.getBlock(x, y, z);
           if (!isSolid(id)) continue;
           // Full cubes block on any overlap. Slabs and stairs only block where their shape is.
-          if (isFullCube(id) || bodyHitsBlock(id, x, y, z, body)) return true;
+          if (isFullCube(id) || bodyHitsBlock(id, x, y, z, body, this.world.facingAt(x, y, z))) return true;
         }
       }
     }

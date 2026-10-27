@@ -48,6 +48,34 @@ export const STAIR_BOXES = [
 export const DOOR_BOX = [[0, 0, 0.4, 1, 1, 0.6]];
 export const OPEN_DOOR_BOX = [[0, 0, 0, 0.12, 1, 1]];
 
+// Rotates one box about the centre of its cell, by a facing (0 south, 1 west, 2 north, 3 east).
+// Each quarter turn maps (x, z) about (0.5, 0.5). Box ends are kept ordered (min, then max).
+export function rotateBox(box, facing) {
+  const [x0, y0, z0, x1, y1, z1] = box;
+  const turns = facing & 3;
+  // Corners of the box in the cell's xz plane, rotated one quarter turn per step.
+  let corners = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+  for (let t = 0; t < turns; t++) {
+    corners = corners.map(([x, z]) => [1 - z, x]);
+  }
+  const xs = corners.map((c) => c[0]);
+  const zs = corners.map((c) => c[1]);
+  return [Math.min(...xs), y0, Math.min(...zs), Math.max(...xs), y1, Math.max(...zs)];
+}
+
+// The collision and rendering boxes for a door in a given state and facing. A closed door is a panel across
+// its cell, turned to match its facing. An open door is that same panel pushed against one edge of the cell,
+// so it lines up with the closed panel's axis and still sits in the doorway.
+export function doorBoxes(open, facing) {
+  const closed = rotateBox(DOOR_BOX[0], facing);
+  if (!open) return [closed];
+  const [x0, y0, z0, x1, y1, z1] = closed;
+  // The closed panel runs along x for facings 1 and 3, and along z for 0 and 2. The open door swings to the
+  // edge on the other axis (the one the closed panel does not run along), so it lies against the cell's side.
+  const alongX = x1 - x0 > z1 - z0;
+  return alongX ? [[x0, y0, 0, x1, y1, 0.12]] : [[0, y0, z0, 0.12, y1, z1]];
+}
+
 // Which shape each building block uses. Full cubes are missing from this table and use FULL_BOX.
 export const SHAPE = {
   [BUILD.WOOD_SLAB]: 'slab',
@@ -63,12 +91,13 @@ export const SHAPE = {
 };
 
 // Returns the collision and rendering boxes for a block id. Full cubes return one box.
-export function boxesFor(id) {
+// `facing` (0..3) turns doors to match the way they face. Other shapes ignore it.
+export function boxesFor(id, facing = 0) {
   const shape = SHAPE[id];
   if (shape === 'slab') return SLAB_BOX;
   if (shape === 'stairs') return STAIR_BOXES;
-  if (shape === 'door') return DOOR_BOX;
-  if (shape === 'open') return OPEN_DOOR_BOX;
+  if (shape === 'door') return doorBoxes(false, facing);
+  if (shape === 'open') return doorBoxes(true, facing);
   return FULL_BOX;
 }
 
@@ -78,8 +107,8 @@ export function isFullCube(id) {
 }
 
 // True if a body with the given world-space bounds overlaps any box of the block at cell (cx, cy, cz).
-export function bodyHitsBlock(id, cx, cy, cz, body) {
-  for (const [x0, y0, z0, x1, y1, z1] of boxesFor(id)) {
+export function bodyHitsBlock(id, cx, cy, cz, body, facing = 0) {
+  for (const [x0, y0, z0, x1, y1, z1] of boxesFor(id, facing)) {
     if (body.maxX > cx + x0 && body.minX < cx + x1 &&
         body.maxY > cy + y0 && body.minY < cy + y1 &&
         body.maxZ > cz + z0 && body.minZ < cz + z1) return true;

@@ -101,7 +101,8 @@ export function buildChunkGeometry(chunk, world) {
 
         // Slabs and stairs are partial boxes, so they are drawn box by box and never culled.
         if (!isFullCube(id)) {
-          for (const box of boxesFor(id)) {
+          // Doors are turned to match the way they face. Other partial blocks ignore the facing.
+          for (const box of boxesFor(id, chunk.getFacing(x, y, z))) {
             emitBox(box, id, def, target, world, chunk, wx, y, wz, x, z);
           }
           continue;

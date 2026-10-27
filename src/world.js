@@ -62,6 +62,16 @@ export class World {
     return true;
   }
 
+  // Which way the block at a world cell faces. Air and unloaded cells report south (0).
+  facingAt(wx, wy, wz) {
+    if (wy < 0 || wy >= CHUNK_HEIGHT) return 0;
+    const cx = Math.floor(wx / CHUNK_SIZE);
+    const cz = Math.floor(wz / CHUNK_SIZE);
+    const chunk = this.chunkAt(cx, cz);
+    if (!chunk) return 0;
+    return chunk.getFacing(wx - cx * CHUNK_SIZE, wy, wz - cz * CHUNK_SIZE);
+  }
+
   // Light level for a channel at a world cell. Returns -1 if the cell's chunk is not loaded.
   getLight(wx, wy, wz, ch) {
     if (wy < 0) return -1;

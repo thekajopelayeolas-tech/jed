@@ -113,6 +113,13 @@ const PAINTERS = {
     if (edge) return jitter([0.25, 0.22, 0.2], noise(x, y, 82), 0.05);
     return jitter(PLANK, noise(x, y, 83), 0.08);
   },
+  // Door front: the same planks and frame, with the handle on this face.
+  doorFront: (x, y) => {
+    const frame = x < 2 || x > 13 || y < 2 || y > 13;
+    if (frame) return jitter([0.36, 0.25, 0.12], noise(x, y, 72), 0.06);
+    if (x >= 10 && x <= 11 && y >= 7 && y <= 8) return [0.85, 0.75, 0.3, 1];
+    return jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 73), 0.08);
+  },
   // Door: wooden planks with a frame, and a small handle near the edge.
   door: (x, y) => {
     const frame = x < 2 || x > 13 || y < 2 || y > 13;
@@ -170,8 +177,9 @@ export const BLOCK_TILES = {
   [BLOCK.BRICK_STAIRS]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },
   [BLOCK.CONCRETE_STAIRS]: { top: 'concrete', side: 'concrete', bottom: 'concrete' },
   [STORAGE.CHEST]: { top: 'chestTop', side: 'chestSide', front: 'chestFront', bottom: 'chestTop' },
-  [DOOR.DOOR]: { top: 'door', side: 'door', bottom: 'door' },
-  [DOOR.OPEN_DOOR]: { top: 'door', side: 'door', bottom: 'door' },
+  // Doors show the handle on their front face. Their other faces are plain door planks.
+  [DOOR.DOOR]: { top: 'door', side: 'door', front: 'doorFront', bottom: 'door' },
+  [DOOR.OPEN_DOOR]: { top: 'door', side: 'door', front: 'doorFront', bottom: 'door' },
 };
 
 // Builds the atlas canvas as a Uint8ClampedArray of RGBA pixels, ready for THREE.DataTexture.

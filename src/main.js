@@ -242,7 +242,9 @@ function useOrPlace() {
   // A door swaps between closed and open. Opening it lets you through, and closing it blocks you again.
   if (hit && (hit.id === DOOR.DOOR || hit.id === DOOR.OPEN_DOOR)) {
     const { x, y, z } = hit.block;
-    world.setBlock(x, y, z, hit.id === DOOR.DOOR ? DOOR.OPEN_DOOR : DOOR.DOOR);
+    // The door keeps its facing when it opens or closes, so it still turns the same way.
+    const facing = world.facingAt(x, y, z);
+    world.setBlock(x, y, z, hit.id === DOOR.DOOR ? DOOR.OPEN_DOOR : DOOR.DOOR, facing);
     return;
   }
   // A chest opens its storage panel. Only one panel at a time, so the others are closed first.
