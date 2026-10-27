@@ -8,6 +8,8 @@ import { villagesNear, LEVEL_BOX } from './village.js';
 
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
+// The jump speed for a mob: high enough to clear one block.
+const JUMP_SPEED = 8.5;
 // Shearing a sheep gives this much wool, and its wool grows back after this many seconds.
 export const SHEARED_WOOL = 2;
 export const SHEEP_WOOL_REGROW = 60;
@@ -19,6 +21,9 @@ export const MOB = {
   PIG: 'pig',
   RABBIT: 'rabbit',
   FISH: 'fish',
+  SALMON: 'salmon',
+  DOLPHIN: 'dolphin',
+  SQUID: 'squid',
   ZOMBIE: 'zombie',
   VILLAGER: 'villager',
   IRON_GOLEM: 'iron_golem',
@@ -41,6 +46,11 @@ const MOB_DEFS = {
   [MOB.RABBIT]: { size: [0.5, 0.6, 0.5], color: 0xb08a62, health: 3, speed: 2.0, hostile: false, drops: [BLOCK.RAW_RABBIT] },
   // Fish swim in water only. Their body is flat and low, and they do not walk on land.
   [MOB.FISH]: { size: [0.6, 0.3, 0.3], color: 0x5c8fc4, health: 2, speed: 1.0, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
+  // Water mobs. All of them stay in the water. Salmon are a second kind of fish, dolphins are larger, and squid
+  // float low in the water.
+  [MOB.SALMON]: { size: [0.6, 0.3, 0.3], color: 0xd9735a, health: 3, speed: 1.2, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
+  [MOB.DOLPHIN]: { size: [0.9, 0.5, 0.5], color: 0x7d8fa6, health: 8, speed: 1.8, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
+  [MOB.SQUID]: { size: [0.6, 0.6, 0.6], color: 0x2c3e50, health: 4, speed: 0.8, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
   // Villagers are peaceful and drop nothing. Iron golems are large, peaceful guards that drop iron.
   [MOB.VILLAGER]: { size: [0.6, 1.9, 0.6], color: 0x6b4a2b, health: 20, speed: 1.0, hostile: false, drops: [] },
   [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25 },
@@ -52,6 +62,14 @@ const LAND_PASSIVE = [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT];
 export function pickPassiveMob() {
   return LAND_PASSIVE[Math.floor(Math.random() * LAND_PASSIVE.length)];
 }
+
+// Water mobs: fish, salmon, dolphin, squid. They spawn only in water and never leave it.
+export const WATER_MOBS = [MOB.FISH, MOB.SALMON, MOB.DOLPHIN, MOB.SQUID];
+export function pickWaterMob() {
+  return WATER_MOBS[Math.floor(Math.random() * WATER_MOBS.length)];
+}
+// The share of spawn attempts that are water mobs.
+const WATER_SPAWN_SHARE = 0.12;
 
 // A cell is dark enough for a zombie when neither sky light nor block light reaches it.
 // Any light at all (a torch, the open sky) means no zombie can spawn there.
@@ -82,6 +100,8 @@ export class Mob {
     // Sheep can be sheared for wool. A sheared sheep keeps living, and its wool grows back after a while.
     this.sheared = false;
     this.woolTimer = 0;
+    // True while the mob is standing on something. Jumps need it, so a mob cannot jump in mid-air.
+    this.onGround = false;
 
     // Collision uses this simple box. The visible model is built separately and animated.
     const [w, h] = this.def.size;
@@ -115,6 +135,20 @@ export class Mob {
     return false;
   }
 
+  // True if a land mob's body would overlap water at this position. Land mobs never enter water.
+  entersWater(px, py, pz) {
+    if (this.def.water) return false;
+    const hw = this.halfWidth;
+    for (let x = Math.floor(px - hw); x <= Math.floor(px + hw - 1e-6); x++) {
+      for (let z = Math.floor(pz - hw); z <= Math.floor(pz + hw - 1e-6); z++) {
+        for (let y = Math.floor(py); y <= Math.floor(py + this.height - 1e-6); y++) {
+          if (this.world.getBlock(x, y, z) === BLOCK.WATER) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // Moves one axis in small steps, stopping at collisions. Returns true if blocked.
   moveAxis(axis, delta) {
     if (delta === 0) return false;
@@ -123,7 +157,8 @@ export class Mob {
     for (let i = 0; i < steps; i++) {
       const next = this.pos.clone();
       next[axis] += step;
-      if (this.collides(next.x, next.y, next.z)) {
+      // A land mob treats water as a wall, so it cannot walk in even if its wander direction took it there.
+      if (this.collides(next.x, next.y, next.z) || this.entersWater(next.x, next.y, next.z)) {
         this.vel[axis] = 0;
         return true;
       }
@@ -132,13 +167,18 @@ export class Mob {
     return false;
   }
 
-  // Steps up one block when walking into a wall, so mobs can climb terrain.
-  tryStepUp(dx, dz) {
+  // Jumps over a single block when walking into it. A mob jumps only when the block in front is one block high
+  // and the space above that block is clear. A taller wall, or a block with no room above it, is not jumped.
+  // Returns true if the mob started a jump.
+  tryJump(dx, dz) {
+    if (this.def.water) return false;
     const nx = this.pos.x + dx;
     const nz = this.pos.z + dz;
+    // The block in front must be solid at foot height (that is the obstacle), and the cell above it must be clear.
     if (!this.collides(nx, this.pos.y, nz)) return false;
     if (this.collides(nx, this.pos.y + 1, nz)) return false;
-    this.pos.y += 1;
+    if (!this.onGround) return false;
+    this.vel.y = JUMP_SPEED;
     return true;
   }
 
@@ -180,15 +220,19 @@ export class Mob {
       mz = this.wanderDir.y;
     }
 
-    // Fish stay in water: a fish turns back when its next step would leave the water.
-    if (this.def.water) {
-      const nx = Math.floor(this.pos.x + mx * 0.3);
-      const nz = Math.floor(this.pos.z + mz * 0.3);
-      if (this.world.getBlock(nx, Math.floor(this.pos.y), nz) !== BLOCK.WATER) {
-        mx = 0;
-        mz = 0;
-        this.wanderDir.set(0, 0);
-      }
+    // Water mobs stay in water: they turn back when the next step would leave the water.
+    // Land mobs stay on land: they turn back when the next step would go into water.
+    // Look ahead far enough to cover one frame of movement, plus the mob's half-width, so a fast mob cannot skip
+    // over the shore in one step.
+    const lookAhead = Math.max(0.6, this.halfWidth + this.def.speed * dt * 2);
+    const nxt = Math.floor(this.pos.x + mx * lookAhead);
+    const nzt = Math.floor(this.pos.z + mz * lookAhead);
+    const stepCell = this.world.getBlock(nxt, Math.floor(this.pos.y), nzt);
+    const wouldLeave = this.def.water ? stepCell !== BLOCK.WATER : stepCell === BLOCK.WATER;
+    if (wouldLeave) {
+      mx = 0;
+      mz = 0;
+      this.wanderDir.set(0, 0);
     }
 
     // Knockback fades out over time and is added on top of the AI movement.
@@ -201,11 +245,15 @@ export class Mob {
 
     const blockedX = this.moveAxis('x', this.vel.x * dt);
     const blockedZ = this.moveAxis('z', this.vel.z * dt);
-    if (blockedX && this.tryStepUp(this.vel.x * dt, 0)) this.vel.x = 0;
-    if (blockedZ && this.tryStepUp(0, this.vel.z * dt)) this.vel.z = 0;
+    // Walking into a single block makes the mob jump over it. A taller wall, or no clear space above, does not.
+    if (blockedX && this.tryJump(this.vel.x * dt, 0)) this.vel.x = 0;
+    if (blockedZ && this.tryJump(0, this.vel.z * dt)) this.vel.z = 0;
 
     const falling = this.vel.y < 0;
-    if (this.moveAxis('y', this.vel.y * dt) && falling) this.vel.y = 0;
+    const landed = this.moveAxis('y', this.vel.y * dt) && falling;
+    if (landed) this.vel.y = 0;
+    // On the ground when the fall was stopped by a block below. A jump lifts the mob off the ground.
+    this.onGround = landed;
 
     this.group.position.copy(this.pos);
     // Hit flash tints every part red for a moment. Otherwise each part keeps its own colour.
@@ -301,28 +349,74 @@ export class MobManager {
   trySpawn(playerPos, timeOfDay) {
     const night = timeOfDay > 0.5;
     const roll = Math.random();
-    const type = night || roll < 0.3 ? MOB.ZOMBIE : roll < 0.4 ? MOB.FISH : pickPassiveMob();
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 14 + Math.random() * 10;
-    const x = Math.floor(playerPos.x + Math.cos(angle) * dist);
-    const z = Math.floor(playerPos.z + Math.sin(angle) * dist);
-    if (type === MOB.FISH) {
-      // Fish spawn at the surface of water: the top water cell with open air above it.
-      for (let y = CHUNK_HEIGHT - 2; y > 0; y--) {
-        if (this.world.getBlock(x, y, z) !== BLOCK.WATER) continue;
-        if (this.world.getBlock(x, y + 1, z) === BLOCK.AIR) {
-          this.mobs.push(new Mob(this.scene, this.world, type, x + 0.5, y + 0.2, z + 0.5));
-        }
-        return;
-      }
+    // Water mobs (fish, salmon, dolphin, squid) are one share of spawns. Everything else is a land mob.
+    if (roll < WATER_SPAWN_SHARE) {
+      this.trySpawnInWater(playerPos, pickWaterMob());
       return;
     }
+    const type = night || roll < 0.3 ? MOB.ZOMBIE : pickPassiveMob();
+    this.trySpawnOnLand(playerPos, type);
+  }
+
+  // Random ground cell near the player, used by both spawn paths.
+  spawnCell(playerPos) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 14 + Math.random() * 10;
+    return {
+      x: Math.floor(playerPos.x + Math.cos(angle) * dist),
+      z: Math.floor(playerPos.z + Math.sin(angle) * dist),
+    };
+  }
+
+  // Land mobs spawn on dry ground only. The top solid block of the column must be ground, not water.
+  // If the column's top is water, the spot is refused, so a land mob is never placed under the water.
+  trySpawnOnLand(playerPos, type) {
+    const { x, z } = this.spawnCell(playerPos);
     for (let y = CHUNK_HEIGHT - 2; y > 0; y--) {
       const id = this.world.getBlock(x, y, z);
-      if (id === 0 || id === 7) continue;
-      if (this.world.getBlock(x, y + 1, z) !== 0) return;
+      if (id === BLOCK.AIR) continue;
+      // The first non-air cell decides it: water means no land spawn here.
+      if (id === BLOCK.WATER) return;
+      if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR) return;
       if (type === MOB.ZOMBIE && !isDarkEnough(this.world, x, y + 1, z)) return;
       this.mobs.push(new Mob(this.scene, this.world, type, x + 0.5, y + 1, z + 0.5));
+      return;
+    }
+  }
+
+  // The top non-air cell of a column (the surface), searching down from the top of the world.
+  surfaceY(x, z) {
+    for (let y = CHUNK_HEIGHT - 2; y > 0; y--) {
+      if (this.world.getBlock(x, y, z) !== BLOCK.AIR) return y;
+    }
+    return 0;
+  }
+
+  // Water mobs spawn in water and stay there. Fish-like mobs sit near the surface, and squid lower in the water.
+  // A spawn needs water at the cell and air or water above it, so the mob has room to swim.
+  trySpawnInWater(playerPos, type) {
+    // A random spot near the player would rarely be water, so sample a few spots and keep the first that is water.
+    // Water spots are sampled across the whole spawn range (a disc around the player), not only the ring the land
+    // mobs use, so a lake near the player is found. Each sample is a column; the first with water on top wins.
+    let spot = null;
+    for (let tries = 0; tries < 40 && !spot; tries++) {
+      const angle = Math.random() * Math.PI * 2;
+      const d = Math.sqrt(Math.random()) * (14 + 10);
+      const x = Math.floor(playerPos.x + Math.cos(angle) * d);
+      const z = Math.floor(playerPos.z + Math.sin(angle) * d);
+      if (this.world.getBlock(x, this.surfaceY(x, z), z) === BLOCK.WATER) spot = { x, z };
+    }
+    if (!spot) return;
+    const { x, z } = spot;
+    for (let y = CHUNK_HEIGHT - 2; y > 0; y--) {
+      if (this.world.getBlock(x, y, z) !== BLOCK.WATER) continue;
+      // Found the surface water cell of this column.
+      if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR && this.world.getBlock(x, y + 1, z) !== BLOCK.WATER) return;
+      const depth = type === MOB.SQUID ? 2 : 0;
+      const sy = Math.max(1, y - depth);
+      // The spawn cell must be water, with water around it so the mob is not on the bottom or at the shore.
+      if (this.world.getBlock(x, sy, z) !== BLOCK.WATER) return;
+      this.mobs.push(new Mob(this.scene, this.world, type, x + 0.5, sy + 0.2, z + 0.5));
       return;
     }
   }
