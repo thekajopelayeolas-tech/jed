@@ -14,6 +14,8 @@ export const SMELT = {
   [BLOCK.RAW_FISH]: BLOCK.COOKED_FISH,
   [BLOCK.RAW_CHICKEN]: BLOCK.COOKED_CHICKEN,
   [BLOCK.IRON_ORE]: BLOCK.IRON_INGOT,
+  // Cobblestone smelts into smooth stone, so stone is made in a furnace.
+  [BLOCK.COBBLESTONE]: BLOCK.STONE,
 };
 
 // Seconds of smelting that one fuel item pays for. Coal burns longest, then wood, then planks.

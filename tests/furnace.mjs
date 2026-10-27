@@ -10,7 +10,8 @@ const check = (name, cond) => {
 // What smelts into what.
 check('raw beef cooks into cooked beef', smeltResult(BLOCK.BEEF) === BLOCK.COOKED_BEEF);
 check('iron ore smelts into an iron ingot', smeltResult(BLOCK.IRON_ORE) === BLOCK.IRON_INGOT);
-check('stone does not smelt', smeltResult(BLOCK.STONE) === null);
+check('cobblestone smelts into stone', smeltResult(BLOCK.COBBLESTONE) === BLOCK.STONE);
+check('stone does not smelt again', smeltResult(BLOCK.STONE) === null);
 
 // Fuel: coal and wood burn, other things do not.
 check('coal is fuel', fuelSeconds(BLOCK.COAL) > 0);
