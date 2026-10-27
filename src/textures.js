@@ -1,5 +1,5 @@
 import { BLOCK } from './blocks.js';
-import { DOOR, STORAGE, FURNACE_STATE } from './building.js';
+import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 
 // Procedural 16x16 pixel textures packed into one atlas. No image files are needed.
 export const TILE = 16;
@@ -61,6 +61,8 @@ const PAINTERS = {
   bedTop: (x, y) => (y < 6 ? jitter([0.95, 0.95, 0.92], noise(x, y, 20), 0.06) : jitter([0.8, 0.15, 0.15], noise(x, y, 21), 0.08)),
   // Bed side: red blanket over a wood frame at the bottom.
   bedSide: (x, y) => (y >= 13 ? jitter([0.4, 0.28, 0.14], noise(x, y, 22), 0.1) : jitter([0.7, 0.12, 0.12], noise(x, y, 23), 0.08)),
+  // Bed foot: solid red blanket on every face, with a little grain so it reads as cloth.
+  bedRed: (x, y) => jitter([0.8, 0.15, 0.15], noise(x, y, 24), 0.08),
   // Wool: soft white fibres with a little grain.
   wool: (x, y) => jitter([0.92, 0.92, 0.9], noise(x, y, 31), 0.1),
   // Furnace: grey stone with a dark firebox opening on the front.
@@ -158,6 +160,8 @@ export const BLOCK_TILES = {
   [BLOCK.TORCH]: { top: 'torch', side: 'torch', bottom: 'torch' },
   [BLOCK.CRAFTING_TABLE]: { top: 'craftTop', side: 'craftSide', bottom: 'planks' },
   [BLOCK.BED]: { top: 'bedTop', side: 'bedSide', bottom: 'planks' },
+  // The bed's foot is all red on every face, so it is a plain red tile.
+  [BED_FOOT]: { top: 'bedRed', side: 'bedRed', bottom: 'bedRed' },
   [BLOCK.WOOL]: { top: 'wool', side: 'wool', bottom: 'wool' },
   // `front` is the tile for the side the block faces. Blocks without one look the same on every side.
   [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceFront', bottom: 'furnaceTop' },

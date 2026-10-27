@@ -33,12 +33,21 @@ export const FURNACE_STATE = {
 // The bed's block id, repeated here because blocks.js imports this file, so importing BLOCK back would be a cycle.
 // It is fixed (BLOCK.BED is 21 in blocks.js) and checked by a test.
 const BED_ID = 21;
+// The bed's second half (the foot). It is all red, so it is its own block. Placing a bed writes a foot next to it.
+// Id 80 is new and never reused.
+export const BED_FOOT = 80;
 export function partOffsets(id, facing) {
   if (id === DOOR.DOOR || id === DOOR.OPEN_DOOR) return [{ dx: 0, dy: 1, dz: 0 }];
   if (id === BED_ID) {
     const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
     return [{ dx: sx, dy: 0, dz: sz }];
   }
+  if (id === BED_FOOT) {
+    // The foot's head is the other cell, one step back along the facing.
+    const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
+    return [{ dx: -sx, dy: 0, dz: -sz }];
+  }
+
   return [];
 }
 

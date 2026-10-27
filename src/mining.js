@@ -1,5 +1,5 @@
 import { BLOCK, TOOL, TOOL_ITEMS } from './blocks.js';
-import { STORAGE, FURNACE_STATE } from './building.js';
+import { STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 
 // Hardness: seconds to mine with bare hands. Tool class and minimum tier decide the drop and speed.
 // `tool` is the class that mines this block fastest. `tier` is the lowest tool tier that yields its drop.
@@ -21,6 +21,8 @@ const HARDNESS = {
   [BLOCK.GLASS]: { hardness: 0.3, tool: null, tier: 0 },
   [BLOCK.WOOL]: { hardness: 0.8, tool: null, tier: 0 },
   [BLOCK.BED]: { hardness: 0.6, tool: null, tier: 0 },
+  // The bed's foot is mined like the bed head.
+  [BED_FOOT]: { hardness: 0.6, tool: null, tier: 0 },
   [BLOCK.TORCH]: { hardness: 0, tool: null, tier: 0 },
   // The lit furnace is mined like the furnace it is.
   [FURNACE_STATE.LIT]: { hardness: 3.5, tool: TOOL.PICKAXE, tier: 1 },

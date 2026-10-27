@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
-import { DOOR, STORAGE, FURNACE_STATE } from './building.js';
+import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
 import { World } from './world.js';
 import { Player } from './player.js';
@@ -127,7 +127,8 @@ function finishBreak(hit) {
   const cleared = world.breakWhole(x, y, z);
   if (cleared.length > 0) {
     // One item per block, not one per cell, so a two-part block still gives a single door or bed.
-    if (drop) drops.spawn(DROP_FOR[hit.id] ?? hit.id, x, y, z);
+    // Breaking the bed's foot gives back a bed, the same as breaking its head.
+    if (drop) drops.spawn(DROP_FOR[hit.id] ?? (hit.id === BED_FOOT ? BLOCK.BED : hit.id), x, y, z);
     // A furnace also gives back everything it held, so breaking it never loses items.
     if (hit.id === BLOCK.FURNACE || hit.id === FURNACE_STATE.LIT) {
       const key = furnaceKey(x, y, z);
@@ -238,7 +239,8 @@ function furnaceAt(x, y, z) {
 // Right click: sleep if the target is a bed, open a furnace, eat if the held item is food, otherwise place the held block.
 function useOrPlace() {
   const hit = targetHit();
-  if (hit && hit.id === BLOCK.BED) {
+  // Either half of a bed starts sleep, so you can sleep from the head or the foot.
+  if (hit && (hit.id === BLOCK.BED || hit.id === BED_FOOT)) {
     if (!sleep.start(timeOfDay)) showMessage('You can only sleep at night.');
     return;
   }

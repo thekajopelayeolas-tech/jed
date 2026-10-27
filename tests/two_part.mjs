@@ -1,4 +1,4 @@
-import { partOffsets, DOOR } from '../src/building.js';
+import { partOffsets, DOOR, BED_FOOT } from '../src/building.js';
 import { BLOCK } from '../src/blocks.js';
 import { World } from '../src/world.js';
 import { FACING } from '../src/facing.js';
@@ -43,7 +43,8 @@ check('a refused door leaves its lower cell empty', w.getBlock(x + 2, y, z) === 
 w.setBlock(x + 4, y, z, BLOCK.AIR);
 w.setBlock(x + 5, y, z, BLOCK.AIR);
 check('a bed places across two free cells', w.placeWhole(x + 4, y, z, BLOCK.BED, FACING.EAST));
-check('the second half of the bed is in the next cell', w.getBlock(x + 5, y, z) === BLOCK.BED);
+check('the second half of the bed is the foot, in the next cell', w.getBlock(x + 5, y, z) === BED_FOOT);
+check('the bed head is still the bed block', w.getBlock(x + 4, y, z) === BLOCK.BED);
 
 // Breaking either half of a door removes both halves.
 const brokenTop = w.breakWhole(x, y + 1, z);

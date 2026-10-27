@@ -1,5 +1,5 @@
 // Block registry. id 0 is air. Colors are per face: [top, side, bottom].
-import { BUILD, DOOR, STORAGE, FURNACE_STATE } from './building.js';
+import { BUILD, DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 
 export const BLOCK = {
   AIR: 0,
@@ -129,6 +129,7 @@ export const BLOCK_DEFS = {
   [BLOCK.COAL]: { name: 'Coal', top: [0.12, 0.12, 0.12], side: [0.12, 0.12, 0.12], bottom: [0.12, 0.12, 0.12], solid: false, transparent: true, item: true },
   [BLOCK.WOOL]: { name: 'Wool', top: [0.92, 0.92, 0.9], side: [0.92, 0.92, 0.9], bottom: [0.92, 0.92, 0.9], solid: true, transparent: false },
   [BLOCK.BED]: { name: 'Bed', top: [0.8, 0.15, 0.15], side: [0.6, 0.12, 0.12], bottom: [0.5, 0.4, 0.3], solid: true, transparent: false },
+  [BED_FOOT]: { name: 'Bed Foot', top: [0.8, 0.15, 0.15], side: [0.8, 0.15, 0.15], bottom: [0.8, 0.15, 0.15], solid: true, transparent: false },
   [BLOCK.WOODEN_PICKAXE]: { name: 'Wooden Pickaxe', top: [0.7, 0.55, 0.3], side: [0.7, 0.55, 0.3], bottom: [0.7, 0.55, 0.3], solid: false, transparent: true, item: true },
   [BLOCK.WOODEN_AXE]: { name: 'Wooden Axe', top: [0.7, 0.55, 0.3], side: [0.7, 0.55, 0.3], bottom: [0.7, 0.55, 0.3], solid: false, transparent: true, item: true },
   [BLOCK.WOODEN_SWORD]: { name: 'Wooden Sword', top: [0.7, 0.55, 0.3], side: [0.7, 0.55, 0.3], bottom: [0.7, 0.55, 0.3], solid: false, transparent: true, item: true },

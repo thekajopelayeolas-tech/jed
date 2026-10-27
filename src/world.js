@@ -1,5 +1,8 @@
 import { BLOCK } from './blocks.js';
-import { partOffsets } from './building.js';
+import { partOffsets, BED_FOOT } from './building.js';
+
+// The bed's head id, repeated from blocks.js (BLOCK.BED) because blocks.js imports building.js.
+const BED_ID = 21;
 import { Chunk } from './chunk.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { buildChunkGeometry, createChunkMeshes } from './mesher.js';
@@ -48,8 +51,11 @@ export class World {
       const cur = this.getBlock(wx + p.dx, wy + p.dy, wz + p.dz);
       if (cur !== BLOCK.AIR && cur !== BLOCK.WATER) return false;
     }
-    if (!this.setBlock(wx, wy, wz, id, facing)) return false;
-    for (const p of parts) this.setBlock(wx + p.dx, wy + p.dy, wz + p.dz, id, facing);
+    // A bed's head is the bed block, and its other half is the foot, which has its own red texture.
+    const headId = id;
+    const otherId = id === BED_ID ? BED_FOOT : id;
+    if (!this.setBlock(wx, wy, wz, headId, facing)) return false;
+    for (const p of parts) this.setBlock(wx + p.dx, wy + p.dy, wz + p.dz, otherId, facing);
     return true;
   }
 
@@ -63,17 +69,21 @@ export class World {
     // A door's other half is directly above or below it. A bed's other half is along its facing, in either
     // direction (the same facing is stored on both halves, so the bed's first half is the one behind).
     const facing = this.facingAt(wx, wy, wz);
-    const candidates = [[0, -1, 0], [0, 1, 0]];
-    if (id === 21) {
-      const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
-      candidates.push([sx, 0, sz], [-sx, 0, -sz]);
-    }
+    const isBed = id === BED_ID || id === BED_FOOT;
+    const bedIds = [BED_ID, BED_FOOT];
+    const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
+    // Each shape has its own neighbours. A door's other half is the cell above or below. A bed's other half is
+    // the cell along its facing, in either direction, and it may be either bed id (head or foot).
+    const candidates = isBed
+      ? [[sx, 0, sz], [-sx, 0, -sz]]
+      : [[0, -1, 0], [0, 1, 0]];
     for (const [dx, dy, dz] of candidates) {
       const ox = wx + dx;
       const oy = wy + dy;
       const oz = wz + dz;
-      if (this.getBlock(ox, oy, oz) !== id) continue;
-      cells.push({ x: ox, y: oy, z: oz });
+      const other = this.getBlock(ox, oy, oz);
+      const sameBlock = isBed ? bedIds.includes(other) : other === id;
+      if (sameBlock) cells.push({ x: ox, y: oy, z: oz });
     }
     const cleared = [];
     for (const c of cells) {
