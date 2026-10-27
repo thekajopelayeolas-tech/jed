@@ -8,6 +8,9 @@ import { villagesNear, LEVEL_BOX } from './village.js';
 
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
+// Shearing a sheep gives this much wool, and its wool grows back after this many seconds.
+export const SHEARED_WOOL = 2;
+export const SHEEP_WOOL_REGROW = 60;
 
 // Mob types.
 export const MOB = {
@@ -76,6 +79,9 @@ export class Mob {
     this.wanderDir = new THREE.Vector2();
     this.attackCooldown = 0;
     this.hitFlash = 0;
+    // Sheep can be sheared for wool. A sheared sheep keeps living, and its wool grows back after a while.
+    this.sheared = false;
+    this.woolTimer = 0;
 
     // Collision uses this simple box. The visible model is built separately and animated.
     const [w, h] = this.def.size;
@@ -141,6 +147,11 @@ export class Mob {
   update(dt, playerPos, onAttack) {
     if (this.dead) return;
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    // A sheared sheep grows its wool back after a while, and can be sheared again.
+    if (this.sheared) {
+      this.woolTimer -= dt;
+      if (this.woolTimer <= 0) this.sheared = false;
+    }
     this.hitFlash = Math.max(0, this.hitFlash - dt);
 
     let mx = 0;
@@ -208,6 +219,15 @@ export class Mob {
     this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
     this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
     if (mx !== 0 || mz !== 0) this.group.rotation.y = Math.atan2(-mx, -mz);
+  }
+
+  // Shears a sheep. Returns the wool it gives (2), or 0 if it cannot be sheared (not a sheep, or already sheared).
+  // The sheep lives on, and its wool grows back after SHEEP_WOOL_REGROW seconds.
+  shear() {
+    if (this.type !== MOB.SHEEP || this.sheared || this.dead) return 0;
+    this.sheared = true;
+    this.woolTimer = SHEEP_WOOL_REGROW;
+    return SHEARED_WOOL;
   }
 
   // Applies damage and knockback away from (fromX, fromZ). Returns true if the mob died.

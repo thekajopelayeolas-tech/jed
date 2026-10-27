@@ -141,6 +141,69 @@ function armourSprite(part, palette) {
   ]);
 }
 
+  // A spade: a rounded blade at the top that narrows to a point, on a handle.
+function shovelSprite(head) {
+  return layered([
+    {
+      inside: (px, py) => {
+        if (py < 1 || py > 9.5) return false;
+        const half = py < 6 ? 3.2 : 3.2 - ((py - 6) / 3.5) ** 2 * 3.2;
+        return Math.abs(px - 8) < Math.max(0.5, half);
+      },
+      color: (px, py) => pick(head, px < 8, px, py),
+    },
+    stroke(8, 9, 8, 14.5, 0.9, HANDLE),
+  ]);
+}
+
+// A hoe: a flat blade set across the top of the handle.
+function hoeSprite(head) {
+  return layered([
+    poly([[3, 3], [13, 3], [13, 6], [8, 6], [8, 5], [3, 5]], (px, py) => pick(head, py < 4.5, px, py)),
+    stroke(8, 5, 8, 14.5, 0.9, HANDLE),
+  ]);
+}
+
+// A fishing rod: a long diagonal rod with a line hanging from the tip.
+function fishingRodSprite() {
+  return layered([
+    // A bent rod: a grip at the bottom-left, a curved tip reaching up and right, a reel where they meet.
+    stroke(3, 13, 7, 9, 0.9, HANDLE),
+    stroke(7, 9, 13, 3, 0.6, HANDLE),
+    ellipse(7, 9, 1.6, 1.6, (px, py) => pick(IRON, px < 7, px, py)),
+    stroke(13, 3, 13, 11, 0.25, { light: [0.9, 0.9, 0.9], dark: [0.6, 0.6, 0.6] }),
+  ]);
+}
+
+// A bucket: a pail with a rim and a handle over the top.
+function bucketSprite(metal) {
+  return layered([
+    poly([[4, 6], [12, 6], [11, 14], [5, 14]], (px, py) => pick(metal, px < 8, px, py)),
+    stroke(4, 4, 12, 4, 0.7, metal),
+    stroke(4, 2, 4, 6, 0.5, metal),
+    stroke(12, 2, 12, 6, 0.5, metal),
+  ]);
+}
+
+// A water bucket: the same pail, with blue water showing at the top.
+function waterBucketSprite() {
+  return layered([
+    poly([[4, 8], [12, 8], [11, 14], [5, 14]], (px, py) => pick(IRON, px < 8, px, py)),
+    poly([[4, 5], [12, 5], [12, 8], [4, 8]], (px, py) => tint([0.3, 0.55, 0.95], grain(px, py) * 0.08)),
+    stroke(4, 3, 12, 3, 0.6, IRON),
+  ]);
+}
+
+// Shears: two blades crossed at a pivot, with ring handles at the bottom.
+function shearsSprite() {
+  return layered([
+    stroke(4, 3, 11, 12, 0.7, IRON),
+    stroke(12, 3, 5, 12, 0.7, IRON),
+    ellipse(4.5, 13, 1.8, 1.8, (px, py) => pick(IRON, px < 4, px, py)),
+    ellipse(11.5, 13, 1.8, 1.8, (px, py) => pick(IRON, px < 11, px, py)),
+  ]);
+}
+
 const SPRITES = new Map([
   [BLOCK.STICK, stroke(3, 13, 13, 3, 1.4, HANDLE)],
   [BLOCK.COOKED_BEEF, ellipse(8, 8.5, 6.2, 4.8, (px, py) => {
@@ -207,8 +270,18 @@ const SPRITES = new Map([
   [BLOCK.STONE_SWORD, swordSprite(STONE)],
   [BLOCK.IRON_PICKAXE, pickaxeSprite(IRON)],
   [BLOCK.IRON_SWORD, swordSprite(IRON)],
-  // A boat: a wooden hull with a raised bow on the right and an open top.
+// A boat: a wooden hull with a raised bow on the right and an open top.
   [BLOCK.BOAT, poly([[2, 7], [4, 11], [12, 11], [14, 6], [13, 5], [3, 5]], (px, py) => pick(WOOD_HEAD, py < 8, px, py))],
+  [BLOCK.WOODEN_SHOVEL, shovelSprite(WOOD_HEAD)],
+  [BLOCK.STONE_SHOVEL, shovelSprite(STONE)],
+  [BLOCK.IRON_SHOVEL, shovelSprite(IRON)],
+  [BLOCK.WOODEN_HOE, hoeSprite(WOOD_HEAD)],
+  [BLOCK.STONE_HOE, hoeSprite(STONE)],
+  [BLOCK.IRON_HOE, hoeSprite(IRON)],
+  [BLOCK.FISHING_ROD, fishingRodSprite()],
+  [BLOCK.BUCKET, bucketSprite(IRON)],
+  [BLOCK.WATER_BUCKET, waterBucketSprite()],
+  [BLOCK.SHEARS, shearsSprite()],
   [BLOCK.DIAMOND_PICKAXE, pickaxeSprite(DIAMOND)],
   [BLOCK.DIAMOND_AXE, axeSprite(DIAMOND)],
   [BLOCK.DIAMOND_SWORD, swordSprite(DIAMOND)],

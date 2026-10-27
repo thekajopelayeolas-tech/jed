@@ -3,6 +3,7 @@ import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
 import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
 import { BOAT_ID, BOAT_TURN_RATE, boatSpotAt, nextBoatPosition } from './boat.js';
+import { useBucket, startCast, stepFishing, CAUGHT_FISH } from './utilities.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory } from './inventory.js';
@@ -20,7 +21,7 @@ import { Furnace, emptyFurnaceInto } from './smelting.js';
 import { Chest, emptyChestInto } from './chest.js';
 import { createChestUI } from './chest-ui.js';
 import { PARTS, armourInfo, defencePoints } from './armour.js';
-import { MobManager } from './mobs.js';
+import { MobManager, MOB } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
@@ -139,6 +140,8 @@ function attack() {
     : REACH;
   const mob = mobs.raycastMob(eye, dir, blockDist);
   if (mob) {
+    // Shears never kill a sheep: they are for shearing with right-click, so a hit does nothing extra.
+    if (inventory.selectedItem.id === BLOCK.SHEARS && mob.type === MOB.SHEEP) return;
     const dmg = attackDamage(inventory.selectedItem.id);
     mob.takeHit(dmg, player.pos.x, player.pos.z);
     if (mob.dead) for (const id of mob.def.drops) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
@@ -266,7 +269,76 @@ function furnaceAt(x, y, z) {
 }
 
 // Right click: sleep if the target is a bed, open a furnace, eat if the held item is food, otherwise place the held block.
+// Right-click a sheep while holding shears: take 2 wool, and the sheep lives on. Returns true if a sheep was sheared.
+function shearAimedSheep() {
+  if (inventory.selectedItem.id !== BLOCK.SHEARS) return false;
+  const eye = player.eye;
+  const dir = player.lookDir();
+  const blockHit = targetHit();
+  const blockDist = blockHit
+    ? eye.distanceTo(new THREE.Vector3(blockHit.block.x + 0.5, blockHit.block.y + 0.5, blockHit.block.z + 0.5))
+    : REACH;
+  const mob = mobs.raycastMob(eye, dir, blockDist);
+  if (!mob || mob.type !== MOB.SHEEP) return false;
+  const wool = mob.shear();
+  if (wool === 0) {
+    showMessage('This sheep is already sheared.');
+    return true;
+  }
+  for (let i = 0; i < wool; i++) drops.spawn(BLOCK.WOOL, mob.pos.x, mob.pos.y, mob.pos.z);
+  return true;
+}
+
+// The fishing line: while active, a float waits on the water and a fish bites after CAST_WAIT seconds.
+let fishing = { active: false, timer: 0, cellKey: null };
+
+// Buckets and the fishing rod. Returns true if the click was used by one of them.
+function useUtility() {
+  const held = inventory.selectedItem.id;
+  const hit = targetHit();
+  if (held === BLOCK.BUCKET || held === BLOCK.WATER_BUCKET) {
+    if (held === BLOCK.BUCKET && hit && hit.id === BLOCK.WATER) {
+      useBucket(world, held, hit.block.x, hit.block.y, hit.block.z, null);
+      inventory.consumeSelected(1);
+      inventory.add(BLOCK.WATER_BUCKET, 1);
+      return true;
+    }
+    if (held === BLOCK.WATER_BUCKET && hit) {
+      const r = useBucket(world, held, 0, 0, 0, hit.place);
+      if (r) {
+        inventory.consumeSelected(1);
+        inventory.add(BLOCK.BUCKET, 1);
+      } else {
+        showMessage('No room to pour the water here.');
+      }
+      return true;
+    }
+    return false;
+  }
+  if (held === BLOCK.FISHING_ROD) {
+    if (fishing.active) {
+      // Reel in early: the line is cleared and nothing is caught.
+      fishing = { active: false, timer: 0, cellKey: null };
+      return true;
+    }
+    if (hit) {
+      const cast = startCast(world, hit.block.x, hit.block.y, hit.block.z);
+      if (cast) {
+        fishing = cast;
+        showMessage('Waiting for a bite…');
+        return true;
+      }
+      showMessage('Cast the line onto water.');
+    }
+    return true;
+  }
+  return false;
+}
+
 function useOrPlace() {
+  // Shears on a sheep take its wool. Otherwise the held item acts as usual.
+  if (shearAimedSheep()) return;
+  if (useUtility()) return;
   const hit = targetHit();
   // Holding a boat: right-click on water places it. Right-click on a placed boat gets in it.
   if (inventory.selectedItem.id === BOAT_ID && inventory.selectedItem.count > 0) {
@@ -620,6 +692,15 @@ function frame(now) {
   world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
   drops.update(dt, player.pos, inventory);
   if (!anyPanelOpen()) mining.update(dt);
+  // The fishing line counts down. When a fish bites, it goes into the inventory as raw fish.
+  if (fishing.active) {
+    const step = stepFishing(fishing, dt);
+    fishing = step.cast;
+    if (step.caught) {
+      inventory.add(CAUGHT_FISH, 1);
+      showMessage('You caught a fish!');
+    }
+  }
   if (!anyPanelOpen()) {
     mobs.update(dt, player.pos, timeOfDay, (mob, damage) => {
       if (player.hurt(damage)) {

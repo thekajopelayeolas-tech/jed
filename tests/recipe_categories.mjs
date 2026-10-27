@@ -22,9 +22,13 @@ const names = new Set(CATEGORIES.map((c) => c.name));
 check('no recipe falls into Other', recipes.every((r) => names.has(r.category)));
 
 // Tools, armour, and building blocks each go to their own category.
-check('a pickaxe is a tool', categoryOf(BLOCK.WOODEN_PICKAXE) === 'Tools');
-// Shovels were removed, so no recipe makes one, and the shovel ids are not items any more.
-check('no recipe makes a shovel', RECIPES.every((r) => !/SHOVEL/.test(Object.keys(BLOCK).find((k) => BLOCK[k] === r.result) ?? '')));
+check('a pickaxe is a tool', categoryOf(BLOCK.WOODEN_PICKAXE) === 'Tools & Utilities');
+check('a fishing rod is a tool and utility', categoryOf(BLOCK.FISHING_ROD) === 'Tools & Utilities');
+check('a bucket is a tool and utility', categoryOf(BLOCK.BUCKET) === 'Tools & Utilities');
+check('shears are a tool and utility', categoryOf(BLOCK.SHEARS) === 'Tools & Utilities');
+// Shovels are back as a tool, so a recipe makes each one, and it sits in Tools & Utilities.
+check('a wooden shovel has a recipe', RECIPES.some((r) => r.result === BLOCK.WOODEN_SHOVEL));
+check('a shovel is in Tools & Utilities', categoryOf(BLOCK.IRON_SHOVEL) === 'Tools & Utilities');
 check('a helmet is armour', categoryOf(BLOCK.IRON_HELMET) === 'Armour');
 check('a stone slab is a building block', categoryOf(BUILD.STONE_SLAB) === 'Building');
 

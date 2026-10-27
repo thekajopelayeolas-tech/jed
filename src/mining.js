@@ -4,11 +4,11 @@ import { STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 // Hardness: seconds to mine with bare hands. Tool class and minimum tier decide the drop and speed.
 // `tool` is the class that mines this block fastest. `tier` is the lowest tool tier that yields its drop.
 const HARDNESS = {
-  [BLOCK.GRASS]: { hardness: 0.6, tool: TOOL.DIG, tier: 0 },
-  [BLOCK.DIRT]: { hardness: 0.5, tool: TOOL.DIG, tier: 0 },
-  [BLOCK.SAND]: { hardness: 0.5, tool: TOOL.DIG, tier: 0 },
+  [BLOCK.GRASS]: { hardness: 0.6, tool: TOOL.SHOVEL, tier: 0 },
+  [BLOCK.DIRT]: { hardness: 0.5, tool: TOOL.SHOVEL, tier: 0 },
+  [BLOCK.SAND]: { hardness: 0.5, tool: TOOL.SHOVEL, tier: 0 },
   [BLOCK.WOOD]: { hardness: 2.0, tool: TOOL.AXE, tier: 0 },
-  [BLOCK.LEAVES]: { hardness: 0.2, tool: null, tier: 0 },
+  [BLOCK.LEAVES]: { hardness: 0.2, tool: TOOL.HOE, tier: 0 },
   [BLOCK.PLANKS]: { hardness: 2.0, tool: TOOL.AXE, tier: 0 },
   [BLOCK.CRAFTING_TABLE]: { hardness: 2.5, tool: TOOL.AXE, tier: 0 },
   [BLOCK.STONE]: { hardness: 1.5, tool: TOOL.PICKAXE, tier: 1 },

@@ -45,10 +45,11 @@ for (const [name, id] of [['pickaxe', BLOCK.DIAMOND_PICKAXE], ['axe', BLOCK.DIAM
 const diamondRecipe = RECIPES.find((r) => r.result === BLOCK.DIAMOND_PICKAXE);
 check('the diamond pickaxe is made from diamonds and sticks', diamondRecipe.key.D === BLOCK.DIAMOND && diamondRecipe.key.S === BLOCK.STICK);
 
-// ---- Shovels are gone ----
-check('no recipe makes a shovel', RECIPES.every((r) => !TOOL_ITEMS[r.result] || TOOL_ITEMS[r.result].tool !== 'shovel'));
-check('the shovel tool class is removed', TOOL.SHOVEL === undefined);
-check('grass, dirt and sand still mine with the dig class', [BLOCK.GRASS, BLOCK.DIRT, BLOCK.SAND].every((id) => breakTime(id, 0) > 0));
+// ---- Shovels are back as a tool class, and they dig grass, dirt and sand ----
+check('the shovel tool class exists', TOOL.SHOVEL === 'shovel');
+check('a shovel is made by a recipe', RECIPES.some((r) => r.result === BLOCK.IRON_SHOVEL));
+check('grass, dirt and sand break faster with a shovel than bare-handed',
+  [BLOCK.GRASS, BLOCK.DIRT, BLOCK.SAND].every((id) => breakTime(id, BLOCK.IRON_SHOVEL) < breakTime(id, 0)));
 
 // ---- Boats ----
 check('the boat is an item with an id', BOAT_ID === 85 && isItem(BLOCK.BOAT));

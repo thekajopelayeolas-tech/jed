@@ -24,6 +24,20 @@ export const RECIPES = [
   // Iron tools (iron ingots + sticks).
   { result: BLOCK.IRON_PICKAXE, count: 1, shaped: true, pattern: ['III', ' S ', ' S '], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
   { result: BLOCK.IRON_SWORD, count: 1, shaped: true, pattern: ['I', 'I', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  // Shovels: a head over two sticks.
+  { result: BLOCK.WOODEN_SHOVEL, count: 1, shaped: true, pattern: ['P', 'S', 'S'], key: { P: BLOCK.PLANKS, S: BLOCK.STICK } },
+  { result: BLOCK.STONE_SHOVEL, count: 1, shaped: true, pattern: ['C', 'S', 'S'], key: { C: BLOCK.COBBLESTONE, S: BLOCK.STICK } },
+  { result: BLOCK.IRON_SHOVEL, count: 1, shaped: true, pattern: ['I', 'S', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  // Hoes: a flat head across the top, one stick below.
+  { result: BLOCK.WOODEN_HOE, count: 1, shaped: true, pattern: ['PP', ' S', ' S'], key: { P: BLOCK.PLANKS, S: BLOCK.STICK } },
+  { result: BLOCK.STONE_HOE, count: 1, shaped: true, pattern: ['CC', ' S', ' S'], key: { C: BLOCK.COBBLESTONE, S: BLOCK.STICK } },
+  { result: BLOCK.IRON_HOE, count: 1, shaped: true, pattern: ['II', ' S', ' S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  // Fishing rod: a stick, with wool for the line at the tip.
+  { result: BLOCK.FISHING_ROD, count: 1, shaped: true, pattern: ['  S', ' SW', 'S W'], key: { S: BLOCK.STICK, W: BLOCK.WOOL } },
+  // Bucket: three iron ingots in a V.
+  { result: BLOCK.BUCKET, count: 1, shaped: true, pattern: ['I I', ' I '], key: { I: BLOCK.IRON_INGOT } },
+  // Shears: two iron ingots over a stick.
+  { result: BLOCK.SHEARS, count: 1, shaped: true, pattern: ['I ', ' I', 'S '], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
   // Boat: five planks in a U shape, open at the top. Made to float on water.
   { result: BLOCK.BOAT, count: 1, shaped: true, pattern: ['P P', 'PPP'], key: { P: BLOCK.PLANKS } },
   // Diamond tools (diamonds on top of sticks), the same shapes as the iron tools.
