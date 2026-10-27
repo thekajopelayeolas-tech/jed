@@ -64,5 +64,16 @@ const lone = w.breakWhole(x + 7, y, z);
 check('breaking a lone stone next to a door does not remove the door', w.getBlock(x + 7, y + 1, z) === DOOR.DOOR);
 check('only the stone is cleared', lone.length === 1);
 
+// Every block is one cell except the door and the bed: breaking a stone or wool block clears just that cell,
+// even when the same block sits right above or below it.
+w.setBlock(x + 9, y, z, BLOCK.STONE);
+w.setBlock(x + 9, y + 1, z, BLOCK.STONE);
+const stone = w.breakWhole(x + 9, y, z);
+check('breaking a stone clears only that stone', stone.length === 1 && w.getBlock(x + 9, y + 1, z) === BLOCK.STONE);
+w.setBlock(x + 10, y, z, BLOCK.WOOL);
+w.setBlock(x + 10, y + 1, z, BLOCK.WOOL);
+const wool = w.breakWhole(x + 10, y, z);
+check('breaking wool clears only that wool', wool.length === 1 && w.getBlock(x + 10, y + 1, z) === BLOCK.WOOL);
+
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;

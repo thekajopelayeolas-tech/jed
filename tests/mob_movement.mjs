@@ -1,5 +1,5 @@
 import { World } from '../src/world.js';
-import { Mob, MobManager, MOB, WATER_MOBS, pickWaterMob } from '../src/mobs.js';
+import { Mob, MobManager, MOB, WATER_MOBS, pickWaterMob, CLIMB_HEIGHT } from '../src/mobs.js';
 import { BLOCK } from '../src/blocks.js';
 import * as THREE from 'three';
 
@@ -34,18 +34,40 @@ const makeWorld = (wallHeight = 0, pondBlocks = true) => ({
   getLight() { return 0; },
 });
 
-// ---- Jumping: one block is jumped, a taller wall is not, and no jump with nothing to clear ----
+// ---- Climbing: land mobs climb walls up to CLIMB_HEIGHT blocks, a taller wall is refused, water mobs never climb ----
 {
   const w = makeWorld(1);
   const m = new Mob(scene, w, MOB.COW, 13.5, WALL_Y + 1, 5.5);
   m.onGround = true;
-  check('a cow jumps over a single block in front', m.tryJump(1, 0) === true);
+  check('a cow climbs a single block in front', m.tryJump(1, 0) === true);
 }
 {
-  const w = makeWorld(3);
+  const w = makeWorld(CLIMB_HEIGHT);
   const m = new Mob(scene, w, MOB.COW, 13.5, WALL_Y + 1, 5.5);
   m.onGround = true;
-  check('a cow does not jump a wall three blocks high', m.tryJump(1, 0) === false);
+  check(`a cow climbs a wall ${CLIMB_HEIGHT} blocks high`, m.tryJump(1, 0) === true);
+}
+{
+  const w = makeWorld(CLIMB_HEIGHT + 1);
+  const m = new Mob(scene, w, MOB.COW, 13.5, WALL_Y + 1, 5.5);
+  m.onGround = true;
+  check(`a cow does not climb a wall ${CLIMB_HEIGHT + 1} blocks high`, m.tryJump(1, 0) === false);
+}
+{
+  // Every land mob climbs, not just cows: zombies, villagers and chickens too.
+  for (const type of [MOB.ZOMBIE, MOB.VILLAGER, MOB.CHICKEN, MOB.IRON_GOLEM]) {
+    const w = makeWorld(2);
+    const m = new Mob(scene, w, type, 13.5, WALL_Y + 1, 5.5);
+    m.onGround = true;
+    check(`a ${type} climbs a 2-block wall`, m.tryJump(1, 0) === true);
+  }
+}
+{
+  // Water mobs never climb, even a single block.
+  const w = makeWorld(1);
+  const m = new Mob(scene, w, MOB.DOLPHIN, 13.5, WALL_Y + 1, 5.5);
+  m.onGround = true;
+  check('a dolphin (water mob) never climbs', m.tryJump(1, 0) === false);
 }
 {
   const w = makeWorld(1);

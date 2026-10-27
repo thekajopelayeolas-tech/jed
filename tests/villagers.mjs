@@ -55,5 +55,23 @@ check('a villager drops nothing', new Mob(scene, w, MOB.VILLAGER, 0, 60, 0).def.
 // Villages are never placed underground: the spawn ground is above sea level.
 check('the village ground is above the water line', surfaceHeight(SEED, village.x, village.z) > 30);
 
+// A villager that dies is not replaced: the village is not topped up with villagers again.
+{
+  const mm2 = new MobManager(scene, w, SEED);
+  const home = { x: village.x, z: village.z };
+  // Fill the village to its full population, so a kill leaves it one short.
+  for (let i = 0; i < 40; i++) mm2.spawnVillagers([village]);
+  const alive = mm2.mobs.filter((m) => m.type === MOB.VILLAGER && m.home && m.home.x === home.x).length;
+  const victim = mm2.mobs.find((m) => m.type === MOB.VILLAGER && m.home && m.home.x === home.x);
+  check('a village starts with villagers to kill', alive > 0 && victim !== undefined);
+  victim.takeHit(1000, 0, 0);
+  mm2.update(0.05, village, () => {}, 'day');
+  check('a dead villager is removed from the world', !mm2.mobs.includes(victim));
+  for (let i = 0; i < 5; i++) mm2.spawnVillagers([village]);
+  const after = mm2.mobs.filter((m) => m.type === MOB.VILLAGER && m.home && m.home.x === home.x).length;
+  check('a village that lost a villager does not summon another', after === alive - 1);
+  check('the village is recorded as having lost a villager', mm2.lostVillagers.has(`${home.x},${home.z}`));
+}
+
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;

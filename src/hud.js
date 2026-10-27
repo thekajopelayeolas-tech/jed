@@ -145,7 +145,10 @@ export function createHud() {
   respawnButton.textContent = 'Respawn';
   respawnButton.style.cssText = 'font-size:22px;padding:12px 32px;cursor:pointer;border:2px solid #fff;' +
     'background:#444;color:#fff;';
+  const deathCount = document.createElement('div');
+  deathCount.style.cssText = 'font-size:18px;margin-top:16px;text-shadow:1px 1px 0 #000;';
   death.appendChild(deathTitle);
+  death.appendChild(deathCount);
   death.appendChild(respawnButton);
   root.appendChild(death);
   let onRespawnClick = () => {};
@@ -178,6 +181,10 @@ export function createHud() {
     },
     isDead() {
       return death.style.display === 'flex';
+    },
+    // Shows how many seconds are left before the automatic respawn.
+    setDeathCountdown(seconds) {
+      deathCount.textContent = `Respawning in ${seconds}...`;
     },
     // Sets what the Respawn button does.
     setDeathHandler(fn) {

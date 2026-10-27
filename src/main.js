@@ -592,11 +592,20 @@ function syncRemotes() {
 
 // Clicking Respawn on the death screen puts the player back where they were (beside their bed, or the default
 // spawn), with full health, and hides the screen. The mouse is grabbed again by the next click on the game.
-hud.setDeathHandler(() => {
+// Seconds on the death screen before the player respawns on their own.
+const AUTO_RESPAWN_SECONDS = 3;
+// Counts down while the death screen is up. Set when the player dies.
+let deathCountdown = 0;
+
+// Puts the player back in the world and hides the death screen. Used by the timer and the Respawn button.
+function respawnFromDeath() {
   respawn();
   hud.setDead(false);
+  deathCountdown = 0;
   renderer.domElement.requestPointerLock();
-});
+}
+
+hud.setDeathHandler(respawnFromDeath);
 
 // Restore a saved game if one exists, otherwise start fresh at spawn.
 const saved = loadGame();
@@ -716,7 +725,14 @@ function frame(now) {
   // No hearts left: show the death screen. The mouse is freed so the Respawn button can be clicked.
   if (player.health <= 0 && !hud.isDead()) {
     hud.setDead(true);
+    deathCountdown = AUTO_RESPAWN_SECONDS;
     if (document.pointerLockElement) document.exitPointerLock();
+  }
+  // Dead: count down, then respawn automatically. The Respawn button does the same thing straight away.
+  if (hud.isDead()) {
+    deathCountdown -= dt;
+    hud.setDeathCountdown(Math.max(0, Math.ceil(deathCountdown)));
+    if (deathCountdown <= 0) respawnFromDeath();
   }
 
   // Send this player's position to the lobby, and draw the others.

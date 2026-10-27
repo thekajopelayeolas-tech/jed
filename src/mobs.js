@@ -9,7 +9,8 @@ import { villagesNear, LEVEL_BOX, HOUSES } from './village.js';
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
 // The jump speed for a mob: high enough to clear one block.
-const JUMP_SPEED = 8.5;
+// The tallest wall, in blocks, that a land mob can climb. Water mobs never climb.
+export const CLIMB_HEIGHT = 4;
 // Shearing a sheep gives this much wool, and its wool grows back after this many seconds.
 export const SHEARED_WOOL = 2;
 export const SHEEP_WOOL_REGROW = 60;
@@ -57,8 +58,9 @@ const MOB_DEFS = {
   // Villagers are peaceful and drop nothing. Iron golems are large, peaceful guards that drop iron.
   [MOB.VILLAGER]: { size: [0.6, 1.9, 0.6], color: 0x6b4a2b, health: 20, speed: 1.0, hostile: false, drops: [] },
   // The iron golem stays peaceful until the player hits a villager. Then it attacks the player, with 7 damage.
-  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, damage: 7, guardDamage: 7 },
-  [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true },
+  // Iron golems and zombies walk backwards: they face away from the way they move.
+  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, damage: 7, guardDamage: 7, walksBackwards: true },
+  [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true, walksBackwards: true },
 };
 
 // Land passive mobs spawn evenly: cows, sheep, pigs, and rabbits. Fish are spawned in water separately.
@@ -173,18 +175,22 @@ export class Mob {
     return false;
   }
 
-  // Jumps over a single block when walking into it. A mob jumps only when the block in front is one block high
-  // and the space above that block is clear. A taller wall, or a block with no room above it, is not jumped.
-  // Returns true if the mob started a jump.
+  // Climbs a wall when walking into it. Every land mob climbs a wall up to CLIMB_HEIGHT blocks tall, as long as
+  // the space above the top of the wall is clear. Water mobs never climb. Returns true if the mob started a climb.
   tryJump(dx, dz) {
     if (this.def.water) return false;
     const nx = this.pos.x + dx;
     const nz = this.pos.z + dz;
-    // The block in front must be solid at foot height (that is the obstacle), and the cell above it must be clear.
-    if (!this.collides(nx, this.pos.y, nz)) return false;
-    if (this.collides(nx, this.pos.y + 1, nz)) return false;
     if (!this.onGround) return false;
-    this.vel.y = JUMP_SPEED;
+    // Find the first cell above foot height that is free: that is the height the wall reaches to.
+    // If there is no solid block in front at foot height, there is no wall to climb.
+    if (!this.collides(nx, this.pos.y, nz)) return false;
+    let top = 1;
+    while (top <= CLIMB_HEIGHT && this.collides(nx, this.pos.y + top, nz)) top++;
+    // Still solid after CLIMB_HEIGHT blocks, so the wall is too tall to climb.
+    if (top > CLIMB_HEIGHT) return false;
+    // Lift the mob high enough to clear the top of the wall, using the same gravity the mob falls with.
+    this.vel.y = Math.sqrt(2 * GRAVITY * (top + 0.1));
     return true;
   }
 
@@ -337,8 +343,11 @@ export class Mob {
     const swing = moving ? Math.sin(this.walkPhase) * 0.6 : 0;
     this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
     this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
-    // Every mob faces the way it walks.
-    if (mx !== 0 || mz !== 0) this.group.rotation.y = Math.atan2(-mx, -mz);
+    // Most mobs face the way they walk. Iron golems and zombies walk backwards, so they face away from their path.
+    if (mx !== 0 || mz !== 0) {
+      const facing = this.def.walksBackwards ? 1 : -1;
+      this.group.rotation.y = Math.atan2(facing * mx, facing * mz);
+    }
   }
 
   // Shears a sheep. Returns the wool it gives (2), or 0 if it cannot be sheared (not a sheep, or already sheared).
@@ -386,6 +395,8 @@ export class MobManager {
     this.mobs = [];
     this.spawnTimer = 0;
     this.villageTimer = 0;
+    // Villages that have lost a villager. Their villagers are never topped up again. Keyed by "x,z" of the centre.
+    this.lostVillagers = new Set();
   }
 
   // Keeps each village near the player populated: up to VILLAGERS_PER_VILLAGE villagers and GOLEMS_PER_VILLAGE
@@ -395,7 +406,9 @@ export class MobManager {
     for (const v of villages) {
       const home = { x: v.x, z: v.z };
       const near = (type) => this.mobs.filter((m) => m.type === type && m.home && m.home.x === home.x && m.home.z === home.z).length;
-      if (near(MOB.VILLAGER) < VILLAGERS_PER_VILLAGE) this.placeOnVillageGround(MOB.VILLAGER, home);
+      // A village that has lost a villager does not get a replacement, so its villagers stay gone.
+      const lost = this.lostVillagers.has(`${home.x},${home.z}`);
+      if (!lost && near(MOB.VILLAGER) < VILLAGERS_PER_VILLAGE) this.placeOnVillageGround(MOB.VILLAGER, home);
       if (near(MOB.IRON_GOLEM) < GOLEMS_PER_VILLAGE) this.placeOnVillageGround(MOB.IRON_GOLEM, home);
     }
   }
@@ -519,6 +532,8 @@ export class MobManager {
       // Villagers and golems belong to a village, so they are only removed when they die, not when far away.
       const village = m.home !== undefined;
       if (m.dead || (!village && m.pos.distanceTo(playerPos) > 48)) {
+        // A villager that dies is not replaced: its village stops topping up villagers for good.
+        if (m.dead && m.type === MOB.VILLAGER && m.home) this.lostVillagers.add(`${m.home.x},${m.home.z}`);
         m.dispose();
         this.mobs.splice(i, 1);
       }

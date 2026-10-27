@@ -77,9 +77,13 @@ export class World {
     const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
     // Each shape has its own neighbours. A door's other half is the cell above or below. A bed's other half is
     // the cell along its facing, in either direction, and it may be either bed id (head or foot).
+    // Every other block is one cell, so a stone or wool block never takes a matching block next to it.
+    const isDoor = id === DOOR.DOOR || id === DOOR.OPEN_DOOR;
     const candidates = isBed
       ? [[sx, 0, sz], [-sx, 0, -sz]]
-      : [[0, -1, 0], [0, 1, 0]];
+      : isDoor
+        ? [[0, -1, 0], [0, 1, 0]]
+        : [];
     for (const [dx, dy, dz] of candidates) {
       const ox = wx + dx;
       const oy = wy + dy;
