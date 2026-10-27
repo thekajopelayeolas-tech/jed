@@ -4,6 +4,7 @@ import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { LIGHT, lightFactor } from './lighting.js';
 import { BLOCK_TILES, TILE_INDEX, tileUV } from './textures.js';
 import { isFullCube, boxesFor } from './building.js';
+import { sideName, isFrontFace } from './facing.js';
 
 // Face definitions: direction, 4 corner offsets (CCW from outside), and shade.
 const FACES = [
@@ -117,7 +118,10 @@ export function buildChunkGeometry(chunk, world) {
           const fy = y + f.dir[1];
           const fz = wz + f.dir[2];
           const lf = lightFactor(Math.max(0, world.getLight(fx, fy, fz, LIGHT.SKY), world.getLight(fx, fy, fz, LIGHT.BLOCK)));
-          const tileName = BLOCK_TILES[id][f.face] ?? BLOCK_TILES[id].side;
+          // A directional block shows its front tile on the side that faces its front. Others use one tile.
+          const side = sideName(f.dir);
+          const isFront = BLOCK_TILES[id].front !== undefined && side !== null && isFrontFace(chunk.getFacing(x, y, z), side);
+          const tileName = isFront ? BLOCK_TILES[id].front : (BLOCK_TILES[id][f.face] ?? BLOCK_TILES[id].side);
           const [u0, v0, u1, v1] = tileUV(TILE_INDEX[tileName]);
           const uvs = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
           const base = target.pos.length / 3;

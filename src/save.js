@@ -22,9 +22,14 @@ function fromBase64(str) {
 // `chests` is an optional Map from "x,y,z" to Chest. Each chest's 27 slots are kept.
 export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map(), chests = new Map()) {
   const chunks = {};
+  const facing = {};
   for (const [key, data] of world.edits) chunks[key] = toBase64(data);
+  for (const [key, data] of world.facingEdits) facing[key] = toBase64(data);
   for (const chunk of world.chunks.values()) {
-    if (chunk.modified) chunks[World.key(chunk.cx, chunk.cz)] = toBase64(chunk.blocks);
+    if (!chunk.modified) continue;
+    const key = World.key(chunk.cx, chunk.cz);
+    chunks[key] = toBase64(chunk.blocks);
+    facing[key] = toBase64(chunk.facing);
   }
   const furnaceData = {};
   for (const [key, f] of furnaces) furnaceData[key] = f.toJSON();
@@ -33,6 +38,7 @@ export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map
   const data = {
     chests: chestData,
     chunks,
+    facing,
     player: { x: player.pos.x, y: player.pos.y, z: player.pos.z, health: player.health, hunger: player.hunger.value, yaw: player.yaw, pitch: player.pitch },
     inventory: inventory.slots.map((s) => ({ id: s.id, count: s.count })),
     armour: { ...player.armour },
@@ -56,7 +62,10 @@ export function loadGame() {
     const data = JSON.parse(raw);
     const edits = new Map();
     for (const [key, b64] of Object.entries(data.chunks ?? {})) edits.set(key, fromBase64(b64));
-    return { edits, player: data.player, inventory: data.inventory, armour: data.armour ?? null, furnaces: data.furnaces ?? {}, chests: data.chests ?? {}, timeOfDay: data.timeOfDay };
+    // Facing is optional. Saves from before facing existed have none, so their blocks keep the default.
+    const facingEdits = new Map();
+    for (const [key, b64] of Object.entries(data.facing ?? {})) facingEdits.set(key, fromBase64(b64));
+    return { edits, facingEdits, player: data.player, inventory: data.inventory, armour: data.armour ?? null, furnaces: data.furnaces ?? {}, chests: data.chests ?? {}, timeOfDay: data.timeOfDay };
   } catch (err) {
     console.warn('Save could not be read', err);
     return null;

@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
 import { DOOR, STORAGE, FURNACE_STATE } from './building.js';
+import { facingToward } from './facing.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory } from './inventory.js';
-import { RENDER_DISTANCE, REACH, SEA_LEVEL, CHUNK_HEIGHT } from './constants.js';
+import { RENDER_DISTANCE, REACH, SEA_LEVEL, CHUNK_HEIGHT, CHUNK_SIZE } from './constants.js';
 import { createHud } from './hud.js';
 import { setupInput } from './input.js';
 import { updateDayNight, createSky } from './sky.js';
@@ -218,8 +219,11 @@ function chestAt(x, y, z) {
 function setFurnaceLit(key, lit) {
   const [x, y, z] = key.split(',').map(Number);
   const id = world.getBlock(x, y, z);
-  if (lit && id === BLOCK.FURNACE) world.setBlock(x, y, z, FURNACE_STATE.LIT);
-  else if (!lit && id === FURNACE_STATE.LIT) world.setBlock(x, y, z, BLOCK.FURNACE);
+  // Keep the furnace's facing when it lights or goes out, so its front stays where it was placed.
+  const facing = world.chunkAt(Math.floor(x / CHUNK_SIZE), Math.floor(z / CHUNK_SIZE))?.getFacing(
+    ((x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE, y, ((z % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE) ?? 0;
+  if (lit && id === BLOCK.FURNACE) world.setBlock(x, y, z, FURNACE_STATE.LIT, facing);
+  else if (!lit && id === FURNACE_STATE.LIT) world.setBlock(x, y, z, BLOCK.FURNACE, facing);
 }
 
 function furnaceAt(x, y, z) {
@@ -295,7 +299,9 @@ function placeBlock() {
   const target = world.getBlock(x, y, z);
   if (target !== BLOCK.AIR && target !== BLOCK.WATER) return;
   if (overlapsPlayer(x, y, z)) return;
-  if (world.setBlock(x, y, z, item.id)) inventory.consumeSelected(1);
+  // The block faces the player who places it, so its front points back toward them.
+  const facing = facingToward(x, z, player.pos.x, player.pos.z);
+  if (world.setBlock(x, y, z, item.id, facing)) inventory.consumeSelected(1);
 }
 
 // True if the block cell at (bx, by, bz) intersects the player's body.
@@ -410,6 +416,7 @@ const saved = loadGame();
 let timeOfDay = 0.25;
 if (saved) {
   world.edits = saved.edits;
+  world.facingEdits = saved.facingEdits ?? new Map();
   timeOfDay = saved.timeOfDay ?? timeOfDay;
   inventory.slots.forEach((s, i) => {
     const src = saved.inventory?.[i];

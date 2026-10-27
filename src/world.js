@@ -15,6 +15,8 @@ export class World {
     this.chunks = new Map();
     // Block data for edited chunks that have been unloaded. Key is "cx,cz", value is a Uint8Array.
     this.edits = new Map();
+    // Facing for edited chunks, kept beside `edits` with the same keys. Blocks are stored by id, so this stays separate.
+    this.facingEdits = new Map();
     this.pendingMeshes = [];
   }
 
@@ -37,7 +39,8 @@ export class World {
     return chunk.get(lx, wy, lz);
   }
 
-  setBlock(wx, wy, wz, id) {
+  // `facing` is which way the block's front points (0..3, see facing.js). It defaults to south.
+  setBlock(wx, wy, wz, id, facing = 0) {
     if (wy < 0 || wy >= CHUNK_HEIGHT) return false;
     const cx = Math.floor(wx / CHUNK_SIZE);
     const cz = Math.floor(wz / CHUNK_SIZE);
@@ -48,7 +51,7 @@ export class World {
     if (chunk.get(lx, wy, lz) === BLOCK.BEDROCK) return false;
     // Only ids with a block texture can exist in the world. Items and unknown ids are refused.
     if (!BLOCK_TILES[id] && id !== BLOCK.AIR) return false;
-    chunk.set(lx, wy, lz, id);
+    chunk.set(lx, wy, lz, id, facing);
     chunk.modified = true;
     updateLightAt(this, wx, wy, wz);
     // Edge blocks affect the neighbouring chunk's face culling.
@@ -105,7 +108,10 @@ export class World {
 
     for (const [key, chunk] of this.chunks) {
       if (!wanted.has(key)) {
-        if (chunk.modified) this.edits.set(key, chunk.blocks.slice());
+        if (chunk.modified) {
+          this.edits.set(key, chunk.blocks.slice());
+          this.facingEdits.set(key, chunk.facing.slice());
+        }
         if (chunk.mesh) {
           this.scene.remove(chunk.mesh);
           chunk.mesh.traverse((o) => o.geometry && o.geometry.dispose());
@@ -128,6 +134,9 @@ export class World {
       const saved = this.edits.get(World.key(cx, cz));
       if (saved) {
         chunk.blocks.set(saved);
+        // Facing is restored when it was saved. Older saves have none, so blocks keep the default south.
+        const savedFacing = this.facingEdits.get(World.key(cx, cz));
+        if (savedFacing) chunk.facing.set(savedFacing);
         chunk.modified = true;
         // Biomes are not stored with the edits, so recompute them from the seed.
         for (let x = 0; x < CHUNK_SIZE; x++) {

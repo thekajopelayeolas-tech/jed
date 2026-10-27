@@ -56,6 +56,8 @@ export class Chunk {
     this.cx = cx;
     this.cz = cz;
     this.blocks = new Uint8Array(CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE);
+    // Which way each block faces (0..3, see facing.js). Kept beside the block ids, one byte per cell.
+    this.facing = new Uint8Array(CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE);
     this.dirty = true;
     this.mesh = null;
     // True once a player edits this chunk, so it is saved instead of regenerated.
@@ -87,10 +89,15 @@ export class Chunk {
     return this.blocks[Chunk.index(x, y, z)];
   }
 
-  set(x, y, z, id) {
+  set(x, y, z, id, facing = 0) {
     if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z >= CHUNK_SIZE) return;
     this.blocks[Chunk.index(x, y, z)] = id;
+    this.facing[Chunk.index(x, y, z)] = facing & 3;
     this.dirty = true;
+  }
+
+  getFacing(x, y, z) {
+    return this.facing[Chunk.index(x, y, z)];
   }
 
   generate(seed) {

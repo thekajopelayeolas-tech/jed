@@ -66,6 +66,8 @@ const PAINTERS = {
   // Furnace: grey stone with a dark firebox opening on the front.
   furnaceSide: (x, y) => (x >= 4 && x <= 11 && y >= 6 && y <= 12 ? [0.12, 0.1, 0.09, 1] : jitter([0.45, 0.45, 0.45], noise(x, y, 24), 0.14)),
   furnaceTop: (x, y) => jitter([0.42, 0.42, 0.42], noise(x, y, 25), 0.14),
+  // Furnace front: the dark firebox opening, shown on the side the furnace faces.
+  furnaceFront: (x, y) => (x >= 4 && x <= 11 && y >= 6 && y <= 12 ? [0.12, 0.1, 0.09, 1] : jitter([0.45, 0.45, 0.45], noise(x, y, 27), 0.14)),
   // Lit furnace front: the same stone, with a bright fire inside the firebox opening.
   furnaceLitSide: (x, y) => {
     if (x >= 4 && x <= 11 && y >= 6 && y <= 12) {
@@ -98,6 +100,13 @@ const PAINTERS = {
     if (band) return jitter([0.25, 0.22, 0.2], noise(x, y, 80), 0.05);
     if (x >= 7 && x <= 8 && y >= 6 && y <= 9) return [0.85, 0.75, 0.3, 1];
     return jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 81), 0.08);
+  },
+  // Chest front: the same planks, with the clasp only on this face.
+  chestFront: (x, y) => {
+    const band = y === 5 || y === 10 || x === 0 || x === 15;
+    if (band) return jitter([0.25, 0.22, 0.2], noise(x, y, 84), 0.05);
+    if (x >= 7 && x <= 8 && y >= 6 && y <= 9) return [0.85, 0.75, 0.3, 1];
+    return jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 85), 0.08);
   },
   chestTop: (x, y) => {
     const edge = x === 0 || x === 15 || y === 0 || y === 15;
@@ -143,8 +152,9 @@ export const BLOCK_TILES = {
   [BLOCK.CRAFTING_TABLE]: { top: 'craftTop', side: 'craftSide', bottom: 'planks' },
   [BLOCK.BED]: { top: 'bedTop', side: 'bedSide', bottom: 'planks' },
   [BLOCK.WOOL]: { top: 'wool', side: 'wool', bottom: 'wool' },
-  [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', bottom: 'furnaceTop' },
-  [FURNACE_STATE.LIT]: { top: 'furnaceTop', side: 'furnaceLitSide', bottom: 'furnaceTop' },
+  // `front` is the tile for the side the block faces. Blocks without one look the same on every side.
+  [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceFront', bottom: 'furnaceTop' },
+  [FURNACE_STATE.LIT]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceLitSide', bottom: 'furnaceTop' },
   [BLOCK.DIAMOND_ORE]: { top: 'diamondOre', side: 'diamondOre', bottom: 'diamondOre' },
   [BLOCK.RAINBOW_ORE]: { top: 'rainbowOre', side: 'rainbowOre', bottom: 'rainbowOre' },
   [BLOCK.STONE_BRICKS]: { top: 'stoneBricks', side: 'stoneBricks', bottom: 'stoneBricks' },
@@ -159,7 +169,7 @@ export const BLOCK_TILES = {
   [BLOCK.STONE_STAIRS]: { top: 'stone', side: 'stone', bottom: 'stone' },
   [BLOCK.BRICK_STAIRS]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },
   [BLOCK.CONCRETE_STAIRS]: { top: 'concrete', side: 'concrete', bottom: 'concrete' },
-  [STORAGE.CHEST]: { top: 'chestTop', side: 'chestSide', bottom: 'chestTop' },
+  [STORAGE.CHEST]: { top: 'chestTop', side: 'chestSide', front: 'chestFront', bottom: 'chestTop' },
   [DOOR.DOOR]: { top: 'door', side: 'door', bottom: 'door' },
   [DOOR.OPEN_DOOR]: { top: 'door', side: 'door', bottom: 'door' },
 };
