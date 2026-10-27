@@ -52,9 +52,8 @@ const MOB_DEFS = {
   [MOB.DOLPHIN]: { size: [0.9, 0.5, 0.5], color: 0x7d8fa6, health: 8, speed: 1.8, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
   [MOB.SQUID]: { size: [0.6, 0.6, 0.6], color: 0x2c3e50, health: 4, speed: 0.8, hostile: false, drops: [BLOCK.RAW_FISH], water: true },
   // Villagers are peaceful and drop nothing. Iron golems are large, peaceful guards that drop iron.
-  // Villagers and iron golems walk backwards: they face away from the way they move.
-  [MOB.VILLAGER]: { size: [0.6, 1.9, 0.6], color: 0x6b4a2b, health: 20, speed: 1.0, hostile: false, drops: [], walksBackwards: true },
-  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, walksBackwards: true },
+  [MOB.VILLAGER]: { size: [0.6, 1.9, 0.6], color: 0x6b4a2b, health: 20, speed: 1.0, hostile: false, drops: [] },
+  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25 },
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true },
 };
 
@@ -267,12 +266,8 @@ export class Mob {
     const swing = moving ? Math.sin(this.walkPhase) * 0.6 : 0;
     this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
     this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
-    // Most mobs face the way they walk. A backwards walker (villagers and iron golems) faces the opposite way,
-    // so it walks backwards along its path.
-    if (mx !== 0 || mz !== 0) {
-      const facing = this.def.walksBackwards ? 1 : -1;
-      this.group.rotation.y = Math.atan2(facing * mx, facing * mz);
-    }
+    // Every mob faces the way it walks.
+    if (mx !== 0 || mz !== 0) this.group.rotation.y = Math.atan2(-mx, -mz);
   }
 
   // Shears a sheep. Returns the wool it gives (2), or 0 if it cannot be sheared (not a sheep, or already sheared).
