@@ -8,7 +8,8 @@ const PALETTES = {
   // Cow, like co.png: a brown and white patched hide with a white face and pink nose.
   cow: { skin: 0xf4f4f4, shirt: 0x6b4426, trousers: 0x4a2e1a, eye: 0x111111, patch: 0xf4f4f4, nose: 0xe8a6a6 },
   // Sheep: a woolly white body with a darker grey face and legs.
-  sheep: { skin: 0x4a4a4a, shirt: 0xf4f4ee, trousers: 0x3c3c3c, eye: 0x111111 },
+  // The patch and nose colours are used by the quadruped body, so the sheep sets them too, to its own white and grey.
+  sheep: { skin: 0x4a4a4a, shirt: 0xf4f4ee, trousers: 0x3c3c3c, eye: 0x111111, patch: 0xf4f4ee, nose: 0x3a3a3a },
   // Pig: pink body and snout, short legs.
   pig: { skin: 0xf0a0a8, shirt: 0xf0a0a8, trousers: 0xd98890, eye: 0x111111 },
   // Rabbit: soft brown body with a pale belly and long ears.

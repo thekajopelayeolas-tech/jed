@@ -92,6 +92,7 @@ export function createChestUI(inventory) {
     const el = makeSlot((e) => clickInv(i, e));
     mainWrap.appendChild(el);
     invEls[i] = el;
+  }
 
   // Shift click: a chest slot moves its stack into the inventory. Right click splits, and left click places.
   function clickChest(i, e) {
@@ -173,5 +174,3 @@ export function createChestUI(inventory) {
     },
   };
 }
-
-  }

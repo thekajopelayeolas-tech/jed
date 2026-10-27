@@ -80,5 +80,16 @@ check('a cow model has white patches', new Mob(scene, w, MOB.COW, 0, 60, 0).mode
 check('a dolphin model has a dorsal fin', new Mob(scene, w, MOB.DOLPHIN, 0, 60, 0).model.group.children.length >= 5);
 check('an iron golem model has vine patches', new Mob(scene, w, MOB.IRON_GOLEM, 0, 60, 0).model.group.children.length > 8);
 
+// Every mob model colours every part. A missing palette colour makes THREE warn and draw black.
+{
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args.join(' '));
+  const kinds = [MOB.ZOMBIE, MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT, MOB.CHICKEN, MOB.VILLAGER, MOB.IRON_GOLEM, MOB.FISH, MOB.DOLPHIN, MOB.SALMON, MOB.SQUID];
+  for (const type of kinds) new Mob(scene, w, type, 0, 60, 0);
+  console.warn = originalWarn;
+  check('every mob model has all its colours (no THREE warnings)', warnings.length === 0);
+}
+
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
