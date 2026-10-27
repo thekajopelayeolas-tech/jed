@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { heldLook } from './character.js';
+import { BLOCK } from './blocks.js';
+
+const SHIELD_ID = BLOCK.SHIELD;
 
 // Resting place of the held item relative to the camera. The bob moves around this point.
 const REST = { x: 0.24, y: -0.2, z: -0.7 };
@@ -51,14 +54,49 @@ export function createHeldView(camera, itemTexture, atlasMaterial, blockCube) {
     holder.add(mesh);
   }
 
+  // The left hand. A shield is carried here, not in the right hand: it sits on the left of the view, and rises
+  // toward the centre while it is raised to block.
+  const leftHolder = new THREE.Group();
+  camera.add(leftHolder);
+  leftHolder.position.set(-REST.x, REST.y, REST.z);
+  leftHolder.rotation.set(0.25, 0.6, -0.15);
+  let leftMesh = null;
+  let leftKey = null;
+
+  // Shows the shield in the left hand, or nothing. The shield is a flat card with its sprite.
+  function setLeftItem(hasShield) {
+    const k = hasShield ? 'shield' : 'none';
+    if (k === leftKey) return;
+    leftKey = k;
+    if (leftMesh) {
+      leftHolder.remove(leftMesh);
+      leftMesh.geometry.dispose();
+      if (leftMesh.material.map) leftMesh.material.map.dispose();
+      leftMesh.material.dispose();
+      leftMesh = null;
+    }
+    if (!hasShield) return;
+    const tex = itemTexture(SHIELD_ID);
+    leftMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.3, 0.3),
+      new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide }),
+    );
+    leftHolder.add(leftMesh);
+  }
+
   // Swing while walking: a gentle bob that grows with horizontal movement speed.
   let t = 0;
-  function update(dt, speed, selectedItem) {
+  // `hasShield` puts a shield in the left hand. `shieldUp` raises it in front of the player to block.
+  function update(dt, speed, selectedItem, hasShield = false, shieldUp = false) {
     setItem(selectedItem);
+    setLeftItem(hasShield);
     t += dt;
     const swing = Math.min(1, speed / 4.3);
     holder.position.y = REST.y + Math.sin(t * 8) * 0.012 * swing;
     holder.position.x = REST.x + Math.cos(t * 4) * 0.01 * swing;
+    // The left hand rests low on the left, and rises to the centre when the shield is up.
+    leftHolder.position.set(shieldUp ? -0.08 : -REST.x, shieldUp ? -0.02 : REST.y, shieldUp ? -0.55 : REST.z);
+    leftHolder.rotation.set(shieldUp ? 0 : 0.25, shieldUp ? 0 : 0.6, shieldUp ? 0 : -0.15);
   }
 
   return { update };

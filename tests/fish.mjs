@@ -57,8 +57,14 @@ for (let i = 0; i < 600; i++) dry.trySpawn(near, 0.3);
 check('no fish spawn on dry land', dry.mobs.every((m) => m.type !== MOB.FISH));
 
 // A fish that wanders stays in the pond: its position remains over water.
-for (let i = 0; i < 300; i++) fish.update(0.1, new THREE.Vector3(8, WATER_Y, 8), () => {});
-check('a fish stays over water while wandering', Math.floor(fish.pos.x) >= 0 && fish.pos.y >= WATER_Y - 0.5);
+// Check every step, not just the end: a fish must never be over dry land at any point of its wander.
+let leftWater = false;
+for (let i = 0; i < 300; i++) {
+  fish.update(0.1, new THREE.Vector3(8, WATER_Y, 8), () => {});
+  const cell = pondWorld.getBlock(Math.floor(fish.pos.x), Math.floor(fish.pos.y) - 1, Math.floor(fish.pos.z));
+  if (cell !== BLOCK.WATER && pondWorld.getBlock(Math.floor(fish.pos.x), Math.floor(fish.pos.y), Math.floor(fish.pos.z)) !== BLOCK.WATER) leftWater = true;
+}
+check('a fish stays over water while wandering', !leftWater);
 
 // A fish's model has no legs or arms, so there is nothing to swing.
 const model = buildMobModel(MOB.FISH);

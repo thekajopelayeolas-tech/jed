@@ -24,19 +24,75 @@ const BARK = [0.4, 0.28, 0.14];
 const LEAF = [0.2, 0.5, 0.15];
 const NONE = [0, 0, 0, 0];
 
+// Realism helpers. A smooth noise value gives clumps rather than static, so textures look like real material.
+// `smooth` blends neighbouring random values, so a patch of pixels shares a tone and the eye reads it as texture.
+function smooth(x, y, seed) {
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const fx = x - x0;
+  const fy = y - y0;
+  const a = noise(x0, y0, seed);
+  const b = noise(x0 + 1, y0, seed);
+  const c = noise(x0, y0 + 1, seed);
+  const d = noise(x0 + 1, y0 + 1, seed);
+  const top = a + (b - a) * fx;
+  const bottom = c + (d - c) * fx;
+  return top + (bottom - top) * fy;
+}
+
+// Darkens a colour by a factor, for shadow edges and the darker side of a block.
+const shade = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
+
 // Each painter returns [r, g, b, a] in 0..1 for pixel (x, y). Row 0 is the top of the tile.
 const PAINTERS = {
-  grassTop: (x, y) => jitter(GREEN, noise(x, y, 1), 0.14),
-  grassSide: (x, y) => (y < 3 + (noise(x, 9, 5) > 0.6 ? 1 : 0) ? jitter(GREEN, noise(x, y, 2), 0.14) : jitter(DIRT, noise(x, y, 3), 0.12)),
-  dirt: (x, y) => jitter(DIRT, noise(x, y, 4), noise(x, y, 6) > 0.92 ? 0.4 : 0.12),
-  stone: (x, y) => jitter(STONE, noise(x, y, 7), 0.18),
-  sand: (x, y) => jitter([0.86, 0.82, 0.6], noise(x, y, 8), 0.08),
-  woodSide: (x, y) => jitter(BARK, noise(Math.floor(x / 2), 0, 9), 0.15),
-  woodTop: (x, y) => {
-    const ring = Math.floor(Math.hypot(x - 7.5, y - 7.5)) % 2;
-    return jitter(ring ? [0.7, 0.55, 0.34] : [0.6, 0.45, 0.25], noise(x, y, 10), 0.08);
+  // Grass: a clumpy green top with blade flecks, so it reads as turf rather than a flat sheet.
+  grassTop: (x, y) => {
+    const clump = smooth(x * 0.6, y * 0.6, 21);
+    const blade = noise(x, y, 22) > 0.8 ? 0.12 : 0;
+    return jitter([GREEN[0] * (0.85 + clump * 0.3) + blade * 0.3, GREEN[1] * (0.85 + clump * 0.3) + blade, GREEN[2] * (0.85 + clump * 0.2)], noise(x, y, 1), 0.06);
   },
-  leaves: (x, y) => (noise(x, y, 11) > 0.25 ? jitter(LEAF, noise(x, y, 12), 0.12) : NONE),
+  // Grass side: a soil body with a ragged green lip along the top, which hangs down unevenly.
+  grassSide: (x, y) => {
+    const lip = 3 + Math.floor(noise(x, 9, 5) * 3);
+    if (y < lip) return jitter(GREEN, noise(x, y, 2), 0.12);
+    const soil = smooth(x * 0.7, y * 0.7, 23);
+    return jitter(shade(DIRT, 0.85 + soil * 0.3), noise(x, y, 3), 0.1);
+  },
+  // Dirt: uneven brown with small pebbles and darker clumps.
+  dirt: (x, y) => {
+    const clump = smooth(x * 0.5, y * 0.5, 24);
+    const pebble = noise(x, y, 6) > 0.92 ? 1.3 : 1;
+    return jitter(shade(DIRT, (0.8 + clump * 0.35) * pebble), noise(x, y, 4), 0.1);
+  },
+  // Stone: grey with mottled patches and small cracks.
+  stone: (x, y) => {
+    const mottle = smooth(x * 0.45, y * 0.45, 25);
+    const crack = noise(x, y, 26) > 0.96 ? 0.6 : 1;
+    return jitter(shade(STONE, (0.82 + mottle * 0.3) * crack), noise(x, y, 7), 0.08);
+  },
+  // Sand: fine grain with faint ripples.
+  sand: (x, y) => {
+    const ripple = Math.sin(y * 1.1 + smooth(x * 0.3, y * 0.3, 27) * 2) * 0.04;
+    return jitter([0.86 + ripple, 0.82 + ripple, 0.6 + ripple], noise(x, y, 8), 0.06);
+  },
+  // Wood side: bark with long vertical grooves and a darker band at the edges.
+  woodSide: (x, y) => {
+    const groove = noise(Math.floor(x / 2), 0, 9);
+    const dark = x < 1 || x > 14 ? 0.8 : 1;
+    return jitter(shade(BARK, (0.75 + groove * 0.4) * dark), noise(x, y, 28), 0.06);
+  },
+  // Wood top: concentric growth rings with a slightly lighter heartwood.
+  woodTop: (x, y) => {
+    const r = Math.hypot(x - 7.5, y - 7.5);
+    const ring = Math.floor(r + smooth(x * 0.3, y * 0.3, 29) * 0.8) % 2;
+    return jitter(ring ? [0.7, 0.55, 0.34] : [0.6, 0.45, 0.25], noise(x, y, 10), 0.05);
+  },
+  // Leaves: dense foliage with light and dark clumps, and small gaps where the sky shows through.
+  leaves: (x, y) => {
+    const clump = smooth(x * 0.8, y * 0.8, 30);
+    if (noise(x, y, 11) < 0.2) return NONE;
+    return jitter(shade(LEAF, 0.75 + clump * 0.45), noise(x, y, 12), 0.08);
+  },
   water: (x, y) => {
     const wave = Math.sin(y * 1.2 + x * 0.3) > 0.7 ? 0.1 : 0;
     return [0.2 + wave, 0.4 + wave, 0.9, 0.6];

@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { BLOCK, BLOCK_DEFS, isItem } from './blocks.js';
+import { BLOCK, BLOCK_DEFS, isItem, isSolid } from './blocks.js';
 import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
 import { BOAT_ID, BOAT_TURN_RATE, boatSpotAt, nextBoatPosition } from './boat.js';
 import { useBucket } from './utilities.js';
 import { World } from './world.js';
 import { Player } from './player.js';
-import { Inventory } from './inventory.js';
+import { Inventory, HOTBAR_SIZE } from './inventory.js';
 import { RENDER_DISTANCE, REACH, SEA_LEVEL, CHUNK_HEIGHT, CHUNK_SIZE } from './constants.js';
 import { createHud } from './hud.js';
 import { setupInput } from './input.js';
@@ -25,6 +25,8 @@ import { MobManager, MOB } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
+import { drawAmount, arrowDamage, damageThroughShield, ARROW_SPEED, ARROW_LIFETIME } from './combat.js';
+import { blastDamage, pearlLanding, PEARL_SPEED, PEARL_LIFETIME } from './hostile.js';
 import { createSleep, sleepPose } from './sleep.js';
 import { foodPoints } from './hunger.js';
 import { spotBesideBed } from './bed-spawn.js';
@@ -36,6 +38,11 @@ const SEED = 1337;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
+// Shadows from the sun, and a filmic tone curve so bright sky and sunlit faces don't clip to flat white.
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -337,9 +344,153 @@ function useUtility() {
   return false;
 }
 
+// Combat state. The shield is up while the right button is held with a shield in hand. The bow draws while the
+// right button is held with a bow, and fires when it is released. Arrows fly and live in `arrows`.
+const combat = { shieldUp: false, drawing: false, drawTime: 0 };
+const arrows = [];
+// Arrows fired by hunters. They fly at the player, and hurt them on a hit (the shield can block them).
+const mobArrows = [];
+
+// Each hunter bullet is drawn as a small bright cube, so the shot can be seen travelling at the player.
+const bulletGeo = new THREE.BoxGeometry(0.12, 0.12, 0.3);
+const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffd34d });
+function removeBullet(a) {
+  if (a.mesh) scene.remove(a.mesh);
+}
+
+// Moves hunter arrows, and hurts the player when one reaches them. Removed on a hit, a block, or when they run out.
+function updateMobArrows(dt) {
+  for (let i = mobArrows.length - 1; i >= 0; i--) {
+    const a = mobArrows[i];
+    a.life -= dt;
+    a.pos.add(a.vel.clone().multiplyScalar(dt));
+    if (!a.mesh) {
+      a.mesh = new THREE.Mesh(bulletGeo, bulletMat);
+      scene.add(a.mesh);
+    }
+    a.mesh.position.copy(a.pos);
+    a.mesh.lookAt(a.pos.clone().add(a.vel));
+    const toPlayer = a.pos.distanceTo(new THREE.Vector3(player.pos.x, player.pos.y + 1.0, player.pos.z));
+    if (toPlayer < 0.8) {
+      // The shield blocks an arrow only when it comes from the front, the same as a melee hit.
+      const lookX = -Math.sin(player.yaw);
+      const lookZ = -Math.cos(player.yaw);
+      const facing = (a.pos.x - player.pos.x) * lookX + (a.pos.z - player.pos.z) * lookZ > 0;
+      const taken = damageThroughShield(a.damage, combat.shieldUp && inventory.hasOffhandShield(), facing);
+      if (taken > 0) player.hurt(taken);
+      removeBullet(a);
+      mobArrows.splice(i, 1);
+      continue;
+    }
+    const blockId = world.getBlock(Math.floor(a.pos.x), Math.floor(a.pos.y), Math.floor(a.pos.z));
+    if ((blockId !== BLOCK.AIR && blockId !== BLOCK.WATER) || a.life <= 0) {
+      removeBullet(a);
+      mobArrows.splice(i, 1);
+    }
+  }
+}
+
+// Right-click press with a bow or shield held. Returns true if the click was used.
+// Throws an ender pearl: it flies along the look direction and, where it lands, the player is teleported there.
+// Only one pearl is in flight at a time, so a second throw is ignored until the first has landed.
+let pearlInFlight = null;
+function throwPearl() {
+  if (pearlInFlight || inventory.countOf(BLOCK.ENDER_PEARL) <= 0) return false;
+  inventory.remove(BLOCK.ENDER_PEARL, 1);
+  const dir = player.lookDir();
+  const from = player.eye;
+  // The landing spot is worked out now, from the world, so the teleport goes exactly where the pearl stops.
+  const landing = pearlLanding(from, dir, (x, y, z) => isSolid(world.getBlock(x, y, z)));
+  pearlInFlight = { pos: from.clone(), vel: dir.clone().multiplyScalar(PEARL_SPEED), life: PEARL_LIFETIME, landing };
+  return true;
+}
+
+// Each frame, the pearl flies out, and when its time is up (or it hits a block) the player is moved to where it landed.
+function updatePearl(dt) {
+  if (!pearlInFlight) return;
+  pearlInFlight.life -= dt;
+  pearlInFlight.pos.add(pearlInFlight.vel.clone().multiplyScalar(dt));
+  if (pearlInFlight.life <= 0) {
+    if (pearlInFlight.landing) {
+      player.pos.set(pearlInFlight.landing.x, pearlInFlight.landing.y, pearlInFlight.landing.z);
+      player.vel.set(0, 0, 0);
+      showMessage('Teleported!');
+    }
+    pearlInFlight = null;
+  }
+}
+
+function combatPress() {
+  // Holding an ender pearl throws it on right-click.
+  if (inventory.selectedItem.id === BLOCK.ENDER_PEARL && throwPearl()) return true;
+  const held = inventory.selectedItem.id;
+  // The shield is in the off-hand, so holding right-click raises it whether or not a shield is selected.
+  if (inventory.hasOffhandShield()) {
+    combat.shieldUp = true;
+    return true;
+  }
+  if (held === BLOCK.BOW && inventory.countOf(BLOCK.ARROW) > 0) {
+    combat.drawing = true;
+    combat.drawTime = 0;
+    return true;
+  }
+  return false;
+}
+
+// Right-click release: lower the shield, or fire the bow at the draw it reached.
+function combatRelease() {
+  combat.shieldUp = false;
+  if (!combat.drawing) return;
+  combat.drawing = false;
+  if (inventory.countOf(BLOCK.ARROW) <= 0) return;
+  const eye = player.eye;
+  const dir = player.lookDir();
+  // The arrow starts a little in front of the eye, so it does not hit the player.
+  const start = eye.clone().add(dir.clone().multiplyScalar(0.8));
+  arrows.push({
+    pos: start,
+    vel: dir.clone().multiplyScalar(ARROW_SPEED),
+    damage: arrowDamage(drawAmount(combat.drawTime)),
+    life: ARROW_LIFETIME,
+  });
+  inventory.remove(BLOCK.ARROW, 1);
+}
+
+// Each frame: a bow being drawn builds up draw time, and each arrow flies, hits the first mob or block it meets,
+// and is removed when it lands or runs out of life.
+function updateCombat(dt) {
+  // Switching away from the bow while the button is held cancels the draw. The shield stays up in the off-hand.
+  const held = inventory.selectedItem.id;
+  if (!inventory.hasOffhandShield()) combat.shieldUp = false;
+  if (held !== BLOCK.BOW) combat.drawing = false;
+  if (combat.drawing) combat.drawTime += dt;
+  for (let i = arrows.length - 1; i >= 0; i--) {
+    const a = arrows[i];
+    a.life -= dt;
+    const step = a.vel.clone().multiplyScalar(dt);
+    const next = a.pos.clone().add(step);
+    const hitMob = mobs.raycastMob(a.pos, step.clone().normalize(), step.length());
+    if (hitMob && !hitMob.dead) {
+      hitMob.takeHit(a.damage, a.pos.x, a.pos.z);
+      if (hitMob.dead) for (const id of hitMob.def.drops) drops.spawn(id, hitMob.pos.x, hitMob.pos.y, hitMob.pos.z);
+      arrows.splice(i, 1);
+      continue;
+    }
+    const blockId = world.getBlock(Math.floor(next.x), Math.floor(next.y), Math.floor(next.z));
+    if (blockId !== BLOCK.AIR && blockId !== BLOCK.WATER) {
+      drops.spawn(BLOCK.ARROW, next.x - 0.5, next.y - 0.5, next.z - 0.5);
+      arrows.splice(i, 1);
+      continue;
+    }
+    a.pos = next;
+    if (a.life <= 0) arrows.splice(i, 1);
+  }
+}
+
 function useOrPlace() {
   // Shears on a sheep take its wool. Otherwise the held item acts as usual.
   if (shearAimedSheep()) return;
+  if (combatPress()) return;
   if (useUtility()) return;
   const hit = targetHit();
   // Holding a boat: right-click on water places it. Right-click on a placed boat gets in it.
@@ -500,6 +651,7 @@ setupInput(renderer.domElement, player, inventory, {
   onBreak: attack,
   onRelease: () => mining.stop(),
   onPlace: useOrPlace,
+  onRightRelease: () => combatRelease(),
   onRespawn: respawn,
   onPauseChange: (paused) => hud.setPaused(paused && !anyPanelOpen()),
   onToggleCrafting: () => {
@@ -624,6 +776,11 @@ if (saved) {
     const src = saved.inventory?.[i];
     if (src) { s.id = src.id; s.count = src.count; }
   });
+  // The off-hand is only restored if it holds a shield. Older saves have none.
+  if (saved.offhand?.id === BLOCK.SHIELD && saved.offhand.count > 0) {
+    // The loaded save is the only source here, so the off-hand is restored only from it.
+    inventory.offhand = { id: BLOCK.SHIELD, count: 1 };
+  }
   const p = saved.player;
   world.update(p.x, p.z, RENDER_DISTANCE, 16);
   player.respawn(p.x, p.y, p.z);
@@ -713,16 +870,44 @@ function frame(now) {
   }
   world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
   drops.update(dt, player.pos, inventory);
+  updateCombat(dt);
+  updatePearl(dt);
   if (!anyPanelOpen()) mining.update(dt);
 
   if (!anyPanelOpen()) {
     mobs.update(dt, player.pos, timeOfDay, (mob, damage) => {
-      if (player.hurt(damage)) {
+      // The shield is between the player and the attacker when the attacker is in the direction the player faces.
+      const toMob = mob.pos.clone().sub(player.pos);
+      const lookX = -Math.sin(player.yaw);
+      const lookZ = -Math.cos(player.yaw);
+      const facingHit = toMob.x * lookX + toMob.z * lookZ > 0;
+      // The shield blocks from the off-hand while the right button holds it up.
+      const taken = damageThroughShield(damage, combat.shieldUp && inventory.hasOffhandShield(), facingHit);
+      if (taken <= 0) return;
+      if (player.hurt(taken)) {
         const away = player.pos.clone().sub(mob.pos);
         player.vel.x += away.x * 4;
         player.vel.z += away.z * 4;
       }
+    }, [], false, player.lookDir(), (from, dir, damage) => {
+      // A hunter's arrow: a projectile aimed at the player. It hurts the player when it reaches them.
+      mobArrows.push({ pos: new THREE.Vector3(from.x, from.y, from.z), vel: new THREE.Vector3(dir.x, dir.y, dir.z).multiplyScalar(18), damage, life: 4 });
     });
+    // A creeper that blew up hurts everything near it: the player takes the blast, and so do nearby mobs.
+    for (const m of mobs.mobs) {
+      if (!m.exploded || m.blasted) continue;
+      m.blasted = true;
+      const d = player.pos.distanceTo(m.pos);
+      const dmg = blastDamage(d);
+      if (dmg > 0 && player.hurt(dmg)) showMessage('Boom!');
+      for (const other of mobs.mobs) {
+        if (other === m || other.dead) continue;
+        const od = other.pos.distanceTo(m.pos);
+        const odmg = blastDamage(od);
+        if (odmg > 0) other.takeHit(odmg, m.pos.x, m.pos.z);
+      }
+    }
+    updateMobArrows(dt);
   }
   player.tickHealth(dt);
   if (!sleep.isSleeping()) player.hunger.update(dt, player.isSprinting());
@@ -748,8 +933,15 @@ function frame(now) {
   // Asleep, the view lowers to the mattress and tilts onto its side. Awake, it is the usual eye height and level.
   const lying = sleepPose(sleep.isSleeping() ? sleep.progress() : 0);
   camera.position.copy(player.eye);
+  // The sky dome follows the camera, so it always surrounds the view.
+  sky.dome.position.copy(camera.position);
   camera.position.y -= lying.drop;
-  heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem);
+  // A shield goes to the off-hand automatically: any shield in the hotbar moves there, and the left hand carries it.
+  // The shield rises while the right button holds it up to block.
+  for (let i = 0; i < HOTBAR_SIZE; i++) {
+    if (inventory.slots[i].id === BLOCK.SHIELD) inventory.equipOffhand(i);
+  }
+  heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem, inventory.hasOffhandShield(), combat.shieldUp);
   camera.rotation.order = 'YXZ';
   camera.rotation.y = player.yaw;
   camera.rotation.x = player.pitch;

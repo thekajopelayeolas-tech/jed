@@ -5,6 +5,13 @@ import { shouldBurn, burnStep } from './burning.js';
 import { buildMobModel } from './mob-model.js';
 import { LIGHT } from './lighting.js';
 import { villagesNear, LEVEL_BOX, HOUSES } from './village.js';
+import { EXTRA_MOBS } from './mob-catalogue.js';
+import {
+  hunterAction, HUNTER_SHOOT_INTERVAL, HUNTER_ARROW_DAMAGE,
+  creeperFuse, creeperExploded, CREEPER_FUSE_RANGE,
+  SPIDER_BITE_RANGE, SPIDER_BITE_DAMAGE,
+  endermanAngry, ENDERMAN_DAMAGE,
+} from './hostile.js';
 
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
@@ -15,7 +22,7 @@ export const CLIMB_HEIGHT = 4;
 export const SHEARED_WOOL = 2;
 export const SHEEP_WOOL_REGROW = 60;
 
-// Mob types.
+// Mob types. The first twelve are the original kinds. The rest come from the catalogue, one id per row.
 export const MOB = {
   COW: 'cow',
   SHEEP: 'sheep',
@@ -30,6 +37,7 @@ export const MOB = {
   VILLAGER: 'villager',
   IRON_GOLEM: 'iron_golem',
 };
+for (const [id] of EXTRA_MOBS) MOB[id.toUpperCase()] = id;
 
 // Each village keeps this many villagers and iron golems. They are topped up when the player is near.
 export const VILLAGERS_PER_VILLAGE = 10;
@@ -63,14 +71,49 @@ const MOB_DEFS = {
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true, walksBackwards: true },
 };
 
-// Land passive mobs spawn evenly: cows, sheep, pigs, and rabbits. Fish are spawned in water separately.
-const LAND_PASSIVE = [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT, MOB.CHICKEN];
-export function pickPassiveMob() {
-  return LAND_PASSIVE[Math.floor(Math.random() * LAND_PASSIVE.length)];
+// The 68 catalogue mobs. Each row gives its stats, body shape, and colour. Drops are the item names in the
+// catalogue, and they stay mob-only items: each drop is a placeholder id so a kill never fails.
+// Each catalogue drop name maps to the item a mob leaves. The names match what the mob is known for in the game.
+const CATALOGUE_DROP = {
+  raw_fish: BLOCK.RAW_FISH, raw_chicken: BLOCK.RAW_CHICKEN, raw_pork: BLOCK.RAW_PORK, raw_mutton: BLOCK.RAW_MUTTON,
+  leather: BLOCK.LEATHER, bone: BLOCK.BONE, string: BLOCK.STRING, gunpowder: BLOCK.GUNPOWDER,
+  feather: BLOCK.FEATHER, wheat: BLOCK.WHEAT, rotten_flesh: BLOCK.ROTTEN_FLESH, pearl: BLOCK.ENDER_PEARL,
+  ink_sac: BLOCK.INK_SAC, slime_ball: BLOCK.SLIME_BALL, honeycomb: BLOCK.HONEYCOMB, scute: BLOCK.SCUTE, bamboo: BLOCK.BAMBOO,
+};
+for (const [id, name, hostile, water, shape, hp, speed, dmg, colour, drops] of EXTRA_MOBS) {
+  MOB_DEFS[id] = {
+    name,
+    shape,
+    size: shape === 'fish' ? [0.6, 0.3, 0.3] : shape === 'blob' ? [0.6, 0.6, 0.6] : [0.7, 1.0, 0.7],
+    color: colour,
+    health: hp,
+    speed,
+    hostile,
+    damage: hostile ? dmg : 0,
+    drops: drops.map((d) => CATALOGUE_DROP[d]).filter((d) => d !== undefined),
+    burnsInSun: false,
+    ...(water ? { water: true } : {}),
+  };
 }
 
-// Water mobs: fish, salmon, dolphin, squid. They spawn only in water and never leave it.
-export const WATER_MOBS = [MOB.FISH, MOB.SALMON, MOB.DOLPHIN, MOB.SQUID];
+// Land passive mobs spawn evenly: cows, sheep, pigs, and rabbits. Fish are spawned in water separately.
+const LAND_PASSIVE = [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT, MOB.CHICKEN];
+// The peaceful land kinds from the catalogue join the passive list, so they spawn by day too.
+const CATALOGUE_LAND_PASSIVE = EXTRA_MOBS.filter((r) => !r[2] && !r[3]).map((r) => r[0]);
+export function pickPassiveMob() {
+  const all = [...LAND_PASSIVE, ...CATALOGUE_LAND_PASSIVE];
+  return all[Math.floor(Math.random() * all.length)];
+}
+
+// The hostile land kinds from the catalogue. They join the zombie at night.
+export const HOSTILE_LAND = EXTRA_MOBS.filter((r) => r[2] && !r[3]).map((r) => r[0]);
+export function pickHostileMob() {
+  const all = [MOB.ZOMBIE, ...HOSTILE_LAND];
+  return all[Math.floor(Math.random() * all.length)];
+}
+
+// Water mobs: fish, salmon, dolphin, squid, and the catalogue's water kinds. They spawn only in water and never leave it.
+export const WATER_MOBS = [MOB.FISH, MOB.SALMON, MOB.DOLPHIN, MOB.SQUID, ...EXTRA_MOBS.filter((r) => r[3]).map((r) => r[0])];
 export function pickWaterMob() {
   return WATER_MOBS[Math.floor(Math.random() * WATER_MOBS.length)];
 }
@@ -175,6 +218,14 @@ export class Mob {
     return false;
   }
 
+  // True if a solid block is directly in front of the mob at foot height, in the direction it is about to move.
+  // Used to start the jump before the mob reaches the block.
+  blockAhead(dx, dz) {
+    const nx = this.pos.x + Math.sign(dx) * this.halfWidth + dx;
+    const nz = this.pos.z + Math.sign(dz) * this.halfWidth + dz;
+    return this.collides(nx, this.pos.y, nz);
+  }
+
   // Climbs a wall when walking into it. Every land mob climbs a wall up to CLIMB_HEIGHT blocks tall, as long as
   // the space above the top of the wall is clear. Water mobs never climb. Returns true if the mob started a climb.
   tryJump(dx, dz) {
@@ -207,6 +258,68 @@ export class Mob {
       if (d < bestDist) { bestDist = d; best = { x: doorX, z: doorZ }; }
     }
     return best;
+  }
+
+  // The behaviour of the special hostile kinds, from hostile.js. Returns null for every other mob, so those keep the
+  // generic chase. Otherwise returns { mx, mz } for the walk direction, and optionally `onAttack` with `damage`.
+  specialAction(dt, playerPos, lookDir, fire) {
+    if (!['hunter', 'creeper', 'spider', 'enderman'].includes(this.type)) return null;
+    const dx = playerPos.x - this.pos.x;
+    const dz = playerPos.z - this.pos.z;
+    const dist = Math.hypot(dx, dz);
+    const toPlayer = dist > 0.01 ? { x: dx / dist, z: dz / dist } : { x: 0, z: 0 };
+
+    if (this.type === 'hunter') {
+      // Keeps its distance, backs off when close, and shoots arrows at range.
+      this.shootTimer = Math.max(0, (this.shootTimer ?? 0) - dt);
+      const action = hunterAction(dist, this.shootTimer <= 0);
+      let mx = 0;
+      let mz = 0;
+      if (action === 'advance') { mx = toPlayer.x; mz = toPlayer.z; }
+      if (action === 'retreat') { mx = -toPlayer.x; mz = -toPlayer.z; }
+      if (action === 'shoot' && fire) {
+        this.shootTimer = HUNTER_SHOOT_INTERVAL;
+        // The rifle is aimed at the player's chest, so the bullet travels toward the body, not the ground.
+        const aim = { x: playerPos.x - this.pos.x, y: playerPos.y + 1.0 - (this.pos.y + 1.5), z: playerPos.z - this.pos.z };
+        const len = Math.hypot(aim.x, aim.y, aim.z) || 1;
+        fire({ x: this.pos.x, y: this.pos.y + 1.5, z: this.pos.z }, { x: aim.x / len, y: aim.y / len, z: aim.z / len }, HUNTER_ARROW_DAMAGE);
+      }
+      return { mx, mz };
+    }
+
+    if (this.type === 'creeper') {
+      // Follows the player. A fuse lights when close and the blast goes off when it ends.
+      this.fuse = creeperFuse(this.fuse ?? 0, dist, dt);
+      if (this.fuse < 0) this.fuse = 0;
+      if (creeperExploded(this.fuse)) {
+        this.dead = true;
+        this.exploded = true;
+        return { mx: 0, mz: 0, onAttack: true, damage: 0 };
+      }
+      const pursue = dist > CREEPER_FUSE_RANGE ? 1 : 0;
+      return { mx: toPlayer.x * pursue, mz: toPlayer.z * pursue };
+    }
+
+    if (this.type === 'spider') {
+      // Runs at the player and bites when close.
+      const bite = dist < SPIDER_BITE_RANGE && this.attackCooldown <= 0;
+      if (bite) {
+        this.attackCooldown = 1;
+        return { mx: toPlayer.x, mz: toPlayer.z, onAttack: true, damage: SPIDER_BITE_DAMAGE };
+      }
+      return { mx: toPlayer.x, mz: toPlayer.z };
+    }
+
+    // Enderman: calm until the player looks straight at it, then it charges and attacks.
+    let lookDot = -1;
+    if (lookDir && dist > 0.01) lookDot = (lookDir.x * -toPlayer.x + lookDir.z * -toPlayer.z);
+    this.angry = endermanAngry(lookDot, dist);
+    if (!this.angry) return { mx: 0, mz: 0 };
+    if (dist < 1.2 && this.attackCooldown <= 0) {
+      this.attackCooldown = 1;
+      return { mx: toPlayer.x, mz: toPlayer.z, onAttack: true, damage: ENDERMAN_DAMAGE };
+    }
+    return { mx: toPlayer.x, mz: toPlayer.z };
   }
 
   // Picks what this mob goes for this frame, or null. `others` is the list of live mobs it can see.
@@ -245,7 +358,8 @@ export class Mob {
   // Runs AI and physics for one frame. `playerPos` is the player's feet position.
   // `onAttack(mob, damage)` is called when a hostile mob strikes.
   // `others` is every other live mob, used for targets. `night` is true when villagers should stay indoors.
-  update(dt, playerPos, onAttack, others = [], night = false) {
+  // `lookDir` is the player's look direction, for the enderman's gaze. `fire(from, dir, damage)` shoots an arrow.
+  update(dt, playerPos, onAttack, others = [], night = false, lookDir = null, fire = null) {
     if (this.dead) return;
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
     // A sheared sheep grows its wool back after a while, and can be sheared again.
@@ -259,8 +373,15 @@ export class Mob {
     let mz = 0;
     // Hostile and angry mobs pick a target. Zombies attack the player and villagers. Iron golems attack zombies,
     // and the player too once they are angry. Each target is a mob or the player, and a strike goes to whichever it is.
-    const target = this.chooseTarget(playerPos, others);
-    if (target) {
+    // Special hostile kinds (hunter, creeper, spider, enderman) have their own behaviour, from hostile.js.
+    const special = this.specialAction(dt, playerPos, lookDir, fire);
+    if (special) {
+      mx = special.mx;
+      mz = special.mz;
+      if (special.onAttack) onAttack(this, special.damage);
+    } else if (this.chooseTarget(playerPos, others) !== null) {
+      // Zombies, golems and the rest chase their target as before.
+      const target = this.chooseTarget(playerPos, others);
       const tdx = target.x - this.pos.x;
       const tdz = target.z - this.pos.z;
       const tdist = Math.hypot(tdx, tdz);
@@ -320,11 +441,16 @@ export class Mob {
     const inWater = this.def.water && this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y), Math.floor(this.pos.z)) === BLOCK.WATER;
     this.vel.y = inWater ? 0 : Math.max(-40, this.vel.y - GRAVITY * dt);
 
-    const blockedX = this.moveAxis('x', this.vel.x * dt);
-    const blockedZ = this.moveAxis('z', this.vel.z * dt);
-    // Walking into a single block makes the mob jump over it. A taller wall, or no clear space above, does not.
-    if (blockedX && this.tryJump(this.vel.x * dt, 0)) this.vel.x = 0;
-    if (blockedZ && this.tryJump(0, this.vel.z * dt)) this.vel.z = 0;
+    const stepX = this.vel.x * dt;
+    const stepZ = this.vel.z * dt;
+    // If a block is directly in front of the mob, jump before walking into it. The jump runs first, so the
+    // mob rises as it moves and does not stop against the block.
+    if (stepX !== 0 && this.blockAhead(stepX, 0)) this.tryJump(stepX, 0);
+    else if (stepZ !== 0 && this.blockAhead(0, stepZ)) this.tryJump(0, stepZ);
+    const blockedX = this.moveAxis('x', stepX);
+    const blockedZ = this.moveAxis('z', stepZ);
+    if (blockedX && this.tryJump(stepX, 0)) this.vel.x = 0;
+    if (blockedZ && this.tryJump(0, stepZ)) this.vel.z = 0;
 
     const falling = this.vel.y < 0;
     const landed = this.moveAxis('y', this.vel.y * dt) && falling;
@@ -439,7 +565,8 @@ export class MobManager {
       this.trySpawnInWater(playerPos, pickWaterMob());
       return;
     }
-    const type = night || roll < 0.3 ? MOB.ZOMBIE : pickPassiveMob();
+    // At night a land spawn is hostile: a zombie or one of the catalogue's hostile kinds. By day it is peaceful.
+    const type = night || roll < 0.3 ? pickHostileMob() : pickPassiveMob();
     this.trySpawnOnLand(playerPos, type, night);
   }
 
@@ -465,6 +592,10 @@ export class MobManager {
       if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR) return;
       // Zombies spawn on dry ground at night. By day they only spawn where it is dark, such as caves.
       if (type === MOB.ZOMBIE && !night && !isDarkEnough(this.world, x, y + 1, z)) return;
+      // A hostile spawn by day only happens where it is dark, as with the zombie. Peaceful kinds ignore the light.
+      if (MOB_DEFS[type]?.hostile && !night && !isDarkEnough(this.world, x, y + 1, z)) return;
+      // A peaceful land mob needs open sky above it, so it never spawns stuck inside a cave or under a roof.
+      if (!MOB_DEFS[type]?.hostile && this.world.getLight(x, y + 1, z, LIGHT.SKY) <= 0) return;
       this.mobs.push(new Mob(this.scene, this.world, type, x + 0.5, y + 1, z + 0.5));
       return;
     }

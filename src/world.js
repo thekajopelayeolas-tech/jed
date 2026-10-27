@@ -6,7 +6,7 @@ const DOOR_OPEN = DOOR.OPEN_DOOR;
 
 // The bed's head id, repeated from blocks.js (BLOCK.BED) because blocks.js imports building.js.
 const BED_ID = 21;
-import { Chunk } from './chunk.js';
+import { Chunk, surfaceHeight } from './chunk.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { buildChunkGeometry, createChunkMeshes } from './mesher.js';
 import { updateLightAt, lightChunk, LIGHT, MAX_LIGHT } from './lighting.js';
@@ -222,7 +222,10 @@ export class World {
         // Biomes are not stored with the edits, so recompute them from the seed.
         for (let x = 0; x < CHUNK_SIZE; x++) {
           for (let z = 0; z < CHUNK_SIZE; z++) {
-            chunk.biomes[x + CHUNK_SIZE * z] = biomeAt(cx * CHUNK_SIZE + x, cz * CHUNK_SIZE + z, this.seed);
+            const wx = cx * CHUNK_SIZE + x;
+            const wz = cz * CHUNK_SIZE + z;
+            // The same base height that generation uses, so an edited chunk gets the same biome as a new one.
+            chunk.biomes[x + CHUNK_SIZE * z] = biomeAt(wx, wz, this.seed, surfaceHeight(this.seed, wx, wz));
           }
         }
       } else {

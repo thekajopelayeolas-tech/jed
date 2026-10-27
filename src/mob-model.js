@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { EXTRA_MOBS } from './mob-catalogue.js';
 
 // Builds a blocky multi-part model for a mob: head, body, two arms, and two legs.
 // Parts are grouped so the legs and arms can swing. Collision still uses the simple box in mobs.js.
@@ -27,14 +28,51 @@ const PALETTES = {
   fish: { skin: 0x5c8fc4, shirt: 0x7aa9d6, trousers: 0x3d6e9c, eye: 0x111111 },
 };
 
+// A box with light from above: the top face is the mob's colour, the sides are a little darker, and the bottom is
+// darkest. Vertex colours carry this, so the one material still takes the hit flash and the mob keeps its colour.
+function shadedBox(w, h, d, color) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const base = new THREE.Color(color);
+  const count = geo.attributes.position.count;
+  const colours = new Float32Array(count * 3);
+  const normal = geo.attributes.normal;
+  for (let i = 0; i < count; i++) {
+    // Normals point out of each face: +y is up (lit), -y is down (dark), the others are sides.
+    const ny = normal.getY(i);
+    const k = ny > 0.5 ? 1.0 : ny < -0.5 ? 0.6 : 0.82;
+    colours[i * 3] = base.r * k;
+    colours[i * 3 + 1] = base.g * k;
+    colours[i * 3 + 2] = base.b * k;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+  return new THREE.Mesh(geo, mat);
+}
+
 function box(w, h, d, color) {
-  const mat = new THREE.MeshLambertMaterial({ color });
-  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  return shadedBox(w, h, d, color);
 }
 
 // Returns { group, parts, materials } where parts.leftLeg etc. are pivots for animation.
+// The catalogue mobs (mob-catalogue.js) draw with one of four body shapes. Each row there names its shape and colour,
+// so a new kind gets its own colours here and the shape picks its body. The existing kinds keep their palettes.
+const SHAPE_OF = Object.fromEntries(EXTRA_MOBS.map((r) => [r[0], { shape: r[4], colour: r[8] }]));
+function catalogueKind(kind) {
+  const row = SHAPE_OF[kind];
+  if (!row) return null;
+  const c = row.colour;
+  // Body colour from the catalogue, with a darker trim for limbs and a light eye. Used by every shape.
+  // The enderman's eyes glow purple. Every other catalogue mob keeps the dark eye.
+  const eye = kind === 'enderman' ? 0xb026ff : 0x111111;
+  return { skin: c, shirt: c, trousers: c, eye, patch: c, nose: c, fin: c, vine: c, shape: row.shape };
+}
+
 export function buildMobModel(kind) {
-  const p = PALETTES[kind] ?? PALETTES.cow;
+  const cat = catalogueKind(kind);
+  const p = cat ?? PALETTES[kind] ?? PALETTES.cow;
+  // A catalogue kind uses the body of its shape: biped is humanoid, fish is a fish, blob is a round body, and quad
+  // is a four-legged beast. The original kinds keep their own branches below.
+  const shape = cat?.shape ?? null;
   const group = new THREE.Group();
   const materials = [];
 
@@ -47,7 +85,8 @@ export function buildMobModel(kind) {
   };
 
   // Zombie: humanoid. Cow: quadruped with a longer body.
-  if (['zombie', 'villager', 'iron_golem'].includes(kind)) {
+  // Catalogue biped: the humanoid body, so the branch below serves it.
+  if (['zombie', 'villager', 'iron_golem'].includes(kind) || shape === 'biped') {
     const head = part(0.5, 0.5, 0.5, p.skin, 0, 1.55, 0);
     const eyeL = part(0.08, 0.06, 0.02, p.eye, -0.12, 1.6, 0.26);
     const eyeR = part(0.08, 0.06, 0.02, p.eye, 0.12, 1.6, 0.26);
@@ -69,11 +108,15 @@ export function buildMobModel(kind) {
     armL.add(part(0.18, 0.6, 0.18, p.skin, 0, -0.28, 0.1));
     armR.add(part(0.18, 0.6, 0.18, p.skin, 0, -0.28, 0.1));
     group.add(head, eyeL, eyeR, body, legL, legR, armL, armR);
+    // A hunter carries a rifle: a dark stock and barrel held out in front, so it reads as a gun.
+    if (kind === 'hunter') {
+      group.add(part(0.08, 0.1, 0.5, 0x3a2a1a, 0.18, 1.05, 0.32), part(0.06, 0.06, 0.4, 0x222222, 0.18, 1.12, 0.6));
+    }
     return { group, legs: [legL, legR], arms: [armL, armR], materials, height: 1.9 };
   }
 
   // Fish: a flat body with a tail fin and two side fins. No legs, so nothing swings.
-  if (kind === 'fish') {
+  if (kind === 'fish' || shape === 'fish') {
     const body = part(0.6, 0.3, 0.3, p.shirt, 0, 0.15, 0);
     const head = part(0.2, 0.25, 0.25, p.skin, 0.36, 0.15, 0);
     const tail = part(0.2, 0.3, 0.05, p.trousers, -0.38, 0.15, 0);
@@ -147,6 +190,16 @@ export function buildMobModel(kind) {
     return { group, legs: [], arms: [], materials, height: 0.5 };
   }
 
+  // Blob: a round body with a small head on top and no legs, so it bobs rather than walks. Used by the slimes,
+  // ghasts, bees and other round catalogue mobs.
+  if (shape === 'blob') {
+    const body = part(0.6, 0.6, 0.6, p.shirt, 0, 0.4, 0);
+    const top = part(0.3, 0.2, 0.3, p.skin, 0, 0.8, 0);
+    const eye = part(0.06, 0.06, 0.02, p.eye, 0.1, 0.45, 0.31);
+    group.add(body, top, eye);
+    return { group, legs: [], arms: [], materials, height: 0.8 };
+  }
+
   // Cow: head at the front, body, four legs. The body is patched brown and white, with a white face and pink nose.
   const body = part(0.9, 0.5, 0.5, p.shirt, 0, 0.6, 0);
   const patchA = part(0.3, 0.3, 0.52, p.patch, -0.2, 0.7, 0);
@@ -162,5 +215,29 @@ export function buildMobModel(kind) {
     group.add(leg);
   }
   group.add(body, patchA, patchB, head, nose);
+  // Catalogue quadrupeds share this body, so each one gets its own features on top of it. The features are placed
+  // from the body's centre, so a kind with a tall head, a shell, or a tail reads as itself.
+  const feature = QUAD_FEATURES[kind];
+  if (feature) feature(part, group, p);
   return { group, legs, arms: [], materials, height: 0.9 };
 }
+
+// Extra parts for the catalogue quadrupeds. Each adds a feature that sets it apart from the others.
+const QUAD_FEATURES = {
+  horse: (part, g, p) => { g.add(part(0.12, 0.6, 0.14, p.trousers, 0.62, 0.95, 0), part(0.1, 0.12, 0.3, p.trousers, 0.7, 0.9, 0)); },
+  donkey: (part, g, p) => { g.add(part(0.1, 0.4, 0.08, p.trousers, 0.58, 1.0, 0.12), part(0.1, 0.4, 0.08, p.trousers, 0.58, 1.0, -0.12)); },
+  mule: (part, g, p) => { g.add(part(0.12, 0.55, 0.14, p.trousers, 0.62, 0.95, 0), part(0.1, 0.4, 0.08, p.trousers, 0.58, 1.0, 0.12)); },
+  llama: (part, g, p) => { g.add(part(0.12, 0.4, 0.12, p.skin, 0.52, 1.1, 0), part(0.14, 0.2, 0.16, p.skin, 0.58, 1.3, 0)); },
+  goat: (part, g, p) => { g.add(part(0.05, 0.22, 0.05, 0xd9d4c4, 0.5, 1.0, 0.1), part(0.05, 0.22, 0.05, 0xd9d4c4, 0.5, 1.0, -0.1)); },
+  camel: (part, g, p) => { g.add(part(0.3, 0.3, 0.3, p.shirt, 0, 1.0, 0)); },
+  sniffer: (part, g, p) => { g.add(part(0.3, 0.12, 0.12, p.trousers, 0.85, 0.7, 0)); },
+  armadillo: (part, g, p) => { g.add(part(0.85, 0.3, 0.5, 0x8a5a3a, -0.02, 0.85, 0)); },
+  ocelot: (part, g, p) => { g.add(part(0.04, 0.3, 0.04, p.trousers, -0.65, 0.7, 0)); },
+  cat: (part, g, p) => { g.add(part(0.05, 0.25, 0.05, p.trousers, -0.65, 0.8, 0)); },
+  fox: (part, g, p) => { g.add(part(0.08, 0.14, 0.08, p.trousers, 0.5, 1.05, 0.1), part(0.08, 0.14, 0.08, p.trousers, 0.5, 1.05, -0.1), part(0.3, 0.12, 0.12, p.shirt, -0.6, 0.6, 0)); },
+  panda: (part, g, p) => { g.add(part(0.14, 0.14, 0.14, 0x2a2a2a, 0.62, 0.95, 0.14), part(0.14, 0.14, 0.14, 0x2a2a2a, 0.62, 0.95, -0.14)); },
+  polar_bear: (part, g, p) => { g.add(part(0.4, 0.4, 0.4, p.skin, 0.1, 0.9, 0)); },
+  turtle: (part, g, p) => { g.add(part(0.9, 0.1, 0.7, 0x4a6a3a, 0, 0.92, 0)); },
+  spider: (part, g, p) => { g.add(part(0.5, 0.4, 0.4, p.shirt, -0.5, 0.7, 0), part(0.25, 0.25, 0.25, 0xd01010, 0.7, 0.85, 0.12), part(0.25, 0.25, 0.25, 0xd01010, 0.7, 0.85, -0.12)); },
+  frog: (part, g, p) => { g.add(part(0.2, 0.1, 0.2, p.skin, 0.5, 0.95, 0.12), part(0.2, 0.1, 0.2, p.skin, 0.5, 0.95, -0.12)); },
+};

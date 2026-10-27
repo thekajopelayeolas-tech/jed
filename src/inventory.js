@@ -86,6 +86,12 @@ export const RECIPES = [
   { result: BLOCK.CAKE, count: 1, shaped: true, pattern: ['EEE', 'WWW'], key: { E: BLOCK.EGG, W: BLOCK.WHEAT } },
   { result: BLOCK.COOKIES, count: 4, shaped: true, pattern: ['WEW'], key: { W: BLOCK.WHEAT, E: BLOCK.EGG } },
   { result: BLOCK.STEW, count: 1, shaped: true, pattern: ['C', 'W'], key: { C: BLOCK.COOKED_CHICKEN, W: BLOCK.WHEAT } },
+  // Combat gear. A shield is planks around an iron ingot. A bow is a stick curve of planks. Arrows use iron and sticks.
+  { result: BLOCK.SHIELD, count: 1, shaped: true, pattern: ['PIP', 'PPP', ' P '], key: { P: BLOCK.PLANKS, I: BLOCK.IRON_INGOT } },
+  { result: BLOCK.BOW, count: 1, shaped: true, pattern: [' SP', 'S P', ' SP'], key: { S: BLOCK.STICK, P: BLOCK.PLANKS } },
+  { result: BLOCK.ARROW, count: 4, shaped: true, pattern: ['I', 'S', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  // Ender pearl: this game has no ender materials, so a pearl is made from a stone and a coal, in a ring.
+  { result: BLOCK.ENDER_PEARL, count: 1, shaped: true, pattern: ['SC'], key: { S: BLOCK.STONE, C: BLOCK.COAL } },
 ];
 
 // Items are {id, count}. Returns a 2D grid recipe match or null.
@@ -125,6 +131,36 @@ export class Inventory {
   constructor() {
     this.slots = new Array(INV_SIZE).fill(null).map(() => ({ id: BLOCK.AIR, count: 0 }));
     this.selected = 0;
+    // The off-hand is its own slot, separate from the hotbar and the main grid. It holds a shield, which is
+    // carried in the left hand. It is not part of add/remove/countOf, so the hotbar and crafting rules do not change.
+    this.offhand = { id: BLOCK.AIR, count: 0 };
+  }
+
+  // Moves a shield from a hotbar slot into the off-hand, freeing that hotbar slot. Returns true if it moved.
+  // Only one shield fits in the off-hand, so a second shield stays where it is.
+  equipOffhand(index) {
+    const s = this.slots[index];
+    if (s.id !== BLOCK.SHIELD || s.count <= 0) return false;
+    if (this.offhand.id !== BLOCK.AIR) return false;
+    this.offhand = { id: BLOCK.SHIELD, count: 1 };
+    s.count -= 1;
+    if (s.count <= 0) { s.id = BLOCK.AIR; s.count = 0; }
+    return true;
+  }
+
+  // Returns the off-hand shield to the inventory. It goes to the first free slot, and stays in the off-hand if the
+  // inventory is full. Returns true if it moved.
+  unequipOffhand() {
+    if (this.offhand.id === BLOCK.AIR) return false;
+    if (this.add(BLOCK.SHIELD, 1) === 0) {
+      this.offhand = { id: BLOCK.AIR, count: 0 };
+      return true;
+    }
+    return false;
+  }
+
+  hasOffhandShield() {
+    return this.offhand.id === BLOCK.SHIELD && this.offhand.count > 0;
   }
 
   get selectedItem() {

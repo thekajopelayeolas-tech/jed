@@ -23,7 +23,10 @@ const BASIC_IDS = [BLOCK.PLANKS, BLOCK.STICK, BLOCK.CRAFTING_TABLE, BLOCK.FURNAC
 // Doors, chests, and the boat sit under the basics: they are simple, everyday items.
 const DOOR_AND_STORAGE_IDS = [DOOR.DOOR, DOOR.OPEN_DOOR, STORAGE.CHEST, BLOCK.BOAT];
 const BUILD_IDS = Object.values(BUILD);
-const UTILITY_IDS = [BLOCK.BUCKET, BLOCK.WATER_BUCKET, BLOCK.SHEARS];
+// The bow and arrows are tools for ranged attacks, so they sit with the tools and utilities.
+const UTILITY_IDS = [BLOCK.BUCKET, BLOCK.WATER_BUCKET, BLOCK.SHEARS, BLOCK.BOW, BLOCK.ARROW, BLOCK.ENDER_PEARL];
+// The shield is defence, so it is grouped with the armour.
+const DEFENCE_IDS = [BLOCK.SHIELD];
 // Food & Drinks: the farm crops and the cooked food they make. Stew is the only drink.
 const FOOD_IDS = [BLOCK.WHEAT, BLOCK.WHEAT_BLOCK, BLOCK.BREAD, BLOCK.CAKE, BLOCK.COOKIES, BLOCK.STEW, BLOCK.COOKED_CHICKEN];
 export const CATEGORIES = [
@@ -32,7 +35,7 @@ export const CATEGORIES = [
   // Tools & Utilities: the tools with a tool class (pickaxes, axes, swords, shovels, hoes), plus
   // buckets, and shears.
   { name: 'Tools & Utilities', test: (id) => TOOL_ITEMS[id] !== undefined || UTILITY_IDS.includes(id) },
-  { name: 'Armour', test: (id) => armourInfo(id) !== null },
+  { name: 'Armour', test: (id) => armourInfo(id) !== null || DEFENCE_IDS.includes(id) },
   { name: 'Building', test: (id) => BUILD_IDS.includes(id) },
 ];
 

@@ -2,6 +2,7 @@ import { World } from '../src/world.js';
 import { DropManager } from '../src/drops.js';
 import { Inventory } from '../src/inventory.js';
 import { Mob, MOB, pickPassiveMob } from '../src/mobs.js';
+import { EXTRA_MOBS } from '../src/mob-catalogue.js';
 import { BLOCK, isItem } from '../src/blocks.js';
 import { BLOCK_TILES } from '../src/textures.js';
 import * as THREE from 'three';
@@ -52,7 +53,9 @@ check('wool is a block with a texture, so it can be placed and dropped', !!BLOCK
   check('passive spawns include cows', seen.has(MOB.COW));
   check('passive spawns include pigs', seen.has(MOB.PIG));
   check('passive spawns include rabbits', seen.has(MOB.RABBIT));
-  check('land passive spawns are cows, sheep, pigs, rabbits, or chickens', [...seen].every((t) => [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT, MOB.CHICKEN].includes(t)));
+  // Land passive spawns are peaceful land mobs: the original five, or a peaceful kind from the catalogue.
+  const peacefulLand = [MOB.COW, MOB.SHEEP, MOB.PIG, MOB.RABBIT, MOB.CHICKEN, ...EXTRA_MOBS.filter((r) => !r[2] && !r[3]).map((r) => r[0])];
+  check('land passive spawns are peaceful land mobs', [...seen].every((t) => peacefulLand.includes(t)));
 check('passive spawns include chickens', seen.has(MOB.CHICKEN));
 }
 

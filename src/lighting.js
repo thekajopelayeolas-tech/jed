@@ -9,7 +9,8 @@ export const MAX_LIGHT = 15;
 const DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
 const DOWN = 3;
 
-const EMISSION = { [BLOCK.TORCH]: 14 };
+// A torch gives the brightest block light the game allows, so the glow reaches as far as it can.
+const EMISSION = { [BLOCK.TORCH]: MAX_LIGHT };
 
 function isOpaque(id) {
   return isSolid(id) && !BLOCK_DEFS[id].transparent;

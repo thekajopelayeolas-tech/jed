@@ -164,7 +164,15 @@ export function createChunkMeshes(geo, opaqueMat, transMat) {
   const group = new THREE.Group();
   const o = toMesh(geo.opaque, opaqueMat);
   const t = toMesh(geo.trans, transMat);
-  if (o) group.add(o);
-  if (t) group.add(t);
+  // Solid blocks cast and receive the sun's shadows. Water and glass are see-through, so they only receive them.
+  if (o) {
+    o.castShadow = true;
+    o.receiveShadow = true;
+    group.add(o);
+  }
+  if (t) {
+    t.receiveShadow = true;
+    group.add(t);
+  }
   return group;
 }

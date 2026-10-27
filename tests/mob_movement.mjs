@@ -130,8 +130,9 @@ for (const type of [MOB.SALMON, MOB.DOLPHIN, MOB.SQUID]) {
   for (let i = 0; i < 400; i++) mm.trySpawn(new THREE.Vector3(22, WALL_Y + 1, 4), 0.3);
   check('no water mobs spawn when there is no water', mm.mobs.every((m) => !WATER_MOBS.includes(m.type)));
 }
-check('the water mob list is only fish, salmon, dolphin and squid',
-  WATER_MOBS.length === 4 && [MOB.FISH, MOB.SALMON, MOB.DOLPHIN, MOB.SQUID].every((t) => WATER_MOBS.includes(t)));
+check('the water mob list has the four original water mobs',
+  [MOB.FISH, MOB.SALMON, MOB.DOLPHIN, MOB.SQUID].every((t) => WATER_MOBS.includes(t)));
+check('every water mob in the list lives in water', WATER_MOBS.every((t) => new Mob(scene, makeWorld(0), t, 0, 0, 0).def.water === true));
 check('pickWaterMob always returns a water mob', Array.from({ length: 100 }, () => pickWaterMob()).every((t) => WATER_MOBS.includes(t)));
 
 Math.random = realRandom;

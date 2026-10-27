@@ -194,6 +194,16 @@ function shearsSprite() {
   ]);
 }
 
+// String: a loose loop of thread with a frayed tail, shaded by side so it reads as a cord.
+const STRING_COL = { light: [0.97, 0.97, 0.94], dark: [0.72, 0.72, 0.68] };
+function stringSprite() {
+  return layered([
+    { inside: (px, py) => { const d = Math.hypot(px - 7, py - 7); return d > 3.3 && d < 4.9; }, color: (px, py) => pick(STRING_COL, py < 7, px, py) },
+    stroke(10, 10, 13.5, 14, 0.9, STRING_COL),
+    stroke(13.5, 14, 12, 15, 0.9, STRING_COL),
+  ]);
+}
+
 const SPRITES = new Map([
   [BLOCK.STICK, stroke(3, 13, 13, 3, 1.4, HANDLE)],
   [BLOCK.COOKED_BEEF, ellipse(8, 8.5, 6.2, 4.8, (px, py) => {
@@ -279,6 +289,27 @@ const SPRITES = new Map([
   [BLOCK.RAW_CHICKEN, ellipse(8, 8.5, 5.5, 4.8, (px, py) => tint([0.95, 0.8, 0.75], grain(px, py) * 0.1))],
   // Cooked chicken: the same piece, browned.
   [BLOCK.COOKED_CHICKEN, ellipse(8, 8.5, 5.5, 4.8, (px, py) => tint([0.78, 0.5, 0.25], grain(px, py) * 0.1))],
+  // Shield: a round wooden board with an iron boss in the middle.
+  [BLOCK.SHIELD, layered([
+    ellipse(8, 8, 6, 6.5, (px, py) => pick(WOOD_HEAD, px < 8, px, py)),
+    ellipse(8, 8, 2, 2, (px, py) => pick(IRON, px < 8, px, py)),
+  ])],
+  // Bow: a curved stave with a string across it.
+  [BLOCK.BOW, layered([
+    stroke(4, 2, 12, 8, 0.9, HANDLE),
+    stroke(12, 8, 4, 14, 0.9, HANDLE),
+    stroke(4, 2, 4, 14, 0.25, { light: [0.9, 0.9, 0.9], dark: [0.7, 0.7, 0.7] }),
+  ])],
+  // Arrow: a thin shaft with a pointed head and feathered tail.
+  [BLOCK.ARROW, layered([
+    stroke(2, 14, 13, 3, 0.5, HANDLE),
+    poly([[13, 3], [15, 1], [14, 4], [12, 5]], (px, py) => pick(IRON, px < 13, px, py)),
+  ])],
+  // Ender pearl: a smooth teal sphere with a dark highlight.
+  [BLOCK.ENDER_PEARL, ellipse(8, 8, 5.5, 5.5, (px, py) => {
+    if (segDist(px, py, 6, 5, 8, 6) < 1.2) return [0.6, 0.95, 0.9];
+    return tint([0.1, 0.5, 0.45], grain(px, py) * 0.08);
+  })],
   // Egg: a plain oval egg.
   [BLOCK.EGG, ellipse(8, 8.5, 4.8, 6, (px, py) => tint([0.96, 0.94, 0.88], grain(px, py) * 0.05))],
   [BLOCK.ROTTEN_FLESH, ellipse(8, 8, 6, 5.5, (px, py) => {
@@ -307,6 +338,17 @@ const SPRITES = new Map([
   [BLOCK.DIAMOND_PICKAXE, pickaxeSprite(DIAMOND)],
   [BLOCK.DIAMOND_AXE, axeSprite(DIAMOND)],
   [BLOCK.DIAMOND_SWORD, swordSprite(DIAMOND)],
+  // Mob drops: a bone, a loop of string, a feather, a leather strip, gunpowder, and the rest.
+  [BLOCK.BONE, stroke(3, 13, 13, 3, 1.5, { light: [0.95, 0.93, 0.85], dark: [0.7, 0.68, 0.6] })],
+  [BLOCK.STRING, stringSprite()],
+  [BLOCK.FEATHER, stroke(4, 13, 12, 3, 1.6, { light: [0.97, 0.97, 0.97], dark: [0.78, 0.78, 0.8] })],
+  [BLOCK.LEATHER, poly([[3, 4], [13, 4], [13, 12], [3, 12]], (px, py) => tint([0.72, 0.5, 0.3], grain(px, py) * 0.1))],
+  [BLOCK.GUNPOWDER, ellipse(8, 8.5, 4.5, 4.5, (px, py) => tint([0.45, 0.45, 0.45], grain(px, py) * 0.2))],
+  [BLOCK.INK_SAC, ellipse(8, 8, 5, 5.5, (px, py) => tint([0.1, 0.12, 0.2], grain(px, py) * 0.06))],
+  [BLOCK.SLIME_BALL, ellipse(8, 8, 5.5, 5.5, (px, py) => tint([0.45, 0.8, 0.4], grain(px, py) * 0.08))],
+  [BLOCK.HONEYCOMB, poly([[4, 3], [12, 3], [14, 8], [12, 13], [4, 13], [2, 8]], (px, py) => tint([0.92, 0.7, 0.2], grain(px, py) * 0.1))],
+  [BLOCK.SCUTE, ellipse(8, 8, 6, 4.5, (px, py) => tint([0.55, 0.45, 0.3], grain(px, py) * 0.08))],
+  [BLOCK.BAMBOO, stroke(4, 13, 12, 3, 1.2, { light: [0.55, 0.8, 0.35], dark: [0.35, 0.55, 0.2] })],
 ]);
 
 // Builds RGBA bytes for a sprite: covered pixels take their colour, and empty pixels next to them get the outline.
@@ -321,8 +363,17 @@ function buildPixels(spec) {
   for (let y = 0; y < n; y++) {
     for (let x = 0; x < n; x++) {
       let rgb = null;
-      if (covered[y * n + x]) rgb = spec.color(x + 0.5, y + 0.5);
-      else if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) rgb = OUTLINE;
+      if (covered[y * n + x]) {
+        rgb = spec.color(x + 0.5, y + 0.5);
+        // A bevel on the edge: pixels on the top and left rim are a little lighter, and those on the bottom and right
+        // rim are a little darker. Solid tools and food read as three-dimensional this way.
+        const rim = !at(x - 1, y) || !at(x, y - 1) || !at(x + 1, y) || !at(x, y + 1);
+        if (rim) {
+          const lit = !at(x - 1, y) || !at(x, y - 1);
+          const k = lit ? 1.12 : 0.85;
+          rgb = [Math.min(1, rgb[0] * k), Math.min(1, rgb[1] * k), Math.min(1, rgb[2] * k)];
+        }
+      } else if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) rgb = OUTLINE;
       if (!rgb) continue;
       const i = (y * n + x) * 4;
       out[i] = Math.round(rgb[0] * 255);

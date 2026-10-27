@@ -108,10 +108,31 @@ export class Chunk {
         const wx = ox + x;
         const wz = oz + z;
         // Inside a village, the ground is levelled to the village height so its houses sit flat.
-        const surface = villageGround(seed, wx, wz) ?? surfaceHeight(seed, wx, wz);
-        const biome = biomeAt(wx, wz, seed);
+        // The base ground is picked first, so the biome can depend on altitude. Mountain and highland biomes lift the
+        // ground by their `lift`. Villages keep their levelled ground, so a village is never raised.
+        const baseSurface = surfaceHeight(seed, wx, wz);
+        const biome = biomeAt(wx, wz, seed, baseSurface);
+        const def = BIOME_DEFS[biome];
+        // A river cuts the ground down to just under sea level, so the water fills the channel. Swamps sink a little.
+        // Mountains and highlands lift the ground. Villages keep their levelled ground, so they are never changed.
+        let surface;
+        const village = villageGround(seed, wx, wz);
+        if (village !== null) {
+          surface = village;
+        } else if (def.channel) {
+          surface = SEA_LEVEL - 2;
+        } else {
+          // `sink` and `lift` default to 0. A biome with no `sink` field would otherwise make this NaN, which left the
+          // column empty above the sea.
+          surface = Math.max(4, Math.min(CHUNK_HEIGHT - 2, baseSurface + (def.lift ?? 0) - (def.sink ?? 0)));
+        }
         this.biomes[x + CHUNK_SIZE * z] = biome;
-        const sandy = biome === BIOME.DESERT || valueNoise2D(wx * 0.03, wz * 0.03, seed + 7) > 0.62;
+        // The surface block: sand in deserts and some low ground, gravel in gravelly windswept hills, stone on peaks,
+        // and grass elsewhere.
+        const surfaceKind = BIOME_DEFS[biome].surface;
+        const sandy = surfaceKind === 'sand' || valueNoise2D(wx * 0.03, wz * 0.03, seed + 7) > 0.62;
+        const stony = surfaceKind === 'stone' && surface > SEA_LEVEL + 8;
+        const gravelly = surfaceKind === 'gravel';
 
         for (let y = 0; y < CHUNK_HEIGHT; y++) {
           let id = BLOCK.AIR;
@@ -123,6 +144,8 @@ export class Chunk {
             id = sandy ? BLOCK.SAND : BLOCK.DIRT;
           } else if (y === surface) {
             if (sandy || surface <= SEA_LEVEL - 1) id = BLOCK.SAND;
+            else if (gravelly) id = BLOCK.COBBLESTONE;
+            else if (stony) id = BLOCK.STONE;
             else id = BLOCK.GRASS;
           } else if (y <= SEA_LEVEL) {
             id = BLOCK.WATER;
@@ -215,7 +238,10 @@ export class Chunk {
           if (this.get(x, y, z) !== BLOCK.AIR) { top = y; break; }
         }
         if (top < 0 || this.get(x, top, z) !== BLOCK.GRASS) continue;
-        const trunk = 4 + Math.floor(valueNoise2D(wx, wz, seed + 3) * 2);
+        // The trunk is 4 to 5 blocks in most biomes. A biome's `trunk` adds height: birch and taiga trees grow taller,
+        // and the old growth ones taller still. The base is the same oak tree everywhere, since only oak exists.
+        const extra = BIOME_DEFS[this.biomeAt(x, z)].trunk ?? 0;
+        const trunk = 4 + Math.floor(valueNoise2D(wx, wz, seed + 3) * 2) + extra;
         for (let i = 1; i <= trunk; i++) this.set(x, top + i, z, BLOCK.WOOD);
         const leafBase = top + trunk - 1;
         for (let dy = 0; dy <= 2; dy++) {

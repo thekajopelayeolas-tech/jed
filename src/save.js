@@ -41,6 +41,8 @@ export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map
     facing,
     player: { x: player.pos.x, y: player.pos.y, z: player.pos.z, health: player.health, hunger: player.hunger.value, yaw: player.yaw, pitch: player.pitch },
     inventory: inventory.slots.map((s) => ({ id: s.id, count: s.count })),
+    // The off-hand shield, kept with the inventory. Saves from before the off-hand have none, so it is empty.
+    offhand: { id: inventory.offhand.id, count: inventory.offhand.count },
     armour: { ...player.armour },
     furnaces: furnaceData,
     timeOfDay,
@@ -67,7 +69,7 @@ export function loadGame() {
     // Facing is optional. Saves from before facing existed have none, so their blocks keep the default.
     const facingEdits = new Map();
     for (const [key, b64] of Object.entries(data.facing ?? {})) facingEdits.set(key, fromBase64(b64));
-    return { edits, facingEdits, player: data.player, inventory: data.inventory, armour: data.armour ?? null, furnaces: data.furnaces ?? {}, chests: data.chests ?? {}, timeOfDay: data.timeOfDay, spawnBed: data.spawnBed ?? null };
+    return { edits, facingEdits, player: data.player, inventory: data.inventory, armour: data.armour ?? null, furnaces: data.furnaces ?? {}, chests: data.chests ?? {}, timeOfDay: data.timeOfDay, spawnBed: data.spawnBed ?? null, offhand: data.offhand ?? null };
   } catch (err) {
     console.warn('Save could not be read', err);
     return null;

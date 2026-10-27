@@ -45,9 +45,10 @@ export function setupInput(canvas, player, inventory, actions) {
     else if (e.button === 2) actions.onPlace();
   });
 
-  // Releasing the left button stops hold-to-mine.
+  // Releasing the left button stops hold-to-mine. Releasing the right button lowers a shield or lets go of a bow.
   document.addEventListener('mouseup', (e) => {
     if (e.button === 0 && actions.onRelease) actions.onRelease();
+    if (e.button === 2 && actions.onRightRelease) actions.onRightRelease();
   });
 
   document.addEventListener('contextmenu', (e) => e.preventDefault());
