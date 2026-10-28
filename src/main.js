@@ -165,6 +165,8 @@ function attack() {
     const dmg = attackDamage(inventory.selectedItem.id);
     // Hitting a villager angers its village's iron golem.
     mobs.angerGolemsOf(mob);
+    // Any tamed wolf takes the player's target, so it attacks the same mob until it dies.
+    for (const w of mobs.mobs) if (w.tamed && w !== mob) w.wolfTarget = mob;
     mob.takeHit(dmg, player.pos.x, player.pos.z);
     if (mob.dead) for (const id of mob.def.drops) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
     return;

@@ -73,6 +73,8 @@ const MOB_DEFS = {
 
 // The 68 catalogue mobs. Each row gives its stats, body shape, and colour. Drops are the item names in the
 // catalogue, and they stay mob-only items: each drop is a placeholder id so a kill never fails.
+// A tamed wolf's bite damage. It bites a target the player has attacked.
+export const WOLF_BITE_DAMAGE = 3;
 // Each catalogue drop name maps to the item a mob leaves. The names match what the mob is known for in the game.
 const CATALOGUE_DROP = {
   raw_fish: BLOCK.RAW_FISH, raw_chicken: BLOCK.RAW_CHICKEN, raw_pork: BLOCK.RAW_PORK, raw_mutton: BLOCK.RAW_MUTTON,
@@ -89,7 +91,8 @@ for (const [id, name, hostile, water, shape, hp, speed, dmg, colour, drops] of E
     health: hp,
     speed,
     hostile,
-    damage: hostile ? dmg : 0,
+    // A hostile mob hits for its catalogue damage. A tamed wolf bites for WOLF_BITE_DAMAGE. Other peaceful mobs do not hit.
+    damage: hostile ? dmg : id === 'wolf' ? WOLF_BITE_DAMAGE : 0,
     drops: drops.map((d) => CATALOGUE_DROP[d]).filter((d) => d !== undefined),
     // Hostile land mobs catch fire in daylight, the same as the zombie. Peaceful mobs do not.
     burnsInSun: hostile && !water,
@@ -329,6 +332,12 @@ export class Mob {
   // A returned target is { x, z, mob } for another mob, or { x, z, mob: null } for the player.
   chooseTarget(playerPos, others) {
     const playerDist = Math.hypot(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
+    // A tamed wolf attacks whatever the player last hit, until that mob dies or gets too far away.
+    if (this.tamed && this.wolfTarget && !this.wolfTarget.dead) {
+      const d = Math.hypot(this.wolfTarget.pos.x - this.pos.x, this.wolfTarget.pos.z - this.pos.z);
+      if (d < 16) return { x: this.wolfTarget.pos.x, z: this.wolfTarget.pos.z, mob: this.wolfTarget };
+    }
+    if (this.tamed) this.wolfTarget = null;
     if (this.type === MOB.ZOMBIE) {
       // Zombies go for villagers that are close, and otherwise for the player.
       let best = null;
