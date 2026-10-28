@@ -26,6 +26,9 @@ import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
 import { drawAmount, arrowDamage, damageThroughShield, ARROW_SPEED, ARROW_LIFETIME } from './combat.js';
+import { bodyInLava, lavaStep } from './lava.js';
+// The lava timer the frame loop keeps: it counts down while the player stands in lava.
+const lavaState = { timer: 0 };
 import { blastDamage, pearlLanding, PEARL_SPEED, PEARL_LIFETIME } from './hostile.js';
 import { createSleep, sleepPose } from './sleep.js';
 import { foodPoints } from './hunger.js';
@@ -891,6 +894,12 @@ function frame(now) {
     }
   } else if (!anyPanelOpen() && !sleep.isSleeping()) {
     player.update(dt);
+  }
+  // Standing in lava hurts on a timer. The damage goes through player.hurt, so armour and hunger still apply.
+  if (!sleep.isSleeping() && !anyPanelOpen()) {
+    const inLava = bodyInLava(world, player.pos, 0.3, 1.8);
+    const lavaDmg = lavaStep(lavaState, inLava, dt);
+    if (lavaDmg > 0) player.hurt(lavaDmg);
   }
   // Every furnace in the world keeps smelting, even with its panel closed.
   // Every furnace in the world keeps smelting. A furnace shows its fire in the world while it is smelting.
