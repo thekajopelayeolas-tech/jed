@@ -239,22 +239,15 @@ const PAINTERS = {
     if (edge) return jitter([0.25, 0.22, 0.2], noise(x, y, 82), 0.05);
     return jitter(PLANK, noise(x, y, 83), 0.08);
   },
-  // Door front: the same planks and frame, with the handle on this face.
+  // Door front: plain planks with the handle on this face. No seam lines across the boards.
   doorFront: (x, y) => {
-    const frame = x < 2 || x > 13 || y < 2 || y > 13;
-    if (frame) return jitter([0.36, 0.25, 0.12], noise(x, y, 72), 0.06);
     if (x >= 10 && x <= 11 && y >= 7 && y <= 8) return [0.85, 0.75, 0.3, 1];
-    return jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 73), 0.08);
+    return jitter(PLANK, noise(x, y, 73), 0.08);
   },
   // Lower half of a door: plain planks, with no frame, no handle, and no seam row, so the two halves read as one.
   doorBottom: (x, y) => jitter(PLANK, noise(x, y, 74), 0.08),
-  // Door: wooden planks with a frame, and a small handle near the edge.
-  door: (x, y) => {
-    const frame = x < 2 || x > 13 || y < 2 || y > 13;
-    if (frame) return jitter([0.36, 0.25, 0.12], noise(x, y, 70), 0.06);
-    if (x >= 10 && x <= 11 && y >= 7 && y <= 8) return [0.85, 0.75, 0.3, 1];
-    return jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 71), 0.08);
-  },
+  // Door sides: plain planks, the same as the rest of the door, with no seam lines.
+  door: (x, y) => jitter(PLANK, noise(x, y, 71), 0.08),
   // Rainbow ore: stone with small gems in a rainbow of colours.
   rainbowOre: (x, y) => {
     const n = noise(x, y, 28);

@@ -295,10 +295,10 @@ export const BLOCK_DEFS = {
   [BUILD.WOOD_STAIRS]: { name: 'Wood Stairs', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },
   [BUILD.STONE_STAIRS]: { name: 'Stone Stairs', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },
   [BUILD.BRICK_STAIRS]: { name: 'Brick Stairs', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
-  [DOOR.DOOR]: { name: 'Door', top: [0.5, 0.36, 0.2], side: [0.5, 0.36, 0.2], bottom: [0.5, 0.36, 0.2], solid: true, transparent: false },
+  [DOOR.DOOR]: { name: 'Door', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },
   [FURNACE_STATE.LIT]: { name: 'Lit Furnace', top: [0.45, 0.45, 0.45], side: [0.9, 0.45, 0.12], bottom: [0.45, 0.45, 0.45], solid: true, transparent: false },
   [STORAGE.CHEST]: { name: 'Chest', top: [0.6, 0.45, 0.25], side: [0.55, 0.4, 0.22], bottom: [0.6, 0.45, 0.25], solid: true, transparent: false },
-  [DOOR.OPEN_DOOR]: { name: 'Open Door', top: [0.5, 0.36, 0.2], side: [0.5, 0.36, 0.2], bottom: [0.5, 0.36, 0.2], solid: false, transparent: true },
+  [DOOR.OPEN_DOOR]: { name: 'Open Door', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: false, transparent: true },
   [BUILD.CONCRETE_STAIRS]: { name: 'Concrete Stairs', top: [0.6, 0.6, 0.6], side: [0.6, 0.6, 0.6], bottom: [0.6, 0.6, 0.6], solid: true, transparent: false },
 };
 

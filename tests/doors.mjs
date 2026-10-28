@@ -40,6 +40,18 @@ check('the open door is not solid', BLOCK_DEFS[DOOR.OPEN_DOOR].solid === false);
   w.setBlock(x, y, z, BLOCK.AIR);
 }
 
+// The door is the same brown as planks, and the upper half has no seam lines. The handle stays on the upper front.
+check('a door is the same colour as planks', JSON.stringify(BLOCK_DEFS[DOOR.DOOR].side) === JSON.stringify(BLOCK_DEFS[BLOCK.PLANKS].side));
+check('an open door is the same colour as planks', JSON.stringify(BLOCK_DEFS[DOOR.OPEN_DOOR].side) === JSON.stringify(BLOCK_DEFS[BLOCK.PLANKS].side));
+{
+  // The upper half's planks have no seam: the rows that are a multiple of 4 are not darker than the rows around them.
+  const up = tileImageData('doorFront');
+  const lum = (x, y) => { const i = (y * TILE + x) * 4; return (up[i] + up[i + 1] + up[i + 2]) / 3; };
+  // Read the middle of the door face (away from the frame and the handle), row 4 against rows 3 and 5.
+  let seamDarker = 0;
+  for (let x = 4; x <= 11; x++) if (lum(x, 4) < lum(x, 3) - 15 && lum(x, 4) < lum(x, 5) - 15) seamDarker++;
+  check('the upper door face has no seam line across its planks', seamDarker === 0);
+}
 // The lower half of a door has no handle, no frame, and no seam row. The upper half keeps the handle.
 import { doorTileName } from '../src/building.js';
 import { tileImageData, tileUV, TILE_INDEX, TILE } from '../src/textures.js';
