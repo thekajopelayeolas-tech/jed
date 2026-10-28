@@ -110,6 +110,8 @@ export const BLOCK = {
   HONEYCOMB: 113,
   SCUTE: 114,
   BAMBOO: 115,
+  // Lava pools in some deep caves. Id 128 is new and never reused.
+  LAVA: 128,
   // Birch wood, planks and leaves, for birch forests and the villages in them. Ids 116 to 118 are new and never reused.
   BIRCH_WOOD: 116,
   BIRCH_PLANKS: 117,
@@ -181,6 +183,8 @@ export const BLOCK_DEFS = {
   [BLOCK.WOOD]: { name: 'Wood', top: [0.65, 0.5, 0.3], side: [0.4, 0.28, 0.14], bottom: [0.65, 0.5, 0.3], solid: true, transparent: false },
   [BLOCK.LEAVES]: { name: 'Leaves', top: [0.2, 0.5, 0.15], side: [0.2, 0.5, 0.15], bottom: [0.2, 0.5, 0.15], solid: true, transparent: true },
   [BLOCK.WATER]: { name: 'Water', top: [0.2, 0.4, 0.9], side: [0.2, 0.4, 0.9], bottom: [0.2, 0.4, 0.9], solid: false, transparent: true, alpha: 0.6 },
+  // Lava: a glowing orange liquid. Like water, it is not solid, so you walk into it.
+  [BLOCK.LAVA]: { name: 'Lava', top: [0.95, 0.45, 0.1], side: [0.95, 0.45, 0.1], bottom: [0.95, 0.45, 0.1], solid: false, transparent: true, alpha: 0.9 },
   [BLOCK.COBBLESTONE]: { name: 'Cobblestone', top: [0.4, 0.4, 0.4], side: [0.4, 0.4, 0.4], bottom: [0.4, 0.4, 0.4], solid: true, transparent: false },
   [BLOCK.PLANKS]: { name: 'Planks', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },
   [BLOCK.BEDROCK]: { name: 'Bedrock', top: [0.15, 0.15, 0.15], side: [0.15, 0.15, 0.15], bottom: [0.15, 0.15, 0.15], solid: true, transparent: false },

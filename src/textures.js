@@ -143,6 +143,13 @@ const PAINTERS = {
     const wave = Math.sin(y * 1.2 + x * 0.3) > 0.7 ? 0.1 : 0;
     return [0.2 + wave, 0.4 + wave, 0.9, 0.6];
   },
+  // Lava: bright orange with darker crust flecks, so it reads as molten rock rather than flat paint.
+  lava: (x, y) => {
+    const crust = smooth(x * 0.5, y * 0.5, 91) > 0.6;
+    const hot = noise(x, y, 92);
+    if (crust) return jitter([0.45, 0.14, 0.05], hot, 0.08);
+    return jitter([0.98, 0.5 + hot * 0.15, 0.1], noise(x, y, 93), 0.06);
+  },
   // Cobblestone: rounded stones of uneven size and tone, separated by dark mortar, not a regular grid.
   cobble: (x, y) => {
     const stoneTone = 0.8 + smooth(x * 0.6, y * 0.6, 13) * 0.4;
@@ -282,6 +289,7 @@ export const BLOCK_TILES = {
   [BLOCK.JUNGLE_LEAVES]: { top: 'jungleLeaves', side: 'jungleLeaves', bottom: 'jungleLeaves' },
   [BLOCK.LEAVES]: { top: 'leaves', side: 'leaves', bottom: 'leaves' },
   [BLOCK.WATER]: { top: 'water', side: 'water', bottom: 'water' },
+  [BLOCK.LAVA]: { top: 'lava', side: 'lava', bottom: 'lava' },
   [BLOCK.COBBLESTONE]: { top: 'cobble', side: 'cobble', bottom: 'cobble' },
   [BLOCK.PLANKS]: { top: 'planks', side: 'planks', bottom: 'planks' },
   [BLOCK.BEDROCK]: { top: 'bedrock', side: 'bedrock', bottom: 'bedrock' },

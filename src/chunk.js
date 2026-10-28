@@ -14,6 +14,16 @@ export function isCave(wx, y, wz, seed) {
   return a > 0.7 && b > 0.55;
 }
 
+// Lava pools: a rare patch on the floor of a deep cave. A second noise field, sampled only at cave cells, picks
+// the few places that are lava. The pool sits low, well below sea level, so it is only found underground.
+const LAVA_DEPTH = SEA_LEVEL - 12;
+export function isLavaPool(wx, y, wz, seed) {
+  if (y > LAVA_DEPTH || y < 1) return false;
+  // Rare: the field has to be near its top to count. Most cave cells stay empty.
+  const field = valueNoise2D(wx * 0.04, wz * 0.04, seed + 731);
+  return field > 0.9;
+}
+
 // Terrain height for one column. Terrain and villages both use this, so a village sits on the same ground.
 export function surfaceHeight(seed, wx, wz) {
   const continent = fbm2D(wx * 0.01, wz * 0.01, seed, 3);
@@ -159,7 +169,8 @@ export class Chunk {
           }
           // Caves carve through solid ground below the surface, leaving the bedrock floor alone.
           if (y > 0 && id !== BLOCK.AIR && id !== BLOCK.WATER && y < surface - 1 && isCave(wx, y, wz, seed)) {
-            id = BLOCK.AIR;
+            // A cave cell is air, except in a rare deep pool, where it is lava.
+            id = isLavaPool(wx, y, wz, seed) ? BLOCK.LAVA : BLOCK.AIR;
           }
           if (id !== BLOCK.AIR) this.blocks[Chunk.index(x, y, z)] = id;
         }
