@@ -103,5 +103,22 @@ const flat = (cells = new Map()) => ({
   check('spread leaves solid ground alone', w.getBlock(6, 11, 0) === BLOCK.STONE);
 }
 
+// The pour lands where the bucket is aimed. Aimed at ground with air above, the water goes in the air cell
+// above the ground, and spreads from there.
+{
+  const cells = new Map();
+  const floor = {
+    getBlock(x, y, z) {
+      const k = `${x},${y},${z}`;
+      if (cells.has(k)) return cells.get(k);
+      if (y <= 10) return BLOCK.STONE;
+      return BLOCK.AIR;
+    },
+    setBlock(x, y, z, id) { cells.set(`${x},${y},${z}`, id); return true; },
+  };
+  const placed = spreadWater(floor, 0, 11, 0);
+  check('a pour onto open ground spreads from the air cell above the ground', placed.length > 0);
+}
+
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
