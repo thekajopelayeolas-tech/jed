@@ -8,6 +8,11 @@ export const INV_SIZE = 36;
 // Shapeless recipes list ingredients as counts.
 export const RECIPES = [
   { result: BLOCK.PLANKS, count: 4, shaped: true, pattern: ['W'], key: { W: BLOCK.WOOD } },
+  // Birch wood makes birch planks, the same way oak wood makes oak planks.
+  { result: BLOCK.BIRCH_PLANKS, count: 4, shaped: true, pattern: ['W'], key: { W: BLOCK.BIRCH_WOOD } },
+  { result: BLOCK.DARK_OAK_PLANKS, count: 4, shaped: true, pattern: ['W'], key: { W: BLOCK.DARK_OAK_WOOD } },
+  { result: BLOCK.SPRUCE_PLANKS, count: 4, shaped: true, pattern: ['W'], key: { W: BLOCK.SPRUCE_WOOD } },
+  { result: BLOCK.JUNGLE_PLANKS, count: 4, shaped: true, pattern: ['W'], key: { W: BLOCK.JUNGLE_WOOD } },
   { result: BLOCK.CRAFTING_TABLE, count: 1, shaped: true, pattern: ['PP', 'PP'], key: { P: BLOCK.PLANKS } },
   { result: BLOCK.TORCH, count: 4, shaped: true, pattern: ['C', 'S'], key: { C: BLOCK.COAL, S: BLOCK.STICK } },
   { result: BLOCK.GLASS, count: 1, shaped: true, pattern: ['SS', 'SS'], key: { S: BLOCK.SAND } },

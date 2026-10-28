@@ -220,10 +220,13 @@ function stringSprite() {
 
 const SPRITES = new Map([
   [BLOCK.STICK, stroke(3, 13, 13, 3, 1.4, HANDLE)],
-  [BLOCK.COOKED_BEEF, ellipse(8, 8.5, 6.2, 4.8, (px, py) => {
-    if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
-    return tint(py < 6.5 ? [0.62, 0.36, 0.2] : [0.42, 0.22, 0.12], grain(px, py) * 0.1);
-  })],
+  // Cooked beef: a browned crust over brown meat, with a bone end.
+  [BLOCK.COOKED_BEEF, layered([
+    ellipse(8, 8.5, 6.2, 4.8, (px, py) => {
+      if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
+      return tint(py < 6.5 ? [0.66, 0.4, 0.22] : [0.44, 0.24, 0.13], grain(px, py) * 0.1);
+    }),
+  ])],
   [BLOCK.DIAMOND, poly([[8, 2], [13, 6], [8, 14], [3, 6]], (px, py) => pick(DIAMOND, px < 8, px, py))],
   [BLOCK.RAINBOW_GEM, poly([[8, 2], [13, 6], [8, 14], [3, 6]], (px, py) => {
     const hue = Math.floor((py + px * 0.5) / 3) % 3;
@@ -254,24 +257,43 @@ const SPRITES = new Map([
     (px, py) => pick(IRON, py < 7.5, px, py))],
   [BLOCK.WOOL, poly([[2, 3], [14, 3], [14, 13], [2, 13]],
     (px, py) => (grain(px, py) > 0.2 ? [0.82, 0.82, 0.8] : [0.94, 0.94, 0.92]))],
-  [BLOCK.BEEF, ellipse(8, 8.5, 6.2, 4.8, (px, py) => {
-    if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
-    return tint(py < 6.5 ? [0.86, 0.42, 0.42] : [0.7, 0.2, 0.22], grain(px, py) * 0.1);
-  })],
-  [BLOCK.RAW_PORK, ellipse(8, 8.5, 6, 4.6, (px, py) => tint([0.95, 0.6, 0.6], grain(px, py) * 0.1))],
-  [BLOCK.COOKED_PORK, ellipse(8, 8.5, 6, 4.6, (px, py) => tint([0.7, 0.45, 0.25], grain(px, py) * 0.1))],
-  [BLOCK.RAW_RABBIT, ellipse(8, 9, 5.4, 4.2, (px, py) => tint([0.85, 0.7, 0.65], grain(px, py) * 0.1))],
-  [BLOCK.COOKED_RABBIT, ellipse(8, 9, 5.4, 4.2, (px, py) => tint([0.7, 0.5, 0.3], grain(px, py) * 0.1))],
+  // Raw beef: deep red with white fat marbling and a bone end.
+  [BLOCK.BEEF, layered([
+    ellipse(8, 8.5, 6.2, 4.8, (px, py) => {
+      if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
+      if (grain(px, py) > 0.3) return [0.95, 0.92, 0.9];
+      return tint(py < 6.5 ? [0.86, 0.36, 0.36] : [0.66, 0.16, 0.2], grain(px, py) * 0.1);
+    }),
+  ])],
+  // Pork: pink raw meat with pale fat streaks; cooked pork is browned with a crisp outer crust.
+  [BLOCK.RAW_PORK, layered([
+    ellipse(8, 8.5, 6, 4.6, (px, py) => (grain(px, py) > 0.28 ? [0.97, 0.9, 0.88] : tint(py < 7 ? [0.96, 0.62, 0.62] : [0.8, 0.42, 0.44], grain(px, py) * 0.08))),
+  ])],
+  [BLOCK.COOKED_PORK, layered([
+    ellipse(8, 8.5, 6, 4.6, (px, py) => tint(py < 7 ? [0.78, 0.5, 0.26] : [0.56, 0.32, 0.16], grain(px, py) * 0.08)),
+  ])],
+  // Rabbit: a small meaty cut with a pale bone end; cooked rabbit is golden-brown.
+  [BLOCK.RAW_RABBIT, layered([
+    ellipse(8, 9, 5.4, 4.2, (px, py) => tint(py < 8.5 ? [0.88, 0.74, 0.7] : [0.76, 0.6, 0.56], grain(px, py) * 0.08)),
+    ellipse(13, 6, 1.3, 1.3, () => [0.96, 0.94, 0.9]),
+  ])],
+  [BLOCK.COOKED_RABBIT, layered([
+    ellipse(8, 9, 5.4, 4.2, (px, py) => tint(py < 8.5 ? [0.8, 0.56, 0.32] : [0.6, 0.38, 0.2], grain(px, py) * 0.08)),
+    ellipse(13, 6, 1.3, 1.3, () => [0.96, 0.94, 0.9]),
+  ])],
   [BLOCK.RAW_FISH, poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => tint(py < 8 ? [0.6, 0.75, 0.9] : [0.45, 0.6, 0.78], grain(px, py) * 0.08))],
   [BLOCK.COOKED_FISH, poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => tint(py < 8 ? [0.8, 0.6, 0.35] : [0.6, 0.42, 0.22], grain(px, py) * 0.08))],
   [BLOCK.RAW_MUTTON, ellipse(8, 8.5, 6, 4.6, (px, py) => {
     if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
     return tint(py < 6.5 ? [0.9, 0.5, 0.5] : [0.75, 0.3, 0.3], grain(px, py) * 0.1);
   })],
-  [BLOCK.COOKED_MUTTON, ellipse(8, 8.5, 6, 4.6, (px, py) => {
-    if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
-    return tint(py < 6.5 ? [0.66, 0.4, 0.22] : [0.45, 0.25, 0.14], grain(px, py) * 0.1);
-  })],
+  // Cooked mutton: a browned crust over lean meat, with a bone end.
+  [BLOCK.COOKED_MUTTON, layered([
+    ellipse(8, 8.5, 6, 4.6, (px, py) => {
+      if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
+      return tint(py < 6.5 ? [0.7, 0.44, 0.24] : [0.48, 0.27, 0.15], grain(px, py) * 0.1);
+    }),
+  ])],
   // Wheat: three golden stalks standing up from the bottom.
   [BLOCK.WHEAT, layered([
     stroke(8, 15, 8, 3, 0.8, { light: [0.95, 0.85, 0.4], dark: [0.7, 0.55, 0.2] }),

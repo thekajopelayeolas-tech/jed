@@ -2,6 +2,7 @@ import { BLOCK } from './blocks.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT, SEA_LEVEL } from './constants.js';
 import { fbm2D, valueNoise2D } from './noise.js';
 import { BIOME, BIOME_DEFS, biomeAt } from './biomes.js';
+import { woodSet } from './wood.js';
 import { LIGHT } from './lighting.js';
 import { REGION, villageCentre, houseCells, pathCells, farmCells, penCells, HOUSES, LEVEL_BOX } from './village.js';
 
@@ -193,9 +194,13 @@ export class Chunk {
             if (cx2 >= 0 && cx2 < CHUNK_SIZE && cz2 >= 0 && cz2 < CHUNK_SIZE) this.clearForVillage.add(cx2 + CHUNK_SIZE * cz2);
           }
         }
+        // A village takes its planks from the biome at its centre, so the houses match the trees around them.
+        // The village builds with the planks of its centre's biome, so the houses match the trees around them.
+        // Every chunk reads the same centre, so they all agree.
+        const planks = woodSet(BIOME_DEFS[biomeAt(centre.x, centre.z, seed, groundY)].wood).planks;
         const cells = [];
         for (const house of HOUSES) {
-          for (const c of houseCells(house, groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
+          for (const c of houseCells(house, groundY, planks)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
         }
         for (const c of pathCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
         for (const c of farmCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
@@ -246,9 +251,14 @@ export class Chunk {
         if (top < 0 || this.get(x, top, z) !== BLOCK.GRASS) continue;
         // The trunk is 4 to 5 blocks in most biomes. A biome's `trunk` adds height: birch and taiga trees grow taller,
         // and the old growth ones taller still. The base is the same oak tree everywhere, since only oak exists.
-        const extra = BIOME_DEFS[this.biomeAt(x, z)].trunk ?? 0;
+        const def = BIOME_DEFS[this.biomeAt(x, z)];
+        const extra = def.trunk ?? 0;
         const trunk = 4 + Math.floor(valueNoise2D(wx, wz, seed + 3) * 2) + extra;
-        for (let i = 1; i <= trunk; i++) this.set(x, top + i, z, BLOCK.WOOD);
+        // The tree's wood and leaves come from its biome's kind: birch, dark oak, spruce or jungle, or oak by default.
+        const set = woodSet(def.wood);
+        const woodId = set.wood;
+        const leafId = set.leaves;
+        for (let i = 1; i <= trunk; i++) this.set(x, top + i, z, woodId);
         const leafBase = top + trunk - 1;
         for (let dy = 0; dy <= 2; dy++) {
           const r = dy === 2 ? 1 : 2;
@@ -257,12 +267,12 @@ export class Chunk {
               if (dx === 0 && dz === 0 && dy < 2) continue;
               if (Math.abs(dx) === r && Math.abs(dz) === r && dy === 0) continue;
               if (this.get(x + dx, leafBase + dy, z + dz) === BLOCK.AIR) {
-                this.set(x + dx, leafBase + dy, z + dz, BLOCK.LEAVES);
+                this.set(x + dx, leafBase + dy, z + dz, leafId);
               }
             }
           }
         }
-        this.set(x, leafBase + 3, z, BLOCK.LEAVES);
+        this.set(x, leafBase + 3, z, leafId);
       }
     }
   }

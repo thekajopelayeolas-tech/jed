@@ -24,6 +24,29 @@ const BARK = [0.4, 0.28, 0.14];
 const LEAF = [0.2, 0.5, 0.15];
 const NONE = [0, 0, 0, 0];
 
+// Painters for one kind of tree: its wood sides and top, its planks, and its leaves. Each kind takes its own colours
+// and a seed, so the dark oak, spruce and jungle trees look different without repeating the texture code.
+function woodPainters(prefix, bark, plank, leaf, seed) {
+  return {
+    [`${prefix}Side`]: (x, y) => {
+      const groove = noise(Math.floor(x / 2), 0, seed);
+      const dark = x < 1 || x > 14 ? 0.8 : 1;
+      return jitter(shade(bark, (0.75 + groove * 0.4) * dark), noise(x, y, seed + 1), 0.06);
+    },
+    [`${prefix}Top`]: (x, y) => {
+      const r = Math.hypot(x - 7.5, y - 7.5);
+      const ring = Math.floor(r + smooth(x * 0.3, y * 0.3, seed + 2) * 0.8) % 2;
+      return jitter(ring ? bark : shade(bark, 0.85), noise(x, y, seed + 3), 0.04);
+    },
+    [`${prefix}Planks`]: (x, y) => jitter(y % 4 === 0 ? shade(plank, 0.86) : plank, noise(x, y, seed + 4), 0.06),
+    [`${prefix}Leaves`]: (x, y) => {
+      const clump = smooth(x * 0.8, y * 0.8, seed + 5);
+      if (noise(x, y, seed + 6) < 0.2) return NONE;
+      return jitter(shade(leaf, 0.78 + clump * 0.42), noise(x, y, seed + 7), 0.08);
+    },
+  };
+}
+
 // Realism helpers. A smooth noise value gives clumps rather than static, so textures look like real material.
 // `smooth` blends neighbouring random values, so a patch of pixels shares a tone and the eye reads it as texture.
 function smooth(x, y, seed) {
@@ -87,6 +110,29 @@ const PAINTERS = {
     const ring = Math.floor(r + smooth(x * 0.3, y * 0.3, 29) * 0.8) % 2;
     return jitter(ring ? [0.7, 0.55, 0.34] : [0.6, 0.45, 0.25], noise(x, y, 10), 0.05);
   },
+  // Birch wood side: pale bark with dark horizontal marks, like birch bark.
+  birchSide: (x, y) => {
+    const mark = noise(x, Math.floor(y / 3), 40) > 0.7 && y % 3 === 0;
+    if (mark) return jitter([0.2, 0.18, 0.16], noise(x, y, 41), 0.06);
+    return jitter([0.9, 0.88, 0.82], noise(x, y, 42), 0.05);
+  },
+  // Birch wood top: pale growth rings, lighter than oak.
+  birchTop: (x, y) => {
+    const r = Math.hypot(x - 7.5, y - 7.5);
+    const ring = Math.floor(r + smooth(x * 0.3, y * 0.3, 43) * 0.8) % 2;
+    return jitter(ring ? [0.86, 0.82, 0.72] : [0.92, 0.9, 0.84], noise(x, y, 44), 0.04);
+  },
+  // Birch planks: pale boards with a fine grain line every four rows.
+  birchPlanks: (x, y) => jitter(y % 4 === 0 ? [0.78, 0.7, 0.52] : [0.86, 0.78, 0.6], noise(x, y, 45), 0.06),
+  // Birch leaves: light green foliage with clumps and gaps.
+  birchLeaves: (x, y) => {
+    const clump = smooth(x * 0.8, y * 0.8, 46);
+    if (noise(x, y, 47) < 0.2) return NONE;
+    return jitter(shade([0.42, 0.66, 0.3], 0.78 + clump * 0.42), noise(x, y, 48), 0.08);
+  },
+  ...woodPainters('darkOak', [0.3, 0.22, 0.12], [0.42, 0.3, 0.17], [0.16, 0.36, 0.14], 50),
+  ...woodPainters('spruce', [0.36, 0.24, 0.14], [0.6, 0.45, 0.27], [0.14, 0.38, 0.28], 60),
+  ...woodPainters('jungle', [0.5, 0.34, 0.2], [0.72, 0.48, 0.3], [0.22, 0.6, 0.12], 70),
   // Leaves: dense foliage with light and dark clumps, and small gaps where the sky shows through.
   leaves: (x, y) => {
     const clump = smooth(x * 0.8, y * 0.8, 30);
@@ -216,6 +262,18 @@ export const BLOCK_TILES = {
   [BLOCK.STONE]: { top: 'stone', side: 'stone', bottom: 'stone' },
   [BLOCK.SAND]: { top: 'sand', side: 'sand', bottom: 'sand' },
   [BLOCK.WOOD]: { top: 'woodTop', side: 'woodSide', bottom: 'woodTop' },
+  [BLOCK.BIRCH_WOOD]: { top: 'birchTop', side: 'birchSide', bottom: 'birchTop' },
+  [BLOCK.BIRCH_PLANKS]: { top: 'birchPlanks', side: 'birchPlanks', bottom: 'birchPlanks' },
+  [BLOCK.BIRCH_LEAVES]: { top: 'birchLeaves', side: 'birchLeaves', bottom: 'birchLeaves' },
+  [BLOCK.DARK_OAK_WOOD]: { top: 'darkOakTop', side: 'darkOakSide', bottom: 'darkOakTop' },
+  [BLOCK.DARK_OAK_PLANKS]: { top: 'darkOakPlanks', side: 'darkOakPlanks', bottom: 'darkOakPlanks' },
+  [BLOCK.DARK_OAK_LEAVES]: { top: 'darkOakLeaves', side: 'darkOakLeaves', bottom: 'darkOakLeaves' },
+  [BLOCK.SPRUCE_WOOD]: { top: 'spruceTop', side: 'spruceSide', bottom: 'spruceTop' },
+  [BLOCK.SPRUCE_PLANKS]: { top: 'sprucePlanks', side: 'sprucePlanks', bottom: 'sprucePlanks' },
+  [BLOCK.SPRUCE_LEAVES]: { top: 'spruceLeaves', side: 'spruceLeaves', bottom: 'spruceLeaves' },
+  [BLOCK.JUNGLE_WOOD]: { top: 'jungleTop', side: 'jungleSide', bottom: 'jungleTop' },
+  [BLOCK.JUNGLE_PLANKS]: { top: 'junglePlanks', side: 'junglePlanks', bottom: 'junglePlanks' },
+  [BLOCK.JUNGLE_LEAVES]: { top: 'jungleLeaves', side: 'jungleLeaves', bottom: 'jungleLeaves' },
   [BLOCK.LEAVES]: { top: 'leaves', side: 'leaves', bottom: 'leaves' },
   [BLOCK.WATER]: { top: 'water', side: 'water', bottom: 'water' },
   [BLOCK.COBBLESTONE]: { top: 'cobble', side: 'cobble', bottom: 'cobble' },

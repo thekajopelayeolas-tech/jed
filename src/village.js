@@ -68,7 +68,9 @@ export function villagesNear(x, z, seed, radius) {
 
 // Describes how to build one house at a given ground height. Returns a list of { dx, dy, dz, id } cells.
 // The walls are cobblestone at the base and planks above, with a glass window, a door gap, and a roof of planks.
-export function houseCells(house, groundY) {
+// `planks` is the plank block the house is built from. Villages in birch forests pass birch planks, so the houses
+// match the trees around them. It defaults to oak.
+export function houseCells(house, groundY, planks = BLOCK.PLANKS) {
   const cells = [];
   const y0 = groundY + 1;
   const wallHeight = 3;
@@ -79,7 +81,7 @@ export function houseCells(house, groundY) {
       const onWall = edgeX || edgeZ;
       if (!onWall) {
         // Floor inside the house, and a roof on top.
-        cells.push({ dx: house.x + dx, dy: y0 + wallHeight, dz: house.z + dz, id: BLOCK.PLANKS });
+        cells.push({ dx: house.x + dx, dy: y0 + wallHeight, dz: house.z + dz, id: planks });
         continue;
       }
       for (let h = 0; h < wallHeight; h++) {
@@ -93,7 +95,7 @@ export function houseCells(house, groundY) {
         // Windows: glass in the middle of the two side walls (the walls along z), at head height.
         const isSideWall = edgeX && !edgeZ;
         const isWindow = isSideWall && h === 1 && dz === Math.floor(house.d / 2);
-        const id = isWindow ? BLOCK.GLASS : h === 0 ? BLOCK.COBBLESTONE : BLOCK.PLANKS;
+        const id = isWindow ? BLOCK.GLASS : h === 0 ? BLOCK.COBBLESTONE : planks;
         cells.push({ dx: house.x + dx, dy: y0 + h, dz: house.z + dz, id });
       }
     }

@@ -60,16 +60,17 @@ export const BIOME_DEFS = {
   // Woodland. `trunk` is the tree's base trunk height (the oak tree is 4 to 5). Only oak wood exists in the game, so
   // every tree is oak, and the variants differ by how many trees grow and how tall they are.
   [BIOME.FOREST_FLOWER]: { name: 'Flower Forest', treeDensity: 1.5, surface: 'grass', lift: 0, alt: false, trunk: 0, sink: 0 },
-  [BIOME.DARK_FOREST]: { name: 'Dark Forest', treeDensity: 2.6, surface: 'grass', lift: 0, alt: false, trunk: 1, sink: 0 },
-  [BIOME.BIRCH_FOREST]: { name: 'Birch Forest', treeDensity: 1.1, surface: 'grass', lift: 0, alt: false, trunk: 1, sink: 0 },
-  [BIOME.OLD_GROWTH_BIRCH_FOREST]: { name: 'Old Growth Birch Forest', treeDensity: 1.3, surface: 'grass', lift: 0, alt: false, trunk: 3, sink: 0 },
-  [BIOME.TAIGA]: { name: 'Taiga', treeDensity: 0.7, surface: 'grass', lift: 0, alt: false, trunk: 1, sink: 0 },
-  [BIOME.SNOWY_TAIGA]: { name: 'Snowy Taiga', treeDensity: 0.6, surface: 'grass', lift: 0, alt: false, trunk: 1, sink: 0 },
-  [BIOME.OLD_GROWTH_PINE_TAIGA]: { name: 'Old Growth Pine Taiga', treeDensity: 0.5, surface: 'grass', lift: 0, alt: false, trunk: 4, sink: 0 },
-  [BIOME.OLD_GROWTH_SPRUCE_TAIGA]: { name: 'Old Growth Spruce Taiga', treeDensity: 0.5, surface: 'grass', lift: 0, alt: false, trunk: 4, sink: 0 },
-  [BIOME.JUNGLE]: { name: 'Jungle', treeDensity: 2.2, surface: 'grass', lift: 0, alt: false, trunk: 3, sink: 0 },
-  [BIOME.SPARSE_JUNGLE]: { name: 'Sparse Jungle', treeDensity: 0.9, surface: 'grass', lift: 0, alt: false, trunk: 3, sink: 0 },
-  [BIOME.BAMBOO_JUNGLE]: { name: 'Bamboo Jungle', treeDensity: 1.6, surface: 'grass', lift: 0, alt: false, trunk: 2, sink: 0 },
+  [BIOME.DARK_FOREST]: { name: 'Dark Forest', treeDensity: 2.6, surface: 'grass', lift: 0, alt: false, trunk: 1, wood: 'dark', sink: 0 },
+  // Birch forests grow birch trees: pale wood and light leaves. `birch` picks the wood the trees are made of.
+  [BIOME.BIRCH_FOREST]: { name: 'Birch Forest', treeDensity: 1.1, surface: 'grass', lift: 0, alt: false, trunk: 1, wood: 'birch', sink: 0 },
+  [BIOME.OLD_GROWTH_BIRCH_FOREST]: { name: 'Old Growth Birch Forest', treeDensity: 1.3, surface: 'grass', lift: 0, alt: false, trunk: 3, wood: 'birch', sink: 0 },
+  [BIOME.TAIGA]: { name: 'Taiga', treeDensity: 0.7, surface: 'grass', lift: 0, alt: false, trunk: 1, wood: 'spruce', sink: 0 },
+  [BIOME.SNOWY_TAIGA]: { name: 'Snowy Taiga', treeDensity: 0.6, surface: 'grass', lift: 0, alt: false, trunk: 1, wood: 'spruce', sink: 0 },
+  [BIOME.OLD_GROWTH_PINE_TAIGA]: { name: 'Old Growth Pine Taiga', treeDensity: 0.5, surface: 'grass', lift: 0, alt: false, trunk: 4, wood: 'spruce', sink: 0 },
+  [BIOME.OLD_GROWTH_SPRUCE_TAIGA]: { name: 'Old Growth Spruce Taiga', treeDensity: 0.5, surface: 'grass', lift: 0, alt: false, trunk: 4, wood: 'spruce', sink: 0 },
+  [BIOME.JUNGLE]: { name: 'Jungle', treeDensity: 2.2, surface: 'grass', lift: 0, alt: false, trunk: 3, wood: 'jungle', sink: 0 },
+  [BIOME.SPARSE_JUNGLE]: { name: 'Sparse Jungle', treeDensity: 0.9, surface: 'grass', lift: 0, alt: false, trunk: 3, wood: 'jungle', sink: 0 },
+  [BIOME.BAMBOO_JUNGLE]: { name: 'Bamboo Jungle', treeDensity: 1.6, surface: 'grass', lift: 0, alt: false, trunk: 2, wood: 'jungle', sink: 0 },
   // Wetland and coast. `channel` is a river: the ground is cut down below sea level so water fills it.
   // `sink` lowers the ground a little, so swamps are flat and wet.
   [BIOME.RIVER]: { name: 'River', treeDensity: 0, surface: 'sand', lift: 0, alt: false, trunk: 0, channel: true, sink: 0 },
