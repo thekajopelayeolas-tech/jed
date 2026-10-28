@@ -76,6 +76,8 @@ export const OPEN_DOOR_BOX = [[0, 0, 0, 0.12, 1, 1]];
 const TORCH_ID = 14;
 // Water's id, repeated here because blocks.js imports this file, so importing BLOCK back would be a cycle.
 const BLOCK_WATER_ID = 7;
+// Flowing water's id, repeated for the same reason. Kept in sync with BLOCK.FLOWING_WATER in blocks.js.
+const BLOCK_FLOWING_WATER_ID = 129;
 // The ramp box for a single water cell, in cell units. Kept in sync with WATER_RAMP_BOXES in water.js.
 export const RAMP_BOX = [[0, 0, 0, 1, 0.5, 1]];
 export const POST_BOX = [[0.42, 0, 0.42, 0.58, 1, 0.58]];
@@ -123,6 +125,8 @@ export const SHAPE = {
   [TORCH_ID]: 'post',
   // A single water cell is a ramp, not a full cube. See src/water.js.
   [BLOCK_WATER_ID]: 'ramp',
+  // Flowing water is a slab: the lower half of the cell.
+  [BLOCK_FLOWING_WATER_ID]: 'slab',
 };
 
 // The texture a door half uses on one face. The upper half shows the handle on its front face, and the lower half

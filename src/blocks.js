@@ -112,6 +112,8 @@ export const BLOCK = {
   BAMBOO: 115,
   // Lava pools in some deep caves. Id 128 is new and never reused.
   LAVA: 128,
+  // Flowing water: water that spreads out as slabs. A bucket cannot pick it up. Id 129 is new and never reused.
+  FLOWING_WATER: 129,
   // Birch wood, planks and leaves, for birch forests and the villages in them. Ids 116 to 118 are new and never reused.
   BIRCH_WOOD: 116,
   BIRCH_PLANKS: 117,
@@ -184,6 +186,8 @@ export const BLOCK_DEFS = {
   [BLOCK.LEAVES]: { name: 'Leaves', top: [0.2, 0.5, 0.15], side: [0.2, 0.5, 0.15], bottom: [0.2, 0.5, 0.15], solid: true, transparent: true },
   [BLOCK.WATER]: { name: 'Water', top: [0.2, 0.4, 0.9], side: [0.2, 0.4, 0.9], bottom: [0.2, 0.4, 0.9], solid: false, transparent: true, alpha: 0.6 },
   // Lava: a glowing orange liquid. Like water, it is not solid, so you walk into it.
+  // Flowing water: the same blue as water, but it is drawn as a slab and a bucket cannot take it.
+  [BLOCK.FLOWING_WATER]: { name: 'Flowing Water', top: [0.2, 0.4, 0.9], side: [0.2, 0.4, 0.9], bottom: [0.2, 0.4, 0.9], solid: false, transparent: true, alpha: 0.6 },
   [BLOCK.LAVA]: { name: 'Lava', top: [0.95, 0.45, 0.1], side: [0.95, 0.45, 0.1], bottom: [0.95, 0.45, 0.1], solid: false, transparent: true, alpha: 0.9 },
   [BLOCK.COBBLESTONE]: { name: 'Cobblestone', top: [0.4, 0.4, 0.4], side: [0.4, 0.4, 0.4], bottom: [0.4, 0.4, 0.4], solid: true, transparent: false },
   [BLOCK.PLANKS]: { name: 'Planks', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },

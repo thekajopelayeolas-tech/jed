@@ -290,6 +290,7 @@ export const BLOCK_TILES = {
   [BLOCK.LEAVES]: { top: 'leaves', side: 'leaves', bottom: 'leaves' },
   [BLOCK.WATER]: { top: 'water', side: 'water', bottom: 'water' },
   [BLOCK.LAVA]: { top: 'lava', side: 'lava', bottom: 'lava' },
+  [BLOCK.FLOWING_WATER]: { top: 'water', side: 'water', bottom: 'water' },
   [BLOCK.COBBLESTONE]: { top: 'cobble', side: 'cobble', bottom: 'cobble' },
   [BLOCK.PLANKS]: { top: 'planks', side: 'planks', bottom: 'planks' },
   [BLOCK.BEDROCK]: { top: 'bedrock', side: 'bedrock', bottom: 'bedrock' },
