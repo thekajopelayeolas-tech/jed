@@ -17,6 +17,9 @@ const EYE = 1.62;
 const HP_PER_HEART = 2;
 const REGEN_INTERVAL = 5;
 const REGEN_HEARTS = 3;
+// Stepping up onto a stair: the tallest step the player climbs without jumping, and how fast the rise is.
+const STEP_HEIGHT = 1.0;
+const STEP_SPEED = 14;
 
 // First-person player with AABB collision against the voxel world.
 export class Player {
@@ -114,6 +117,32 @@ export class Player {
     return false;
   }
 
+  // Climbs a stair the player is walking into. It rises by up to STEP_HEIGHT, only while the space above
+  // the step is clear, and then the player keeps walking on it. Stepping off means nothing is in the way, so
+  // the player does not rise. Returns true if the player moved up.
+  stepUp(dt, move) {
+    if (move.lengthSq() === 0) return false;
+    // Look a little ahead of the body, in the direction of the walk, for the block that stops it.
+    const ahead = 0.35;
+    const ax = this.pos.x + move.x * (HALF_WIDTH + ahead);
+    const az = this.pos.z + move.z * (HALF_WIDTH + ahead);
+    // The wall is in front at foot height. Find the lowest step height, up to STEP_HEIGHT, at which the body fits.
+    if (!this.collides(ax, this.pos.y + 0.01, az)) return false;
+    for (let rise = 0.1; rise <= STEP_HEIGHT + 1e-6; rise += 0.1) {
+      const y = this.pos.y + rise;
+      if (this.collides(ax, y + 0.01, az)) continue;
+      if (this.collides(this.pos.x, y, this.pos.z)) continue;
+      // Clear at this height: put the player on the step in one move, so the climb is quick and gravity cannot
+      // pull them back down partway up. The rise is relative to where the player stands now, so a player
+      // standing on a slab is not snapped up by a whole block.
+      this.pos.y += rise;
+      this.vel.y = 0;
+      this.onGround = true;
+      return true;
+    }
+    return false;
+  }
+
   update(dt) {
     const wasOnGround = this.onGround;
     const forward = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
@@ -145,8 +174,10 @@ export class Player {
       if (this.vel.y < -50) this.vel.y = -50;
     }
 
-    this.moveAxis('x', this.vel.x * dt);
-    this.moveAxis('z', this.vel.z * dt);
+    const blockedX = this.moveAxis('x', this.vel.x * dt);
+    const blockedZ = this.moveAxis('z', this.vel.z * dt);
+    // Walking into a stair on the ground climbs it quickly, so the player does not have to jump.
+    if ((blockedX || blockedZ) && this.onGround && !swimming) this.stepUp(dt, move);
     const fallingBeforeMove = this.vel.y < 0;
     const blockedY = this.moveAxis('y', this.vel.y * dt);
     // Landed if vertical movement was stopped while falling.
