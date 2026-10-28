@@ -649,13 +649,16 @@ function placeBlock() {
 function dropHeldItem() {
   const item = inventory.selectedItem;
   if (item.id === BLOCK.AIR || item.count <= 0) return false;
+  // Copy the id before the slot is changed. The slot is the live object, so when this is the last item,
+  // consuming it clears the slot to air, and reading the id afterwards would drop air instead of the item.
+  const id = item.id;
   const look = player.lookDir();
   const x = Math.floor(player.pos.x + look.x * 1.5);
   const z = Math.floor(player.pos.z + look.z * 1.5);
   const y = Math.floor(player.pos.y);
   inventory.consumeSelected(1);
   // Locked until the player walks away, so the dropped item is not picked straight back up.
-  drops.spawn(item.id, x, y, z).markDropped();
+  drops.spawn(id, x, y, z).markDropped();
   return true;
 }
 
