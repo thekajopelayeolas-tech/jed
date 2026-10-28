@@ -119,6 +119,14 @@ export const SHAPE = {
   [TORCH_ID]: 'post',
 };
 
+// The texture a door half uses on one face. The upper half shows the handle on its front face, and the lower half
+// is plain planks on every face, so the two halves read as one door with no handle or seam at the bottom.
+// `isFront` says whether this face is the door's front. `isUpper` says whether this cell is the upper half.
+export function doorTileName(id, isFront, isUpper) {
+  if (!isUpper) return 'doorBottom';
+  return isFront ? 'doorFront' : 'door';
+}
+
 // Which icon shape the inventory draws for a block: 'slab', 'stairs', or 'cube'. Slabs and stairs are drawn with
 // their own shape, so they do not look like a full block. Every other block is a full cube icon.
 export function iconShape(id) {

@@ -3,7 +3,7 @@ import { BLOCK, BLOCK_DEFS } from './blocks.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { LIGHT, lightFactor } from './lighting.js';
 import { BLOCK_TILES, TILE_INDEX, tileUV } from './textures.js';
-import { isFullCube, boxesFor } from './building.js';
+import { isFullCube, boxesFor, DOOR, doorTileName } from './building.js';
 import { sideName, isFrontFace } from './facing.js';
 
 // Face definitions: direction, 4 corner offsets (CCW from outside), and shade.
@@ -65,7 +65,16 @@ function emitBox(box, id, def, target, world, chunk, wx, y, wz, x, z) {
   ];
   for (const f of shapes) {
     const lf = lightFactor(Math.max(0, world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.SKY), world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.BLOCK)));
-    const tileName = BLOCK_TILES[id][f.face] ?? BLOCK_TILES[id].side;
+    let tileName = BLOCK_TILES[id][f.face] ?? BLOCK_TILES[id].side;
+    // A door's lower half is plain planks, and its upper half keeps the handle on the front. The upper half is the
+    // cell with the same door directly below it. A door has no front tile on its other faces, so those stay planks.
+    if (id === DOOR.DOOR || id === DOOR.OPEN_DOOR) {
+      // `fx, fy, fz` is this door cell, so the cell below it is `y - 1`.
+      const isUpper = world.getBlock(wx, y - 1, wz) === id;
+      const side = sideName(f.dir);
+      const isFront = side !== null && isFrontFace(chunk.getFacing(x, y, z), side);
+      tileName = doorTileName(id, isFront, isUpper);
+    }
     const [u0, v0, u1, v1] = tileUV(TILE_INDEX[tileName]);
     const uvs = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
     const base = target.pos.length / 3;
