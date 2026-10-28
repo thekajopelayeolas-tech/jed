@@ -17,7 +17,7 @@ const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
 // The jump speed for a mob: high enough to clear one block.
 // The tallest wall, in blocks, that a land mob can climb. Water mobs never climb.
-export const CLIMB_HEIGHT = 4;
+export const CLIMB_HEIGHT = 1;
 // Shearing a sheep gives this much wool, and its wool grows back after this many seconds.
 export const SHEARED_WOOL = 2;
 export const SHEEP_WOOL_REGROW = 60;

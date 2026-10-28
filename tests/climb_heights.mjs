@@ -35,6 +35,16 @@ for (const type of [MOB.COW, MOB.ZOMBIE, MOB.IRON_GOLEM]) {
   }
 }
 
+// A 2-block wall is too tall: in the real update loop the mob never gets over it.
+for (const type of [MOB.COW, MOB.ZOMBIE, MOB.IRON_GOLEM]) {
+  const m = new Mob(scene, worldWithWall(CLIMB_HEIGHT + 1), type, 11.5, WALL_Y + 1, 5.5);
+  m.onGround = true;
+  m.wanderTimer = 99;
+  m.wanderDir.set(1, 0);
+  for (let i = 0; i < 200; i++) m.update(0.05, far, () => {});
+  check(`a ${type} does not get over a ${CLIMB_HEIGHT + 1}-block wall`, m.pos.x < 14);
+}
+
 // The jump starts when the block is directly in front: the mob is rising before it is pressed against the wall.
 {
   const m = new Mob(scene, worldWithWall(1), MOB.COW, 13.0, WALL_Y + 1, 5.5);

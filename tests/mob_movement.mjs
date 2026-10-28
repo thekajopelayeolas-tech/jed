@@ -54,12 +54,12 @@ const makeWorld = (wallHeight = 0, pondBlocks = true) => ({
   check(`a cow does not climb a wall ${CLIMB_HEIGHT + 1} blocks high`, m.tryJump(1, 0) === false);
 }
 {
-  // Every land mob climbs, not just cows: zombies, villagers and chickens too.
+  // Every land mob is limited the same way: zombies, villagers, chickens and golems refuse a 2-block wall.
   for (const type of [MOB.ZOMBIE, MOB.VILLAGER, MOB.CHICKEN, MOB.IRON_GOLEM]) {
     const w = makeWorld(2);
     const m = new Mob(scene, w, type, 13.5, WALL_Y + 1, 5.5);
     m.onGround = true;
-    check(`a ${type} climbs a 2-block wall`, m.tryJump(1, 0) === true);
+    check(`a ${type} does not climb a 2-block wall`, m.tryJump(1, 0) === false);
   }
 }
 {
