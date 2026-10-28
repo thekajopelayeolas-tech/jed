@@ -23,7 +23,8 @@ export const ARMOUR_SETS = {
   },
   diamond: {
     ids: { helmet: BLOCK.DIAMOND_HELMET, chest: BLOCK.DIAMOND_CHEST, legs: BLOCK.DIAMOND_LEGS, boots: BLOCK.DIAMOND_BOOTS },
-    defence: { helmet: 3, chest: 4, legs: 3, boots: 2 },
+    // Diamond gives one more point per piece than iron, so a full set blocks more.
+    defence: { helmet: 4, chest: 5, legs: 4, boots: 3 },
   },
 };
 

@@ -139,9 +139,10 @@ export const TOOL_ITEMS = {
   [BLOCK.IRON_PICKAXE]: { tool: TOOL.PICKAXE, tier: 3, speed: 6, damage: 4, item: true },
   [BLOCK.IRON_SWORD]: { tool: TOOL.SWORD, tier: 3, speed: 1.5, damage: 7, item: true },
   // Diamond tools are the top tier (4): faster than iron and they do the most damage.
-  [BLOCK.DIAMOND_PICKAXE]: { tool: TOOL.PICKAXE, tier: 4, speed: 8, damage: 5, item: true },
-  [BLOCK.DIAMOND_AXE]: { tool: TOOL.AXE, tier: 4, speed: 8, damage: 6, item: true },
-  [BLOCK.DIAMOND_SWORD]: { tool: TOOL.SWORD, tier: 4, speed: 2, damage: 9, item: true },
+  // Diamond is clearly better than iron: mines faster and hits harder than the iron tool of the same kind.
+  [BLOCK.DIAMOND_PICKAXE]: { tool: TOOL.PICKAXE, tier: 4, speed: 12, damage: 6, item: true },
+  [BLOCK.DIAMOND_AXE]: { tool: TOOL.AXE, tier: 4, speed: 12, damage: 8, item: true },
+  [BLOCK.DIAMOND_SWORD]: { tool: TOOL.SWORD, tier: 4, speed: 2.5, damage: 12, item: true },
   // Shovels dig dirt-type blocks. Tiers and speeds follow the other tools: wood, stone, iron.
   [BLOCK.WOODEN_SHOVEL]: { tool: TOOL.SHOVEL, tier: 1, speed: 2, damage: 2, item: true },
   [BLOCK.STONE_SHOVEL]: { tool: TOOL.SHOVEL, tier: 2, speed: 4, damage: 3, item: true },

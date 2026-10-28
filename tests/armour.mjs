@@ -23,10 +23,10 @@ const none = emptyArmour();
 check('no armour gives 0 defence', defencePoints(none) === 0);
 check('no armour gives 0% reduction', damageReduction(none) === 0);
 
-// Full diamond set: 3 + 4 + 3 + 2 = 12 defence, 48% reduction.
+// Full diamond set: 4 + 5 + 4 + 3 = 16 defence, 64% reduction (one more point per piece than iron).
 const diamond = { helmet: BLOCK.DIAMOND_HELMET, chest: BLOCK.DIAMOND_CHEST, legs: BLOCK.DIAMOND_LEGS, boots: BLOCK.DIAMOND_BOOTS };
-check('full diamond set gives 12 defence', defencePoints(diamond) === 12);
-check('full diamond set reduces damage by 48%', Math.abs(damageReduction(diamond) - 0.48) < 1e-9);
+check('full diamond set gives 16 defence', defencePoints(diamond) === 16);
+check('full diamond set reduces damage by 64%', Math.abs(damageReduction(diamond) - 0.64) < 1e-9);
 
 // Better materials protect more than worse ones (full set comparison).
 const full = (m) => ({ helmet: ARMOUR_SETS[m].ids.helmet, chest: ARMOUR_SETS[m].ids.chest, legs: ARMOUR_SETS[m].ids.legs, boots: ARMOUR_SETS[m].ids.boots });

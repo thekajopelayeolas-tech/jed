@@ -32,6 +32,7 @@ import { foodPoints } from './hunger.js';
 import { spotBesideBed } from './bed-spawn.js';
 import { createMultiplayer } from './multiplayer.js';
 import { createLobbyUI } from './lobby-ui.js';
+import { buildPlayerModel } from './character-model.js';
 
 const SEED = 1337;
 
@@ -755,21 +756,23 @@ function syncBoats() {
 }
 
 const remotes = new Map();
+// Other players are drawn with the same blocky character as the local player, so you can see who is who.
+// Each one is built once and kept, then moved to its last reported position. Feet sit at y, as for the player.
 function syncRemotes() {
   const seen = new Set();
   for (const p of mp.others()) {
     seen.add(p.id);
-    let mesh = remotes.get(p.id);
-    if (!mesh) {
-      mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.8, 0.6), new THREE.MeshLambertMaterial({ color: 0xd9732b }));
-      scene.add(mesh);
-      remotes.set(p.id, mesh);
+    let model = remotes.get(p.id);
+    if (!model) {
+      model = buildPlayerModel();
+      scene.add(model.group);
+      remotes.set(p.id, model);
     }
-    mesh.position.set(p.x, p.y + 0.9, p.z);
-    mesh.rotation.y = p.yaw;
+    model.group.position.set(p.x, p.y, p.z);
+    model.group.rotation.y = p.yaw;
   }
-  for (const [id, mesh] of remotes) {
-    if (!seen.has(id)) { scene.remove(mesh); remotes.delete(id); }
+  for (const [id, model] of remotes) {
+    if (!seen.has(id)) { scene.remove(model.group); remotes.delete(id); }
   }
 }
 
