@@ -82,16 +82,20 @@ function swordSprite(blade) {
   ]);
 }
 
-// A pickaxe: a long curved head with a point at each end, set across the top of a diagonal handle.
+// A pickaxe: a thick metal head with a lit top edge and a shadowed underside, set across a wooden handle. The head
+// keeps the stick's diagonal, a dark binding joins it to the handle, and the handle has a grain line down its middle.
 function pickaxeSprite(head) {
   return layered([
-    // The head is a straight diagonal bar, the same angle as the handle, so the top reads like the stick.
-    stroke(3, 6, 13, 10, 1.2, head),
-    // Pick points: a stub at each end of the bar, so it reads as a pick and not a plain stick.
-    stroke(2.2, 5.2, 3.6, 7.2, 0.9, head),
-    stroke(13.8, 10.8, 12.4, 8.8, 0.9, head),
-    // Handle: a diagonal stick from the middle of the head down to the bottom left.
-    stroke(8, 8.5, 3, 15, 0.9, HANDLE),
+    // Head: a thick diagonal bar of metal, bright on the upper edge and dark underneath.
+    stroke(3, 6, 13, 10, 1.5, head),
+    // Pick points: a stub at each end, drawn a little thicker so they read as metal points.
+    stroke(2.2, 5.2, 3.6, 7.2, 1.0, head),
+    stroke(13.8, 10.8, 12.4, 8.8, 1.0, head),
+    // Binding: a dark collar where the head meets the handle.
+    ellipse(8, 8.6, 1.4, 1.4, () => [0.15, 0.12, 0.1]),
+    // Handle: a thicker wooden shaft, with a darker grain line down its middle.
+    stroke(8, 8.5, 3, 15, 1.1, HANDLE),
+    stroke(8, 8.5, 3, 15, 0.3, { light: [0.3, 0.2, 0.1], dark: [0.3, 0.2, 0.1] }),
   ]);
 }
 
