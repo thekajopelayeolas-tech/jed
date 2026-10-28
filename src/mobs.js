@@ -91,7 +91,8 @@ for (const [id, name, hostile, water, shape, hp, speed, dmg, colour, drops] of E
     hostile,
     damage: hostile ? dmg : 0,
     drops: drops.map((d) => CATALOGUE_DROP[d]).filter((d) => d !== undefined),
-    burnsInSun: false,
+    // Hostile land mobs catch fire in daylight, the same as the zombie. Peaceful mobs do not.
+    burnsInSun: hostile && !water,
     ...(water ? { water: true } : {}),
   };
 }
@@ -566,7 +567,8 @@ export class MobManager {
       return;
     }
     // At night a land spawn is hostile: a zombie or one of the catalogue's hostile kinds. By day it is peaceful.
-    const type = night || roll < 0.3 ? pickHostileMob() : pickPassiveMob();
+    // Hostile mobs only spawn at night. By day every land spawn is peaceful.
+    const type = night ? pickHostileMob() : pickPassiveMob();
     this.trySpawnOnLand(playerPos, type, night);
   }
 
@@ -590,10 +592,8 @@ export class MobManager {
       // The first non-air cell decides it: water means no land spawn here.
       if (id === BLOCK.WATER) return;
       if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR) return;
-      // Zombies spawn on dry ground at night. By day they only spawn where it is dark, such as caves.
-      if (type === MOB.ZOMBIE && !night && !isDarkEnough(this.world, x, y + 1, z)) return;
-      // A hostile spawn by day only happens where it is dark, as with the zombie. Peaceful kinds ignore the light.
-      if (MOB_DEFS[type]?.hostile && !night && !isDarkEnough(this.world, x, y + 1, z)) return;
+      // A hostile mob only spawns at night, so by day no hostile spawn happens here at all.
+      if (MOB_DEFS[type]?.hostile && !night) return;
       // A peaceful land mob needs open sky above it, so it never spawns stuck inside a cave or under a roof.
       if (!MOB_DEFS[type]?.hostile && this.world.getLight(x, y + 1, z, LIGHT.SKY) <= 0) return;
       this.mobs.push(new Mob(this.scene, this.world, type, x + 0.5, y + 1, z + 0.5));
