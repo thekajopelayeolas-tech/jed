@@ -21,6 +21,8 @@ export const CLIMB_HEIGHT = 4;
 // Shearing a sheep gives this much wool, and its wool grows back after this many seconds.
 export const SHEARED_WOOL = 2;
 export const SHEEP_WOOL_REGROW = 60;
+// A tamed wolf this far from the player teleports back to them, and is never removed for distance.
+export const TAME_TELEPORT_RANGE = 24;
 
 // Mob types. The first twelve are the original kinds. The rest come from the catalogue, one id per row.
 export const MOB = {
@@ -503,6 +505,30 @@ export class Mob {
     return true;
   }
 
+  // Moves a tamed wolf onto open ground a few blocks from the player. Tries a ring of spots around them, and
+  // returns false (leaving the wolf where it is) if none of them has ground with room to stand.
+  teleportNear(playerPos) {
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      const x = Math.floor(playerPos.x + Math.cos(a) * 2.5);
+      const z = Math.floor(playerPos.z + Math.sin(a) * 2.5);
+      // Walk down from just above the player to the first solid block, which is the ground at this spot.
+      for (let y = Math.floor(playerPos.y) + 2; y > 0; y--) {
+        if (!isSolid(this.world.getBlock(x, y, z))) continue;
+        // The two cells above the ground must be open, so the wolf fits standing on it.
+        if (!isSolid(this.world.getBlock(x, y + 1, z)) && !isSolid(this.world.getBlock(x, y + 2, z))) {
+          this.pos.set(x + 0.5, y + 1, z + 0.5);
+          this.vel.set(0, 0, 0);
+          this.knock.set(0, 0, 0);
+          this.group.position.copy(this.pos);
+          return true;
+        }
+        break;
+      }
+    }
+    return false;
+  }
+
   shear() {
     if (this.type !== MOB.SHEEP || this.sheared || this.dead) return 0;
     this.sheared = true;
@@ -684,9 +710,12 @@ export class MobManager {
       const burning = shouldBurn(m, this.world, timeOfDay);
       const burnDamage = burnStep(m, dt, burning);
       if (burnDamage > 0 && !m.dead) m.takeHit(burnDamage, m.pos.x, m.pos.z);
+      // A tamed wolf that gets far away teleports back to the player. It is never removed for distance.
+      if (m.tamed && !m.dead && m.pos.distanceTo(playerPos) > TAME_TELEPORT_RANGE) m.teleportNear(playerPos);
       // Villagers and golems belong to a village, so they are only removed when they die, not when far away.
       const village = m.home !== undefined;
-      if (m.dead || (!village && m.pos.distanceTo(playerPos) > 48)) {
+      const tamed = m.tamed === true;
+      if (m.dead || (!village && !tamed && m.pos.distanceTo(playerPos) > 48)) {
         // A villager that dies is not replaced: its village stops topping up villagers for good.
         if (m.dead && m.type === MOB.VILLAGER && m.home) this.lostVillagers.add(`${m.home.x},${m.home.z}`);
         m.dispose();
