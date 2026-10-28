@@ -88,7 +88,7 @@ export function biomeAt(wx, wz, seed, height = 0) {
   const temperature = valueNoise2D(wx * 0.004, wz * 0.004, seed + 201);
   const humidity = valueNoise2D(wx * 0.004, wz * 0.004, seed + 301);
   // Mountain zones: a separate noise field decides which mountain kind. Only high ground is a mountain.
-  if (height >= 46) {
+  if (height >= 52) {
     const zone = valueNoise2D(wx * 0.006, wz * 0.006, seed + 501);
     if (zone < 0.2) return BIOME.JAGGED_PEAKS;
     if (zone < 0.4) return BIOME.FROZEN_PEAKS;
@@ -96,7 +96,7 @@ export function biomeAt(wx, wz, seed, height = 0) {
     if (zone < 0.7) return BIOME.SNOWY_SLOPES;
     return BIOME.STONY_PEAKS;
   }
-  if (height >= 38) {
+  if (height >= 44) {
     const zone = valueNoise2D(wx * 0.006, wz * 0.006, seed + 503);
     if (zone < 0.25) return BIOME.MEADOW;
     if (zone < 0.5) return BIOME.GROVE;
