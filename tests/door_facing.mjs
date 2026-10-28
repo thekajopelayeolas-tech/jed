@@ -14,8 +14,9 @@ const sameBox = (a, b) => a.every((v, i) => near(v, b[i]));
 
 // South-facing (0) is the default, so it matches the original door box exactly.
 check('a south door keeps the original closed box', sameBox(doorBoxes(false, FACING.SOUTH)[0], DOOR_BOX[0]));
-// A south open door lies against the z = 0 edge, the same axis the closed panel runs along.
-check('a south door open box lies against the z = 0 edge', sameBox(doorBoxes(true, FACING.SOUTH)[0], [0, 0, 0, 1, 1, 0.12]));
+// An open door is swung 90 degrees on its hinge, so its panel runs across the other axis. A south door's
+// closed panel runs along x, so its open panel runs along z, hinged on the west edge of the cell.
+check('a south door open box is a panel swung to the west edge', sameBox(doorBoxes(true, FACING.SOUTH)[0], [0, 0, 0, 0.12, 1, 1]));
 
 // A quarter turn swaps the panel between the z axis and the x axis.
 const closedSouth = doorBoxes(false, FACING.SOUTH)[0];
@@ -33,12 +34,14 @@ for (const f of [0, 1, 2, 3]) {
   check(`a closed door facing ${f} stays inside its cell`, x0 >= 0 && x1 <= 1 && z0 >= 0 && z1 <= 1);
 }
 
-// An open door sits against an edge, and its front still points the same way as the closed door's.
-// The open door lies against a cell edge on the axis the closed panel does not run along.
+// An open door is a thin panel on the hinge edge of its cell, running across the closed panel's axis.
+// Facing east, the closed panel runs along z, so the open panel runs along x at the z = 0 hinge edge.
 const openEast = doorBoxes(true, FACING.EAST)[0];
-check('an open door facing east lies against the cell edge at x = 0', openEast[0] === 0 && openEast[3] === 0.12);
+check('an open door facing east is a panel swung to the south edge', near(openEast[2], 0) && near(openEast[5], 0.12));
 const openSouth = doorBoxes(true, FACING.SOUTH)[0];
-check('an open door facing south lies against the cell edge at z = 0', openSouth[2] === 0 && openSouth[5] === 0.12);
+check('an open door facing south is a panel swung to the west edge', near(openSouth[0], 0) && near(openSouth[3], 0.12));
+// The open panel is the full length of the cell, so it reads as a door standing open in the wall's side.
+check('an open door panel spans the full cell length', near(openSouth[5] - openSouth[2], 1));
 
 // Collision follows the door's facing. A body on the east side of a closed west-facing door does not hit the
 // panel that lies across x near the middle, but a body in the middle of the cell does.

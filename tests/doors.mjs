@@ -16,10 +16,10 @@ check('a closed door is not a full cube', !isFullCube(DOOR.DOOR));
 const sameBox = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
 check('a closed door uses the thin door box', sameBox(boxesFor(DOOR.DOOR, 0)[0], DOOR_BOX[0]));
 
-// An open door is drawn as a thin panel at its edge, and is not solid, so a player walks through it.
-// The open door is thin across its facing axis: for a south door that is z, so the z extent is small.
+// An open door is drawn as a thin panel swung to the cell's hinge edge, and is not solid, so a player walks through it.
+// The open panel is thin across x for a south door, because it has swung 90 degrees from the closed panel.
 const openBox = boxesFor(DOOR.OPEN_DOOR, 0)[0];
-check('an open door is drawn as a thin panel', boxesFor(DOOR.OPEN_DOOR, 0).length === 1 && openBox[5] - openBox[2] < 0.2);
+check('an open door is drawn as a thin panel', boxesFor(DOOR.OPEN_DOOR, 0).length === 1 && openBox[3] - openBox[0] < 0.2);
 check('an open door is not solid, so it does not block', !isSolid(DOOR.OPEN_DOOR));
 check('a closed door is solid, so it blocks', isSolid(DOOR.DOOR));
 

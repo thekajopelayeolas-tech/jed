@@ -66,9 +66,9 @@ export const STAIR_BOXES = [
   [0, 0.5, 0, 0.5, 1, 1],
 ];
 
-// A closed door is a thin panel across the middle of its cell. An open door is a thin panel pushed against
-// the west edge of its cell, so it is still visible. Open doors are not solid (see blocks.js), so the
-// player and mobs walk through them, whatever box is drawn.
+// A closed door is a thin panel across the middle of its cell. An open door is the same panel swung 90 degrees
+// on a hinge at one edge of its cell, so it stands out from the wall. Open doors are not solid (see blocks.js),
+// so the player and mobs walk through them, whatever box is drawn.
 export const DOOR_BOX = [[0, 0, 0.4, 1, 1, 0.6]];
 export const OPEN_DOOR_BOX = [[0, 0, 0, 0.12, 1, 1]];
 
@@ -92,16 +92,16 @@ export function rotateBox(box, facing) {
 }
 
 // The collision and rendering boxes for a door in a given state and facing. A closed door is a panel across
-// its cell, turned to match its facing. An open door is that same panel pushed against one edge of the cell,
-// so it lines up with the closed panel's axis and still sits in the doorway.
+// its cell, turned to match its facing. An open door is that panel swung 90 degrees on a hinge at one edge
+// of the cell: it runs across the closed panel's axis, so it stands out from the wall like a door held open.
 export function doorBoxes(open, facing) {
   const closed = rotateBox(DOOR_BOX[0], facing);
   if (!open) return [closed];
   const [x0, y0, z0, x1, y1, z1] = closed;
-  // The closed panel runs along x for facings 1 and 3, and along z for 0 and 2. The open door swings to the
-  // edge on the other axis (the one the closed panel does not run along), so it lies against the cell's side.
+  // The closed panel runs along x for facings 1 and 3, and along z for 0 and 2. The open panel runs along
+  // the other axis, thin across the closed panel's axis, and is hinged on the cell edge where it starts.
   const alongX = x1 - x0 > z1 - z0;
-  return alongX ? [[x0, y0, 0, x1, y1, 0.12]] : [[0, y0, z0, 0.12, y1, z1]];
+  return alongX ? [[0, y0, 0, 0.12, y1, 1]] : [[0, y0, 0, 1, y1, 0.12]];
 }
 
 // Which shape each building block uses. Full cubes are missing from this table and use FULL_BOX.
@@ -118,6 +118,15 @@ export const SHAPE = {
   [DOOR.OPEN_DOOR]: 'open',
   [TORCH_ID]: 'post',
 };
+
+// Which icon shape the inventory draws for a block: 'slab', 'stairs', or 'cube'. Slabs and stairs are drawn with
+// their own shape, so they do not look like a full block. Every other block is a full cube icon.
+export function iconShape(id) {
+  const shape = SHAPE[id];
+  if (shape === 'slab') return 'slab';
+  if (shape === 'stairs') return 'stairs';
+  return 'cube';
+}
 
 // Returns the collision and rendering boxes for a block id. Full cubes return one box.
 // `facing` (0..3) turns doors to match the way they face. Other shapes ignore it.
