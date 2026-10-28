@@ -424,11 +424,8 @@ function combatPress() {
   // Holding an ender pearl throws it on right-click.
   if (inventory.selectedItem.id === BLOCK.ENDER_PEARL && throwPearl()) return true;
   const held = inventory.selectedItem.id;
-  // The shield is in the off-hand, so holding right-click raises it whether or not a shield is selected.
-  if (inventory.hasOffhandShield()) {
-    combat.shieldUp = true;
-    return true;
-  }
+  // The shield is raised with Shift (see updateShield), not right-click, so right-click does nothing for it here.
+  if (inventory.hasOffhandShield() && held !== BLOCK.BOW) return false;
   if (held === BLOCK.BOW && inventory.countOf(BLOCK.ARROW) > 0) {
     combat.drawing = true;
     combat.drawTime = 0;
@@ -437,9 +434,13 @@ function combatPress() {
   return false;
 }
 
-// Right-click release: lower the shield, or fire the bow at the draw it reached.
+// The shield is raised while Shift is held and lowered when it is released. Sprinting still uses Shift for movement.
+function updateShield() {
+  combat.shieldUp = !!(player.keys.ShiftLeft || player.keys.ShiftRight) && inventory.hasOffhandShield();
+}
+
+// Right-click release: fire the bow at the draw it reached.
 function combatRelease() {
-  combat.shieldUp = false;
   if (!combat.drawing) return;
   combat.drawing = false;
   if (inventory.countOf(BLOCK.ARROW) <= 0) return;
@@ -461,7 +462,7 @@ function combatRelease() {
 function updateCombat(dt) {
   // Switching away from the bow while the button is held cancels the draw. The shield stays up in the off-hand.
   const held = inventory.selectedItem.id;
-  if (!inventory.hasOffhandShield()) combat.shieldUp = false;
+  updateShield();
   if (held !== BLOCK.BOW) combat.drawing = false;
   if (combat.drawing) combat.drawTime += dt;
   for (let i = arrows.length - 1; i >= 0; i--) {
