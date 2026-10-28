@@ -28,7 +28,8 @@ check('iron ore drops with stone pickaxe', canHarvest(BLOCK.IRON_ORE, STONE_PICK
 check('dirt drops bare-handed', canHarvest(BLOCK.DIRT, 0) === true);
 
 // Weapon damage: bare hand 1, and the held sword sets the value.
-check('bare hand deals 1', attackDamage(0) === 1);
-check('iron sword deals 7', attackDamage(IRON_SWORD) === 7);
+// Each hit has the 10-point strength bonus on top of the held item's damage.
+check('bare hand deals 1 plus the 10 strength bonus', attackDamage(0) === 11);
+check('iron sword deals 7 plus the 10 strength bonus', attackDamage(IRON_SWORD) === 17);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);

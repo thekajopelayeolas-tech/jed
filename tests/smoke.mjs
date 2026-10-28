@@ -1,5 +1,6 @@
 import { World } from '../src/world.js';
 import { biomeAt } from '../src/biomes.js';
+import { MAX_LIGHT } from '../src/lighting.js';
 
 const mockMat = {};
 const scene = { add() {}, remove() {} };
@@ -7,9 +8,9 @@ const w = new World(scene, 1337, mockMat, mockMat);
 w.update(8, 8, 2, 25);
 console.log('chunks loaded:', w.chunks.size);
 
-let sky15 = 0;
-for (let x = 0; x < 16; x++) for (let z = 0; z < 16; z++) if (w.getLight(x, 90, z, 0) === 15) sky15++;
-console.log('sky light 15 at y=90 (of 256):', sky15);
+let skyMax = 0;
+for (let x = 0; x < 16; x++) for (let z = 0; z < 16; z++) if (w.getLight(x, 90, z, 0) === MAX_LIGHT) skyMax++;
+console.log('sky light at maximum at y=90 (of 256):', skyMax);
 
 let surface = -1;
 for (let y = 95; y > 0; y--) if (w.getBlock(8, y, 8) !== 0) { surface = y; break; }

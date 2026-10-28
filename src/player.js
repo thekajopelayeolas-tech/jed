@@ -5,7 +5,8 @@ import { Hunger } from './hunger.js';
 import { emptyArmour, damageReduction } from './armour.js';
 import { bodyInWater, swimVelocityY, SWIM_SPEED_MULT } from './swimming.js';
 
-const WALK_SPEED = 4.3;
+// Walking is 10 blocks per second faster than before (4.3 + 10).
+const WALK_SPEED = 14.3;
 const SPRINT_MULT = 1.3;
 const JUMP_VEL = 8.0;
 const GRAVITY = 28;

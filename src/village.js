@@ -7,7 +7,7 @@ import { valueNoise2D } from './noise.js';
 
 export const REGION = 64;
 // Chance that a region contains a village. Villages are rare: most regions have none.
-export const VILLAGE_CHANCE = 0.12;
+export const VILLAGE_CHANCE = 0.3;
 // Half-size of the flat area a village needs around its centre. It is large enough for ten houses.
 export const FLAT_RADIUS = 18;
 // Maximum height difference allowed across the flat area.

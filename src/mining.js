@@ -75,6 +75,8 @@ export function canHarvest(blockId, heldId) {
 }
 
 // Melee damage for the held item. Empty hand deals 1.
+// The player's strength: every hit does 10 more damage than the held item gives.
+export const STRENGTH_BONUS = 10;
 export function attackDamage(heldId) {
-  return toolFor(heldId)?.damage ?? 1;
+  return (toolFor(heldId)?.damage ?? 1) + STRENGTH_BONUS;
 }
