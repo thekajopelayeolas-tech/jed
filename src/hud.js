@@ -2,6 +2,8 @@ import { BLOCK_DEFS } from './blocks.js';
 import { HOTBAR_SIZE } from './inventory.js';
 import { iconCanvas } from './icons.js';
 import { MAX_HUNGER } from './hunger.js';
+// The burger picture, bundled by Vite. Used for the hunger meter.
+import burgerUrl from './assets/burger.png';
 
 // Colours for the meter icons. Full icons are filled, empty icons are dark outlines.
 const HEART_FULL = '#e02020';
@@ -24,16 +26,13 @@ function heartIcon(full) {
   return el;
 }
 
-// A burger: a domed top bun, a patty, and a flat bottom bun. Empty points keep the same shapes in dark colours.
+// A burger, drawn from burger.png. An empty burger is the same picture, greyed out, so the empty points still show.
 function hungerIcon(full) {
-  const el = document.createElement('div');
-  el.style.cssText = 'position:relative;width:14px;height:14px;';
-  const bun = full ? HUNGER_BUN : HUNGER_EMPTY;
-  const patty = full ? HUNGER_PATTY : HUNGER_EMPTY;
-  el.innerHTML =
-    `<div style="position:absolute;left:1px;top:0px;width:12px;height:6px;border-radius:6px 6px 2px 2px;background:${bun};"></div>` +
-    `<div style="position:absolute;left:0px;top:6px;width:14px;height:3px;border-radius:1px;background:${patty};"></div>` +
-    `<div style="position:absolute;left:1px;top:9px;width:12px;height:4px;border-radius:2px 2px 4px 4px;background:${bun};"></div>`;
+  const el = document.createElement('img');
+  el.src = burgerUrl;
+  el.alt = '';
+  el.draggable = false;
+  el.style.cssText = `width:14px;height:14px;image-rendering:pixelated;flex:none;${full ? '' : 'filter:grayscale(1) brightness(0.45);'}`;
   return el;
 }
 
