@@ -29,10 +29,16 @@ const FLAT_REACH = 22;
 // Radius around a village centre where trees are not planted. It covers the houses and the roads.
 const VILLAGE_CLEAR = 22;
 
+// How many blocks higher a village sits than the ground around it. The village is levelled up onto a raised
+// platform, so its houses, farms, and pen stand clear of the terrain.
+export const VILLAGE_LIFT = 6;
+
 // The ground height a village levels to, or null if the centre is underwater (no village there).
 function villageGroundY(seed, centre) {
   const y = surfaceHeight(seed, centre.x, centre.z);
-  return y > SEA_LEVEL + 1 ? y : null;
+  if (y <= SEA_LEVEL + 1) return null;
+  // Keep the raised village inside the world's build height, with room for the houses above it.
+  return Math.min(CHUNK_HEIGHT - 12, y + VILLAGE_LIFT);
 }
 
 // If a column lies inside a village's levelled area, returns the village's ground height. Otherwise null.
