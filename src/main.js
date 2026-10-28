@@ -654,7 +654,8 @@ function dropHeldItem() {
   const z = Math.floor(player.pos.z + look.z * 1.5);
   const y = Math.floor(player.pos.y);
   inventory.consumeSelected(1);
-  drops.spawn(item.id, x, y, z);
+  // Locked until the player walks away, so the dropped item is not picked straight back up.
+  drops.spawn(item.id, x, y, z).markDropped();
   return true;
 }
 

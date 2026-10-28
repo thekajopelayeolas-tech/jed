@@ -93,8 +93,19 @@ export class ItemDrop {
     this.mesh.rotation.y = this.age * 2;
   }
 
+  // A dropped item (from Q) is locked until the player walks away from it, so it is not picked straight back up.
+  // It unlocks once the player is past the pickup radius.
+  markDropped() {
+    this.locked = true;
+    return this;
+  }
+
   // Returns true if the drop is close enough to the player to be collected.
   canPickUp(playerPos) {
+    if (this.locked) {
+      if (playerPos.distanceTo(this.pos) >= PICKUP_RADIUS) this.locked = false;
+      return false;
+    }
     return this.age > 0.5 && this.pos.distanceTo(playerPos) < PICKUP_RADIUS;
   }
 
@@ -114,8 +125,11 @@ export class DropManager {
     this.items = [];
   }
 
+  // Returns the new drop, so a caller can lock it (see markDropped).
   spawn(id, x, y, z) {
-    this.items.push(new ItemDrop(this.scene, this.world, id, x + 0.5, y + 0.5, z + 0.5, this.atlasMaterial));
+    const drop = new ItemDrop(this.scene, this.world, id, x + 0.5, y + 0.5, z + 0.5, this.atlasMaterial);
+    this.items.push(drop);
+    return drop;
   }
 
   // Updates all drops and returns the list of collected item ids.
