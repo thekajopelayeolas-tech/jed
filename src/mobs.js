@@ -6,6 +6,7 @@ import { buildMobModel } from './mob-model.js';
 import { LIGHT } from './lighting.js';
 import { villagesNear, LEVEL_BOX, HOUSES } from './village.js';
 import { EXTRA_MOBS } from './mob-catalogue.js';
+import { torchSpawnCell, findTorches } from './torch-spawn.js';
 import {
   hunterAction, HUNTER_SHOOT_INTERVAL, HUNTER_ARROW_DAMAGE,
   creeperFuse, creeperExploded, CREEPER_FUSE_RANGE,
@@ -635,6 +636,15 @@ export class MobManager {
   // Land mobs spawn on dry ground only. The top solid block of the column must be ground, not water.
   // If the column's top is water, the spot is refused, so a land mob is never placed under the water.
   trySpawnOnLand(playerPos, type, night = false) {
+    // A hostile spawn at night prefers a spot near a torch the player can reach, so hostiles gather at torches.
+    // With no torch in reach, it uses the usual ring around the player.
+    if (night && MOB_DEFS[type]?.hostile) {
+      const torchCell = torchSpawnCell(this.world, playerPos, findTorches(this.world, playerPos));
+      if (torchCell) {
+        this.mobs.push(new Mob(this.scene, this.world, type, torchCell.x + 0.5, torchCell.y, torchCell.z + 0.5));
+        return;
+      }
+    }
     const { x, z } = this.spawnCell(playerPos);
     for (let y = CHUNK_HEIGHT - 2; y > 0; y--) {
       const id = this.world.getBlock(x, y, z);
