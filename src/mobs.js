@@ -152,6 +152,8 @@ export class Mob {
     // Sheep can be sheared for wool. A sheared sheep keeps living, and its wool grows back after a while.
     this.sheared = false;
     this.woolTimer = 0;
+    // A wolf can be tamed with a bone. A tamed wolf follows the player and does not wander off.
+    this.tamed = false;
     // True while the mob is standing on something. Jumps need it, so a mob cannot jump in mid-air.
     this.onGround = false;
 
@@ -392,6 +394,12 @@ export class Mob {
         if (target.mob) target.mob.takeHit(this.def.damage ?? this.def.guardDamage, this.pos.x, this.pos.z);
         else onAttack(this, this.def.damage ?? this.def.guardDamage);
       }
+    } else if (this.tamed) {
+      // A tamed wolf keeps close to the player: it walks toward them when far, and waits when near.
+      const fx = playerPos.x - this.pos.x;
+      const fz = playerPos.z - this.pos.z;
+      const d = Math.hypot(fx, fz);
+      if (d > 3) { mx = fx / d; mz = fz / d; }
     } else {
       // Cow: wander in a random direction and pause between walks.
       this.wanderTimer -= dt;
@@ -479,6 +487,13 @@ export class Mob {
 
   // Shears a sheep. Returns the wool it gives (2), or 0 if it cannot be sheared (not a sheep, or already sheared).
   // The sheep lives on, and its wool grows back after SHEEP_WOOL_REGROW seconds.
+  // Taming: a wild wolf becomes tamed when fed a bone. Returns true if it was tamed by this call.
+  tame() {
+    if (this.type !== 'wolf' || this.tamed || this.dead) return false;
+    this.tamed = true;
+    return true;
+  }
+
   shear() {
     if (this.type !== MOB.SHEEP || this.sheared || this.dead) return 0;
     this.sheared = true;

@@ -200,6 +200,30 @@ export function buildMobModel(kind) {
     return { group, legs: [], arms: [], materials, height: 0.8 };
   }
 
+  // Wolf: a long lean body, a head with a pointed snout, two upright ears, a bushy tail, and red eyes.
+  if (kind === 'wolf') {
+    const body = part(0.8, 0.36, 0.4, p.shirt, 0, 0.55, 0);
+    const head = part(0.34, 0.32, 0.32, p.skin, 0.52, 0.72, 0);
+    const snout = part(0.18, 0.12, 0.18, p.trousers, 0.72, 0.66, 0);
+    const nose = part(0.05, 0.05, 0.05, 0x111111, 0.82, 0.68, 0);
+    const earL = part(0.08, 0.14, 0.06, p.trousers, 0.5, 0.92, -0.1);
+    const earR = part(0.08, 0.14, 0.06, p.trousers, 0.5, 0.92, 0.1);
+    // Red eyes, set on the front of the head.
+    const eyeL = part(0.05, 0.05, 0.03, 0xff1a1a, 0.7, 0.8, -0.1);
+    const eyeR = part(0.05, 0.05, 0.03, 0xff1a1a, 0.7, 0.8, 0.1);
+    const tail = part(0.28, 0.1, 0.1, p.shirt, -0.5, 0.7, 0);
+    const legs = [];
+    for (const [x, z] of [[-0.28, -0.14], [-0.28, 0.14], [0.28, -0.14], [0.28, 0.14]]) {
+      const leg = new THREE.Group();
+      leg.position.set(x, 0.3, z);
+      leg.add(part(0.1, 0.3, 0.1, p.trousers, 0, -0.15, 0));
+      legs.push(leg);
+      group.add(leg);
+    }
+    group.add(body, head, snout, nose, earL, earR, eyeL, eyeR, tail);
+    return { group, legs, arms: [], materials, height: 0.9 };
+  }
+
   // Cow: head at the front, body, four legs. The body is patched brown and white, with a white face and pink nose.
   const body = part(0.9, 0.5, 0.5, p.shirt, 0, 0.6, 0);
   const patchA = part(0.3, 0.3, 0.52, p.patch, -0.2, 0.7, 0);

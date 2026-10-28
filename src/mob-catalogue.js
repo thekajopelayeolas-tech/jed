@@ -8,7 +8,8 @@ export const EXTRA_MOBS = [
   ['creeper', 'Creeper', true, false, 'biped', 10, 1.6, 6, 0x4caf50, ['gunpowder']],
   ['spider', 'Spider', true, false, 'quad', 10, 2.6, 2, 0x3b2e2a, ['string']],
   ['enderman', 'Enderman', true, false, 'biped', 20, 2.4, 7, 0x1b0f26, ['pearl']],
-  // Peaceful land mobs.
+  // Peaceful land mobs. A wolf is peaceful until it is tamed with a bone.
+  ['wolf', 'Wolf', false, false, 'quad', 8, 2.0, 0, 0x9a9a9a, ['bone']],
   ['horse', 'Horse', false, false, 'quad', 16, 2.2, 0, 0x9c6b3e, ['leather']],
   ['donkey', 'Donkey', false, false, 'quad', 14, 1.8, 0, 0x8a8478, ['leather']],
   ['mule', 'Mule', false, false, 'quad', 16, 1.9, 0, 0x7a5a40, ['leather']],

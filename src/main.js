@@ -294,6 +294,28 @@ function furnaceAt(x, y, z) {
 
 // Right click: sleep if the target is a bed, open a furnace, eat if the held item is food, otherwise place the held block.
 // Right-click a sheep while holding shears: take 2 wool, and the sheep lives on. Returns true if a sheep was sheared.
+// Right-click a wild wolf while holding a bone: it is tamed, and the bone is used up. Returns true if the click was used.
+function tameAimedWolf() {
+  if (inventory.selectedItem.id !== BLOCK.BONE) return false;
+  const eye = player.eye;
+  const dir = player.lookDir();
+  const blockHit = targetHit();
+  const blockDist = blockHit
+    ? eye.distanceTo(new THREE.Vector3(blockHit.block.x + 0.5, blockHit.block.y + 0.5, blockHit.block.z + 0.5))
+    : REACH;
+  const mob = mobs.raycastMob(eye, dir, blockDist);
+  if (!mob || mob.type !== 'wolf') return false;
+  if (mob.tamed) {
+    showMessage('This wolf is already tamed.');
+    return true;
+  }
+  if (mob.tame()) {
+    inventory.consumeSelected(1);
+    showMessage('The wolf is tamed!');
+  }
+  return true;
+}
+
 function shearAimedSheep() {
   if (inventory.selectedItem.id !== BLOCK.SHEARS) return false;
   const eye = player.eye;
@@ -491,6 +513,7 @@ function updateCombat(dt) {
 function useOrPlace() {
   // Shears on a sheep take its wool. Otherwise the held item acts as usual.
   if (shearAimedSheep()) return;
+  if (tameAimedWolf()) return;
   if (combatPress()) return;
   if (useUtility()) return;
   const hit = targetHit();
