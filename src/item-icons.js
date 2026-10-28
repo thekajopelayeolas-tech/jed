@@ -183,10 +183,11 @@ function bucketSprite(metal) {
 // A water bucket with the top removed: no rim and no raised top. The pail is shown open, with blue water at the surface.
 function waterBucketSprite() {
   return layered([
-    // The pail body, the same tapered shape as the empty bucket but without its rim.
+    // The water fills the top of the pail, so it is drawn first: the first part that covers a pixel decides its
+    // colour. It is a blue band across the opening, over the top rows of the pail.
+    poly([[4, 6], [12, 6], [12, 9], [4, 9]], (px, py) => tint([0.3, 0.55, 0.95], grain(px, py) * 0.08)),
+    // The pail body, the same tapered shape as the empty bucket, shows only below the water.
     poly([[4, 6], [12, 6], [11, 14], [5, 14]], (px, py) => pick(IRON, px < 8, px, py)),
-    // The water fills the opening, a blue band at the top of the pail.
-    poly([[4, 6], [12, 6], [12, 8], [4, 8]], (px, py) => tint([0.3, 0.55, 0.95], grain(px, py) * 0.08)),
   ]);
 }
 

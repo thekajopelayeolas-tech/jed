@@ -26,6 +26,24 @@ for (const [name, id] of Object.entries(newItems)) {
 }
 check('a water bucket has no recipe, it comes from filling a bucket', !RECIPES.some((r) => r.result === BLOCK.WATER_BUCKET));
 
+// The water bucket shows water in its icon: blue pixels at the top of the pail. Without them it looks empty.
+{
+  const px = itemPixels(BLOCK.WATER_BUCKET);
+  let blueTop = 0;
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 16; x++) {
+      const i = (y * 16 + x) * 4;
+      if (px[i + 3] !== 0 && px[i + 2] > px[i] + 60) blueTop++;
+    }
+  }
+  check('the water bucket icon shows blue water at the top of the pail', blueTop > 8);
+  // An empty bucket has no blue, so the two icons look different.
+  let blueEmpty = 0;
+  const ep = itemPixels(BLOCK.BUCKET);
+  for (let i = 0; i < ep.length; i += 4) if (ep[i + 3] !== 0 && ep[i + 2] > ep[i] + 60) blueEmpty++;
+  check('an empty bucket shows no blue', blueEmpty === 0);
+}
+
 // ---- Shovels dig grass, dirt, sand; they are faster than bare hands. Wood and stone tiers rise. ----
 check('shovels have the shovel class', [BLOCK.WOODEN_SHOVEL, BLOCK.STONE_SHOVEL, BLOCK.IRON_SHOVEL].every((id) => TOOL_ITEMS[id].tool === TOOL.SHOVEL));
 check('an iron shovel digs dirt faster than a wooden one', breakTime(BLOCK.DIRT, BLOCK.IRON_SHOVEL) < breakTime(BLOCK.DIRT, BLOCK.WOODEN_SHOVEL));
