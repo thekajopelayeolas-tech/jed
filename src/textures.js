@@ -143,11 +143,22 @@ const PAINTERS = {
     const wave = Math.sin(y * 1.2 + x * 0.3) > 0.7 ? 0.1 : 0;
     return [0.2 + wave, 0.4 + wave, 0.9, 0.6];
   },
+  // Cobblestone: rounded stones of uneven size and tone, separated by dark mortar, not a regular grid.
   cobble: (x, y) => {
-    const mortar = x % 8 === 0 || y % 4 === 0 || (Math.floor(y / 4) % 2 === 1 && x % 8 === 4);
-    return jitter(mortar ? [0.25, 0.25, 0.25] : [0.42, 0.42, 0.42], noise(x, y, 13), 0.12);
+    const stoneTone = 0.8 + smooth(x * 0.6, y * 0.6, 13) * 0.4;
+    const gap = smooth(x * 0.9, y * 0.9, 61) < 0.3;
+    if (gap) return jitter([0.22, 0.21, 0.2], noise(x, y, 62), 0.06);
+    return jitter(shade([0.46, 0.45, 0.43], stoneTone), noise(x, y, 13), 0.1);
   },
-  planks: (x, y) => jitter(y % 4 === 0 ? [0.55, 0.42, 0.25] : PLANK, noise(x, y, 14), 0.08),
+  // Planks: boards of varied tone, each with a dark seam and a grain line running along the board.
+  planks: (x, y) => {
+    const board = Math.floor(y / 4);
+    const seam = y % 4 === 0;
+    const boardTone = 0.92 + noise(board, 0, 63) * 0.16;
+    const grain = smooth(x * 0.25, y * 0.9, 64) * 0.12;
+    if (seam) return jitter([0.42, 0.31, 0.18], noise(x, y, 65), 0.05);
+    return jitter(shade(PLANK, boardTone + grain), noise(x, y, 66), 0.06);
+  },
   bedrock: (x, y) => jitter([0.15, 0.15, 0.15], noise(x, y, 15), 0.25),
   glass: (x, y) => (x === 0 || y === 0 || x === 15 || y === 15 ? [0.85, 0.92, 0.96, 0.95] : [0.8, 0.9, 0.95, 0.12]),
   coal: (x, y) => (noise(x, y, 16) > 0.85 ? [0.08, 0.08, 0.08, 1] : jitter(STONE, noise(x, y, 17), 0.18)),
