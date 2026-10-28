@@ -74,6 +74,10 @@ export const OPEN_DOOR_BOX = [[0, 0, 0, 0.12, 1, 1]];
 
 // A torch is a thin upright post in the middle of its cell, not a full cube. Its id is 14 (BLOCK.TORCH in blocks.js).
 const TORCH_ID = 14;
+// Water's id, repeated here because blocks.js imports this file, so importing BLOCK back would be a cycle.
+const BLOCK_WATER_ID = 7;
+// The ramp box for a single water cell, in cell units. Kept in sync with WATER_RAMP_BOXES in water.js.
+export const RAMP_BOX = [[0, 0, 0, 1, 0.5, 1]];
 export const POST_BOX = [[0.42, 0, 0.42, 0.58, 1, 0.58]];
 
 // Rotates one box about the centre of its cell, by a facing (0 south, 1 west, 2 north, 3 east).
@@ -117,6 +121,8 @@ export const SHAPE = {
   [DOOR.DOOR]: 'door',
   [DOOR.OPEN_DOOR]: 'open',
   [TORCH_ID]: 'post',
+  // A single water cell is a ramp, not a full cube. See src/water.js.
+  [BLOCK_WATER_ID]: 'ramp',
 };
 
 // The texture a door half uses on one face. The upper half shows the handle on its front face, and the lower half
@@ -145,6 +151,7 @@ export function boxesFor(id, facing = 0) {
   if (shape === 'door') return doorBoxes(false, facing);
   if (shape === 'open') return doorBoxes(true, facing);
   if (shape === 'post') return POST_BOX;
+  if (shape === 'ramp') return RAMP_BOX;
   return FULL_BOX;
 }
 

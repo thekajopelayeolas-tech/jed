@@ -1,44 +1,42 @@
-// Water flow for poured water. A poured source spreads out across the ground around it for a few blocks, and
-// falls down any drop it reaches. Pure functions with no DOM or three.js, so tests run in Node.
+// Water rules. A poured water block is a single ramp: it does not spread into new water blocks. When three or more
+// water pieces touch on one level, they merge into a full water block. Pure functions with no DOM or three.js.
 import { BLOCK } from './blocks.js';
 
-// How far poured water spreads from where it lands, in blocks (counted across the ground, not the air).
-export const WATER_REACH = 3;
-// The deepest a poured drop can fall, in blocks. Limits how far a pour can dig down into the world.
-export const WATER_FALL_LIMIT = 8;
+// The ramp a single water cell is drawn as: a box covering the lower part of the cell, sloping down toward +x.
+// It is lower than a full block, so a single poured block reads as a sloped surface rather than a cube.
+export const WATER_RAMP_BOXES = [[0, 0, 0, 1, 0.5, 1]];
 
-// A cell water can flow into: air, or water that is already there, which does not count as new.
-const passable = (id) => id === BLOCK.AIR;
+// Three or more connected water pieces make one full water block.
+export const WATER_MERGE_COUNT = 3;
 
-// Spreads water out from a poured cell (x, y, z). The source is already water. Each step flows to a free
-// neighbour on the same level, up to WATER_REACH across. A free cell with air below it is a drop: the water
-// falls down it, and does not spread sideways from the top. Returns the cells that became water.
-export function spreadWater(world, x, y, z) {
-  const placed = [];
+const NEIGHBOURS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+// Starting from (x, y, z), finds every water cell connected to it on the same level (across the four sides).
+function connectedWater(world, x, y, z) {
+  const group = [];
   const seen = new Set([`${x},${y},${z}`]);
-  // Each queued entry is a cell and how far it is from the pour, across the ground.
-  const queue = [{ x, y, z, dist: 0 }];
-  while (queue.length > 0) {
-    const cur = queue.shift();
-    const neighbours = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-    for (const [dx, dz] of neighbours) {
+  const stack = [{ x, z }];
+  while (stack.length > 0) {
+    const cur = stack.pop();
+    group.push(cur);
+    for (const [dx, dz] of NEIGHBOURS) {
       const nx = cur.x + dx;
       const nz = cur.z + dz;
-      const key = `${nx},${cur.y},${nz}`;
+      const key = `${nx},${y},${nz}`;
       if (seen.has(key)) continue;
-      const dist = cur.dist + 1;
-      if (dist > WATER_REACH) continue;
-      if (!passable(world.getBlock(nx, cur.y, nz))) continue;
       seen.add(key);
-      // The water fills this cell. If the cell below is air, it falls down the drop, and keeps falling.
-      let ny = cur.y;
-      while (ny - 1 >= 1 && cur.y - (ny - 1) <= WATER_FALL_LIMIT && passable(world.getBlock(nx, ny - 1, nz))) ny -= 1;
-      // World.setBlock returns false when the cell's chunk is not loaded. Such a cell is not water, so skip it.
-      if (world.setBlock(nx, ny, nz, BLOCK.WATER) === false) continue;
-      placed.push({ x: nx, y: ny, z: nz });
-      // Only water that stayed on this level keeps spreading sideways; a fall stops where it lands.
-      if (ny === cur.y) queue.push({ x: nx, y: ny, z: nz, dist });
+      if (world.getBlock(nx, y, nz) === BLOCK.WATER) stack.push({ x: nx, z: nz });
     }
   }
-  return placed;
+  return group;
+}
+
+// Called after water is placed at (x, y, z). If that water is connected to at least WATER_MERGE_COUNT pieces on the
+// same level, every piece in the group becomes a full water block. Returns true when the group merged.
+export function waterMerge(world, x, y, z) {
+  if (world.getBlock(x, y, z) !== BLOCK.WATER) return false;
+  const group = connectedWater(world, x, y, z);
+  if (group.length < WATER_MERGE_COUNT) return false;
+  for (const cell of group) world.setBlock(cell.x, y, cell.z, BLOCK.WATER);
+  return true;
 }

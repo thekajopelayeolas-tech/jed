@@ -4,7 +4,7 @@ import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
 import { BOAT_ID, BOAT_TURN_RATE, boatSpotAt, nextBoatPosition } from './boat.js';
 import { useBucket } from './utilities.js';
-import { spreadWater } from './water.js';
+import { waterMerge } from './water.js';
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory, HOTBAR_SIZE } from './inventory.js';
@@ -363,8 +363,8 @@ function useUtility() {
       if (r) {
         inventory.consumeSelected(1);
         inventory.add(BLOCK.BUCKET, 1);
-        // The poured water flows out over the ground around where it landed.
-        spreadWater(world, hit.place.x, hit.place.y, hit.place.z);
+        // The poured water is one block. If it touches enough water on its level, those pieces merge into a block.
+        waterMerge(world, hit.place.x, hit.place.y, hit.place.z);
       } else {
         showMessage('No room to pour the water here.');
       }
