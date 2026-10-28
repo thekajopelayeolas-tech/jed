@@ -19,8 +19,9 @@ export function recipeIngredients(recipe) {
 }
 
 // Recipe categories shown as headings in the book. A recipe belongs to the first category whose test it passes.
+// The basics (planks, sticks, crafting table, furnace, torch, glass, bed) are listed with the tools and utilities,
+// as are doors, chests, and the boat, so the book has one category for all of them.
 const BASIC_IDS = [BLOCK.PLANKS, BLOCK.BIRCH_PLANKS, BLOCK.DARK_OAK_PLANKS, BLOCK.SPRUCE_PLANKS, BLOCK.JUNGLE_PLANKS, BLOCK.STICK, BLOCK.CRAFTING_TABLE, BLOCK.FURNACE, BLOCK.TORCH, BLOCK.GLASS, BLOCK.BED];
-// Doors, chests, and the boat sit under the basics: they are simple, everyday items.
 const DOOR_AND_STORAGE_IDS = [DOOR.DOOR, DOOR.OPEN_DOOR, STORAGE.CHEST, BLOCK.BOAT];
 const BUILD_IDS = Object.values(BUILD);
 // The bow and arrows are tools for ranged attacks, so they sit with the tools and utilities.
@@ -30,11 +31,10 @@ const DEFENCE_IDS = [BLOCK.SHIELD];
 // Food & Drinks: the farm crops and the cooked food they make. Stew is the only drink.
 const FOOD_IDS = [BLOCK.WHEAT, BLOCK.WHEAT_BLOCK, BLOCK.BREAD, BLOCK.CAKE, BLOCK.COOKIES, BLOCK.STEW, BLOCK.COOKED_CHICKEN];
 export const CATEGORIES = [
-  { name: 'Basics and doors', test: (id) => BASIC_IDS.includes(id) || DOOR_AND_STORAGE_IDS.includes(id) },
   { name: 'Food & Drinks', test: (id) => FOOD_IDS.includes(id) },
-  // Tools & Utilities: the tools with a tool class (pickaxes, axes, swords, shovels, hoes), plus
-  // buckets, and shears.
-  { name: 'Tools & Utilities', test: (id) => TOOL_ITEMS[id] !== undefined || UTILITY_IDS.includes(id) },
+  // Tools & Utilities: the basics, doors, and storage, plus the tools with a tool class (pickaxes, axes, swords,
+  // shovels, hoes), buckets, shears, and the bow.
+  { name: 'Tools & Utilities', test: (id) => BASIC_IDS.includes(id) || DOOR_AND_STORAGE_IDS.includes(id) || TOOL_ITEMS[id] !== undefined || UTILITY_IDS.includes(id) },
   { name: 'Armour', test: (id) => armourInfo(id) !== null || DEFENCE_IDS.includes(id) },
   { name: 'Building', test: (id) => BUILD_IDS.includes(id) },
 ];
