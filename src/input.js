@@ -29,6 +29,7 @@ export function setupInput(canvas, player, inventory, actions) {
     if (e.code === 'KeyE' && !e.repeat) actions.onToggleCrafting();
     if (e.code === 'KeyB' && !e.repeat && actions.onToggleRecipeBook) actions.onToggleRecipeBook();
     if (e.code === 'KeyF' && !e.repeat && actions.onTakeAll) actions.onTakeAll();
+    if (e.code === 'KeyQ' && !e.repeat && actions.onDropSelected) actions.onDropSelected();
     if (e.code.startsWith('Digit')) {
       const n = Number(e.code.slice(5)) - 1;
       if (n >= 0 && n < HOTBAR_SIZE) inventory.selected = n;

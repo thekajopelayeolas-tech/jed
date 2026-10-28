@@ -643,6 +643,21 @@ function placeBlock() {
   if (world.placeWhole(x, y, z, item.id, facing)) inventory.consumeSelected(1);
 }
 
+// Drops one of the held item onto the ground a little in front of the player. It is removed from the
+// inventory first, so the same item is never in both places. The drop waits briefly before it can be picked up
+// again, so the player does not grab it straight back.
+function dropHeldItem() {
+  const item = inventory.selectedItem;
+  if (item.id === BLOCK.AIR || item.count <= 0) return false;
+  const look = player.lookDir();
+  const x = Math.floor(player.pos.x + look.x * 1.5);
+  const z = Math.floor(player.pos.z + look.z * 1.5);
+  const y = Math.floor(player.pos.y);
+  inventory.consumeSelected(1);
+  drops.spawn(item.id, x, y, z);
+  return true;
+}
+
 // True if the block cell at (bx, by, bz) intersects the player's body.
 function overlapsPlayer(bx, by, bz) {
   const hw = 0.3;
@@ -691,6 +706,11 @@ setupInput(renderer.domElement, player, inventory, {
   onTakeAll: () => {
     // F empties the open furnace into the inventory. It does nothing when no furnace is open.
     if (furnaceUI.isOpen()) furnaceUI.takeAll();
+  },
+  onDropSelected: () => {
+    // Q drops one of the held item in front of the player. Nothing happens with an empty hand or a panel open.
+    if (anyPanelOpen()) return;
+    dropHeldItem();
   },
   onToggleRecipeBook: () => {
     // B closes whichever panel is open. Otherwise it opens the recipe book.

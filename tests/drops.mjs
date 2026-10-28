@@ -20,6 +20,24 @@ const stone = new ItemDrop(scene, world, BLOCK.STONE, 0, 0, 0, atlasMaterial);
 check(stone.mesh.material === atlasMaterial, 'textured block drop uses the atlas material');
 check(stone.ownsMaterial === false, 'textured block drop does not own its material');
 
+// Dropping with Q takes one of the held item. A dropped item cannot be picked up for a moment, so it is not
+// grabbed straight back from the spot the player dropped it.
+import { Inventory } from '../src/inventory.js';
+{
+  const inv = new Inventory();
+  inv.selected = 0;
+  inv.slots[0] = { id: BLOCK.STONE, count: 3 };
+  inv.consumeSelected(1);
+  check('dropping one of three stone leaves two', inv.slots[0].count === 2 && inv.slots[0].id === BLOCK.STONE);
+  inv.slots[0] = { id: BLOCK.STONE, count: 1 };
+  inv.consumeSelected(1);
+  check('dropping the last stone empties the slot', inv.slots[0].id === BLOCK.AIR && inv.slots[0].count === 0);
+  const fresh = new ItemDrop(scene, world, BLOCK.STONE, 0, 0, 0, atlasMaterial);
+  check('a new drop cannot be picked up at once', !fresh.canPickUp({ x: 0.5, y: 0.5, z: 0.5 }));
+  fresh.age = 1;
+  check('a drop next to the player can be picked up after a moment', fresh.canPickUp({ x: 0.5, y: 0.5, z: 0.5 }));
+}
+
 // Every block drop should be a cube with 24 vertices, each carrying one atlas UV pair and a shade.
 const blockIds = Object.keys(BLOCK_TILES).map(Number);
 const badCube = blockIds.filter((id) => {
