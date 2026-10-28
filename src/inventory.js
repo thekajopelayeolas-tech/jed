@@ -91,9 +91,9 @@ export const RECIPES = [
   { result: BLOCK.CAKE, count: 1, shaped: true, pattern: ['EEE', 'WWW'], key: { E: BLOCK.EGG, W: BLOCK.WHEAT } },
   { result: BLOCK.COOKIES, count: 4, shaped: true, pattern: ['WEW'], key: { W: BLOCK.WHEAT, E: BLOCK.EGG } },
   { result: BLOCK.STEW, count: 1, shaped: true, pattern: ['C', 'W'], key: { C: BLOCK.COOKED_CHICKEN, W: BLOCK.WHEAT } },
-  // Combat gear. A shield is planks around an iron ingot. A bow is a stick curve of planks. Arrows use iron and sticks.
+  // Combat gear. A shield is planks around an iron ingot. A bow is a stick curve strung with string. Arrows use iron and sticks.
   { result: BLOCK.SHIELD, count: 1, shaped: true, pattern: ['PIP', 'PPP', ' P '], key: { P: BLOCK.PLANKS, I: BLOCK.IRON_INGOT } },
-  { result: BLOCK.BOW, count: 1, shaped: true, pattern: [' SP', 'S P', ' SP'], key: { S: BLOCK.STICK, P: BLOCK.PLANKS } },
+  { result: BLOCK.BOW, count: 1, shaped: true, pattern: [' SP', 'S P', ' SP'], key: { S: BLOCK.STICK, P: BLOCK.STRING } },
   { result: BLOCK.ARROW, count: 4, shaped: true, pattern: ['I', 'S', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
   // Ender pearl: this game has no ender materials, so a pearl is made from a stone and a coal, in a ring.
   { result: BLOCK.ENDER_PEARL, count: 1, shaped: true, pattern: ['SC'], key: { S: BLOCK.STONE, C: BLOCK.COAL } },

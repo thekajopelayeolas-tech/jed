@@ -21,6 +21,25 @@ for (const [name, id] of [['shield', BLOCK.SHIELD], ['bow', BLOCK.BOW], ['arrow'
 }
 check('a stick is not a combat item', !isCombatItem(BLOCK.STICK));
 check('arrows come out in a stack of four', RECIPES.some((r) => r.result === BLOCK.ARROW && r.count === 4));
+// The bow is made from string and sticks, with no planks.
+{
+  const bow = RECIPES.find((r) => r.result === BLOCK.BOW);
+  const used = bow.pattern.join('');
+  check('a bow uses string', bow.key[used.replace(/ /g, '')[0]] !== undefined && Object.values(bow.key).includes(BLOCK.STRING));
+  check('a bow uses no planks', !Object.values(bow.key).includes(BLOCK.PLANKS));
+}
+// Crafting a bow in the grid: sticks down the left and string down the right, in the bow's pattern.
+{
+  const { matchRecipe } = await import('../src/inventory.js');
+  const S = BLOCK.STICK, T = BLOCK.STRING, A = BLOCK.AIR;
+  // A 3x3 grid. The pattern is [' SP', 'S P', ' SP'], so string sits in the right column at rows 0 to 2 and
+  // sticks in the middle column at row 0 and left column at row 1.
+  const grid = [A, S, T, S, A, T, A, S, T];
+  const out = matchRecipe(grid, 3);
+  check('a bow is crafted from sticks and string', out?.result === BLOCK.BOW);
+  const planksGrid = [A, S, BLOCK.PLANKS, S, A, BLOCK.PLANKS, A, S, BLOCK.PLANKS];
+  check('planks in the bow pattern do not craft a bow', matchRecipe(planksGrid, 3)?.result !== BLOCK.BOW);
+}
 
 // The shield blocks a hit from the front completely, and does nothing against a hit from the side or back.
 check('a raised shield blocks a front hit', damageThroughShield(6, true, true) === 6 * (1 - SHIELD_BLOCK));
