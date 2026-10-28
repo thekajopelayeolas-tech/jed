@@ -4,7 +4,16 @@ import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
 import { facingToward } from './facing.js';
 import { BOAT_ID, BOAT_TURN_RATE, boatSpotAt, nextBoatPosition } from './boat.js';
 import { useBucket } from './utilities.js';
-import { waterMerge, flowFrom } from './water.js';
+import { waterMerge, flowFrom, removeSourceFlow } from './water.js';
+// The flowing water each poured source made, keyed by the source cell. Taking a source clears its own flow.
+const sourceFlow = new Map();
+const sourceKey = (x, y, z) => `${x},${y},${z}`;
+function takeSourceFlow(x, y, z) {
+  const key = sourceKey(x, y, z);
+  const made = sourceFlow.get(key);
+  if (made) removeSourceFlow(world, made);
+  sourceFlow.delete(key);
+}
 import { World } from './world.js';
 import { Player } from './player.js';
 import { Inventory, HOTBAR_SIZE } from './inventory.js';
@@ -350,11 +359,14 @@ function useUtility() {
     // An empty bucket looks for water in front of the player, even though normal targeting skips water.
     const waterHit = world.raycast(player.eye, player.lookDir(), REACH, true);
     if (held === BLOCK.BUCKET && waterHit && waterHit.id === BLOCK.WATER) {
-      // Filling takes the water out of the world, and the bucket becomes a water bucket.
-      const r = useBucket(world, held, waterHit.block.x, waterHit.block.y, waterHit.block.z, null);
+      // Filling takes the source out of the world, and the bucket becomes a water bucket.
+      const { x, y, z } = waterHit.block;
+      const r = useBucket(world, held, x, y, z, null);
       if (r) {
         inventory.consumeSelected(1);
         inventory.add(BLOCK.WATER_BUCKET, 1);
+        // Taking the source also takes the flow it fed, so no water is left hanging with nothing behind it.
+        takeSourceFlow(x, y, z);
       }
       return true;
     }
@@ -364,7 +376,8 @@ function useUtility() {
         inventory.consumeSelected(1);
         inventory.add(BLOCK.BUCKET, 1);
         // The poured block stays full water a bucket can take. Water that flows out of it is slabs, which it cannot.
-        flowFrom(world, hit.place.x, hit.place.y, hit.place.z);
+        // Remember the flow this source made, so taking the source later clears exactly that flow.
+        sourceFlow.set(sourceKey(hit.place.x, hit.place.y, hit.place.z), flowFrom(world, hit.place.x, hit.place.y, hit.place.z));
         // If the poured water touches enough full water on its level, those pieces merge into a full block.
         waterMerge(world, hit.place.x, hit.place.y, hit.place.z);
       } else {

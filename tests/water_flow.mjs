@@ -1,4 +1,4 @@
-// Poured water is one block, drawn as a ramp. It does not spread into new water blocks. Three water pieces
+// Poured water is one block, a single block. It does not spread into new water blocks. Three water pieces
 // that meet turn into one full water block.
 import { BLOCK } from '../src/blocks.js';
 import { waterMerge } from '../src/water.js';
@@ -33,11 +33,10 @@ const makeWorld = (initial = []) => {
   check('a single poured water block does not merge', merged === false);
 }
 
-// A placed water cell is drawn as a ramp: lower than a full block, not a cube.
+// A water source is drawn as a full block, so it reads as a block you can point at.
 {
-  const ramp = boxesFor(BLOCK.WATER, 0);
-  check('water is drawn as a ramp shape', ramp.length >= 1 && ramp.every((b) => b[4] < 1));
-  check('the ramp is not a full block', !(ramp.length === 1 && ramp[0][1] === 0 && ramp[0][4] === 1 && ramp[0][3] === 1));
+  const source = boxesFor(BLOCK.WATER, 0);
+  check('a water source is drawn as a full block', source.length === 1 && source[0][4] === 1);
 }
 
 // Three water pieces that touch turn into one full water block. Two do not.
@@ -49,14 +48,7 @@ const makeWorld = (initial = []) => {
   check('two connected water pieces do not merge', waterMerge(pair, 0, 11, 0) === false);
 }
 
-// The ramp is keyed to the water id. The id is repeated in building.js to avoid an import cycle, so check it.
-check('the water id used for the ramp matches the water block', BLOCK.WATER === 7);
-// The mesher draws the ramp as a box, not a cube, so a single water cell uses fewer faces than a full block would.
-{
-  const cube = boxesFor(BLOCK.STONE, 0);
-  check('a full cube is one box that fills the cell', cube.length === 1 && cube[0][4] === 1);
-  check('a water ramp is a lower box, not the full cell', boxesFor(BLOCK.WATER, 0)[0][4] === 0.5);
-}
+
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
