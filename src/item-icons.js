@@ -85,19 +85,13 @@ function swordSprite(blade) {
 // A pickaxe: a long curved head with a point at each end, set across the top of a diagonal handle.
 function pickaxeSprite(head) {
   return layered([
-    // The head is an arc over the top of the handle, thick enough to read as metal.
-    {
-      inside: (px, py) => {
-        const d = Math.hypot(px - 8, py - 11);
-        return d > 4.6 && d < 6.6 && py < 9.5;
-      },
-      color: (px, py) => pick(head, py < 7, px, py),
-    },
-    // Pick points: short stubs at each end of the arc, so it reads as a pick and not a bow.
-    stroke(2.2, 7.4, 3.8, 9.6, 0.9, head),
-    stroke(13.8, 7.4, 12.2, 9.6, 0.9, head),
+    // The head is a straight diagonal bar, the same angle as the handle, so the top reads like the stick.
+    stroke(3, 6, 13, 10, 1.2, head),
+    // Pick points: a stub at each end of the bar, so it reads as a pick and not a plain stick.
+    stroke(2.2, 5.2, 3.6, 7.2, 0.9, head),
+    stroke(13.8, 10.8, 12.4, 8.8, 0.9, head),
     // Handle: a diagonal stick from the middle of the head down to the bottom left.
-    stroke(8, 10.5, 3, 15, 0.9, HANDLE),
+    stroke(8, 8.5, 3, 15, 0.9, HANDLE),
   ]);
 }
 
@@ -191,6 +185,20 @@ function shearsSprite() {
     stroke(12, 3, 5, 12, 0.7, IRON),
     ellipse(4.5, 13, 1.8, 1.8, (px, py) => pick(IRON, px < 4, px, py)),
     ellipse(11.5, 13, 1.8, 1.8, (px, py) => pick(IRON, px < 11, px, py)),
+  ]);
+}
+
+// Bone: a long shaft with a rounded knob at each end, as a real bone has. Shaded by side like the other items.
+const BONE_COL = { light: [0.96, 0.94, 0.86], dark: [0.72, 0.7, 0.62] };
+function boneSprite() {
+  const knob = (cx, cy) => ({
+    inside: (px, py) => Math.hypot(px - cx, py - cy) < 2.2,
+    color: (px, py) => pick(BONE_COL, px < cx || py < cy, px, py),
+  });
+  return layered([
+    knob(2.8, 11.8), knob(4.6, 13.4),
+    knob(13.2, 4.2), knob(11.4, 2.6),
+    stroke(4, 12, 12, 4, 1.4, BONE_COL),
   ]);
 }
 
@@ -339,7 +347,7 @@ const SPRITES = new Map([
   [BLOCK.DIAMOND_AXE, axeSprite(DIAMOND)],
   [BLOCK.DIAMOND_SWORD, swordSprite(DIAMOND)],
   // Mob drops: a bone, a loop of string, a feather, a leather strip, gunpowder, and the rest.
-  [BLOCK.BONE, stroke(3, 13, 13, 3, 1.5, { light: [0.95, 0.93, 0.85], dark: [0.7, 0.68, 0.6] })],
+  [BLOCK.BONE, boneSprite()],
   [BLOCK.STRING, stringSprite()],
   [BLOCK.FEATHER, stroke(4, 13, 12, 3, 1.6, { light: [0.97, 0.97, 0.97], dark: [0.78, 0.78, 0.8] })],
   [BLOCK.LEATHER, poly([[3, 4], [13, 4], [13, 12], [3, 12]], (px, py) => tint([0.72, 0.5, 0.3], grain(px, py) * 0.1))],
