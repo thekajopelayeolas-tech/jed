@@ -28,6 +28,8 @@ function countNode(count) {
 function paint(el, stack) {
   const def = BLOCK_DEFS[stack.id];
   el.innerHTML = '';
+  // Hovering a slot shows the item's name, so you can tell food and tools apart without guessing.
+  el.title = def ? def.name : '';
   if (stack.id === BLOCK.AIR || !def) return;
   el.appendChild(iconCanvas(stack.id, 32));
   el.appendChild(countNode(stack.count));

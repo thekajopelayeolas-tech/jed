@@ -170,11 +170,13 @@ function bucketSprite(metal) {
 }
 
 // A water bucket: the same pail, with blue water showing at the top.
+// A water bucket with the top removed: no rim and no raised top. The pail is shown open, with blue water at the surface.
 function waterBucketSprite() {
   return layered([
-    poly([[4, 8], [12, 8], [11, 14], [5, 14]], (px, py) => pick(IRON, px < 8, px, py)),
-    poly([[4, 5], [12, 5], [12, 8], [4, 8]], (px, py) => tint([0.3, 0.55, 0.95], grain(px, py) * 0.08)),
-    stroke(4, 3, 12, 3, 0.6, IRON),
+    // The pail body, the same tapered shape as the empty bucket but without its rim.
+    poly([[4, 6], [12, 6], [11, 14], [5, 14]], (px, py) => pick(IRON, px < 8, px, py)),
+    // The water fills the opening, a blue band at the top of the pail.
+    poly([[4, 6], [12, 6], [12, 8], [4, 8]], (px, py) => tint([0.3, 0.55, 0.95], grain(px, py) * 0.08)),
   ]);
 }
 
@@ -272,31 +274,38 @@ const SPRITES = new Map([
     stroke(5, 15, 4, 5, 0.8, { light: [0.95, 0.85, 0.4], dark: [0.7, 0.55, 0.2] }),
     stroke(11, 15, 12, 5, 0.8, { light: [0.95, 0.85, 0.4], dark: [0.7, 0.55, 0.2] }),
   ])],
-  // Bread: a golden loaf with a scored top.
+  // Bread: a domed loaf with a golden crust that darkens toward the base, and two scored slashes on top.
   [BLOCK.BREAD, ellipse(8, 9, 6, 4.2, (px, py) => {
-    if (segDist(px, py, 5, 7, 11, 7) < 0.6) return [0.6, 0.38, 0.18];
-    return tint(py < 8 ? [0.9, 0.65, 0.35] : [0.7, 0.45, 0.22], grain(px, py) * 0.08);
+    if (segDist(px, py, 5, 6.5, 8, 7.5) < 0.5 || segDist(px, py, 8, 6.5, 11, 7.5) < 0.5) return [0.5, 0.3, 0.14];
+    const crust = py < 7 ? [0.95, 0.72, 0.42] : py < 9.5 ? [0.84, 0.56, 0.28] : [0.66, 0.4, 0.18];
+    return tint(crust, grain(px, py) * 0.06);
   })],
   // Cake: a cream-topped slice of sponge.
   [BLOCK.CAKE, poly([[2, 6], [14, 6], [14, 12], [2, 12]], (px, py) => {
     if (py < 8) return tint([0.98, 0.95, 0.9], grain(px, py) * 0.05);
     return tint([0.85, 0.65, 0.45], grain(px, py) * 0.08);
   })],
-  // Cookies: three round brown cookies with dark chips.
+  // Cookies: three round cookies, golden at the edge and paler in the middle, with dark chocolate chips.
   [BLOCK.COOKIES, layered([
-    ellipse(5, 6, 2.6, 2.6, (px, py) => tint([0.75, 0.52, 0.28], grain(px, py) * 0.1)),
-    ellipse(11, 6, 2.6, 2.6, (px, py) => tint([0.75, 0.52, 0.28], grain(px, py) * 0.1)),
-    ellipse(8, 11, 2.8, 2.6, (px, py) => (grain(px, py) > 0.3 ? [0.2, 0.12, 0.08] : tint([0.72, 0.5, 0.27], grain(px, py) * 0.1))),
+    ellipse(5, 6, 2.6, 2.6, (px, py) => (Math.hypot(px - 5, py - 6) > 1.7 ? [0.7, 0.46, 0.22] : tint([0.9, 0.74, 0.5], grain(px, py) * 0.06))),
+    ellipse(11, 6, 2.6, 2.6, (px, py) => (Math.hypot(px - 11, py - 6) > 1.7 ? [0.7, 0.46, 0.22] : tint([0.9, 0.74, 0.5], grain(px, py) * 0.06))),
+    ellipse(8, 11, 2.8, 2.6, (px, py) => (grain(px, py) > 0.25 ? [0.18, 0.1, 0.06] : (Math.hypot(px - 8, py - 11) > 1.9 ? [0.7, 0.46, 0.22] : tint([0.9, 0.74, 0.5], grain(px, py) * 0.06)))),
   ])],
   // Stew: a bowl of brown broth.
   [BLOCK.STEW, layered([
     poly([[3, 7], [13, 7], [11, 13], [5, 13]], (px, py) => tint([0.82, 0.82, 0.8], grain(px, py) * 0.05)),
     ellipse(8, 7, 5, 1.6, (px, py) => tint([0.55, 0.36, 0.2], grain(px, py) * 0.08)),
   ])],
-  // Raw chicken: a pale pink drumstick-shaped piece.
-  [BLOCK.RAW_CHICKEN, ellipse(8, 8.5, 5.5, 4.8, (px, py) => tint([0.95, 0.8, 0.75], grain(px, py) * 0.1))],
-  // Cooked chicken: the same piece, browned.
-  [BLOCK.COOKED_CHICKEN, ellipse(8, 8.5, 5.5, 4.8, (px, py) => tint([0.78, 0.5, 0.25], grain(px, py) * 0.1))],
+  // Raw chicken: pale pink meat with a lighter sheen on top and a pale bone end.
+  [BLOCK.RAW_CHICKEN, layered([
+    ellipse(8, 8.5, 5.5, 4.8, (px, py) => tint(py < 7 ? [0.98, 0.84, 0.8] : [0.9, 0.7, 0.66], grain(px, py) * 0.08)),
+    ellipse(13, 5, 1.4, 1.4, () => [0.96, 0.94, 0.9]),
+  ])],
+  // Cooked chicken: the same piece, browned and crisp on top, with a bone end.
+  [BLOCK.COOKED_CHICKEN, layered([
+    ellipse(8, 8.5, 5.5, 4.8, (px, py) => tint(py < 7 ? [0.86, 0.56, 0.28] : [0.66, 0.36, 0.16], grain(px, py) * 0.08)),
+    ellipse(13, 5, 1.4, 1.4, () => [0.96, 0.94, 0.9]),
+  ])],
   // Shield: a round wooden board with an iron boss in the middle.
   [BLOCK.SHIELD, layered([
     ellipse(8, 8, 6, 6.5, (px, py) => pick(WOOD_HEAD, px < 8, px, py)),

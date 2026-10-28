@@ -235,6 +235,8 @@ export function createHud() {
         const selected = i === inventory.selected;
         slotEls[i].style.borderColor = selected ? '#fff' : '#555';
         slotEls[i].innerHTML = '';
+        // Hovering a hotbar slot shows the item's name.
+        slotEls[i].title = id && def ? def.name : '';
         if (id && def) {
           slotEls[i].appendChild(iconCanvas(id, 32));
           const count = document.createElement('div');
