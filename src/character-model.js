@@ -89,11 +89,11 @@ export function buildPlayerModel() {
   // and the leg reaches 0.645 below it). The boot is placed so its bottom edge matches the foot.
   const bootL = buildBoots();
   bootL.visible = false;
-  bootL.position.set(0.015, BOOT_DROP, 0);
+  bootL.position.set(0, BOOT_DROP, 0);
   legL.add(bootL);
   const bootR = buildBoots();
   bootR.visible = false;
-  bootR.position.set(-0.015, BOOT_DROP, 0);
+  bootR.position.set(0, BOOT_DROP, 0);
   legR.add(bootR);
   shells.bootsLeft = bootL;
   shells.bootsRight = bootR;
@@ -146,11 +146,11 @@ function buildLeggings() {
 // One boot: a shaft over the ankle, a wider sole, and a cuff at the top.
 function buildBoots() {
   const g = new THREE.Group();
-  // The boot is 0.23 wide, the same as the trouser leg's outer edge, so it does not stick out on the outside.
+  // The boot is 0.2 wide, so it stays clear of the other boot, with a gap in the middle.
   // It is centred on the boot's origin (set in the boot position below).
-  piece(g, 0.23, 0.2, 0.3, 0, 0.0, 0);
-  piece(g, 0.23, 0.06, 0.34, 0, -0.1, 0.02);
-  piece(g, 0.23, 0.04, 0.32, 0, 0.1, 0);
+  piece(g, 0.2, 0.2, 0.3, 0, 0.0, 0);
+  piece(g, 0.2, 0.06, 0.34, 0, -0.1, 0.02);
+  piece(g, 0.2, 0.04, 0.32, 0, 0.1, 0);
   return g;
 }
 

@@ -20,8 +20,8 @@ const R = box(model.shells.bootsRight);
 
 // The inner edges (the left boot's right side and the right boot's left side) meet, with no gap between the feet.
 const gap = R.min.x - L.max.x;
-check('the two boots touch: no gap between the inner edges', Math.abs(gap) < 0.01);
-check('the boots do not overlap by much', gap > -0.03);
+check('the two boots are separate: a clear gap between the inner edges', gap >= 0.05);
+check('the boots do not overlap', gap > 0);
 
 // Each boot stays on its own side of the body.
 check('the left boot is on the left side', L.max.x <= 0.02);
