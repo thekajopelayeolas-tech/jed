@@ -373,11 +373,22 @@ const SPRITES = new Map([
     stroke(4, 2, 4, 14, 0.25, { light: [0.9, 0.9, 0.9], dark: [0.7, 0.7, 0.7] }),
   ])],
   // Gun: a dark iron barrel across the top, a wooden stock, and a grip hanging below.
+  // Gun: a long iron barrel across the top, a taller wooden stock at the back, a trigger guard (a hollow loop under
+  // the barrel), and a grip hanging down in front of it.
   [BLOCK.GUN, layered([
-    poly([[2, 5], [13, 5], [13, 8], [2, 8]], (px, py) => pick(IRON, py < 6.5, px, py)),
-    poly([[9, 8], [13, 8], [14, 12], [11, 12]], (px, py) => pick(HANDLE, px < 12, px, py)),
-    poly([[3, 8], [9, 8], [9, 10], [3, 10]], (px, py) => pick(HANDLE, py < 9, px, py)),
-    stroke(10, 9, 9, 13, 0.8, HANDLE),
+    // The stock at the back: a wooden block, taller than the barrel, rising above it and down past it.
+    poly([[1, 1], [4, 1], [4, 9], [1, 9]], (px, py) => pick(HANDLE, px < 2.5, px, py)),
+    // The barrel: a long steel bar across rows 4 to 6, clear of the stock's back end.
+    poly([[4, 4], [15, 4], [15, 7], [4, 7]], (px, py) => pick(IRON, py < 5.5, px, py)),
+    // The trigger guard: a steel loop under the barrel, rows 8 to 12. Its top bar sits under the barrel, then two
+    // posts and a bottom bar. The hollow inside (columns 7 to 11, rows 9 to 11) is left empty on purpose, and its
+    // middle row has no solid pixel above or below, so the hole shows the background.
+    poly([[6, 8], [13, 8], [13, 9], [6, 9]], (px, py) => pick(IRON, py < 8.5, px, py)),
+    poly([[6, 9], [7, 9], [7, 13], [6, 13]], (px, py) => pick(IRON, px < 6.5, px, py)),
+    poly([[11, 9], [12, 9], [12, 13], [11, 13]], (px, py) => pick(IRON, px < 11.5, px, py)),
+    poly([[6, 12], [13, 12], [13, 13], [6, 13]], (px, py) => pick(IRON, py < 12.5, px, py)),
+    // The grip hangs below the guard, angled slightly forward.
+    poly([[10, 13], [13, 13], [14, 15], [11, 15]], (px, py) => pick(HANDLE, px < 12, px, py)),
   ])],
   // Bullet: a brass cartridge with an iron tip.
   [BLOCK.BULLET, layered([
