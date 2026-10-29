@@ -89,7 +89,7 @@ export function buildPlayerModel() {
   // and the leg reaches 0.645 below it). The boot is placed so its bottom edge matches the foot.
   const bootL = buildBoots();
   bootL.visible = false;
-  bootL.position.set(-0.13, BOOT_DROP, 0);
+  bootL.position.set(-0.115, BOOT_DROP, 0);
   legL.add(bootL);
   const bootR = buildBoots();
   bootR.visible = false;
@@ -115,10 +115,10 @@ function piece(group, w, h, d, x, y, z) {
 function buildHelmet() {
   const g = new THREE.Group();
   // The dome is 0.2 tall and sits on the top of the head: its bottom is at the head top (0.25), so its top is at 0.45.
-  piece(g, 0.58, 0.2, 0.58, 0, 0.35, 0);
+  piece(g, 0.5, 0.2, 0.5, 0, 0.35, 0);
   // The brim is a thin band at the top of the forehead, clear of the eyes: it sits above the hair line of the
   // eyes, not across them. Eyes are at 0.02 relative to the head centre.
-  piece(g, 0.6, 0.05, 0.2, 0, 0.2, 0.2);
+  piece(g, 0.5, 0.05, 0.2, 0, 0.2, 0.2);
   // The visor is a thin strip just above the brim, so it reads as the front of the helmet and does not cover the eyes.
   piece(g, 0.46, 0.05, 0.02, 0, 0.25, 0.3);
   return g;
@@ -146,9 +146,12 @@ function buildLeggings() {
 // One boot: a shaft over the ankle, a wider sole, and a cuff at the top.
 function buildBoots() {
   const g = new THREE.Group();
-  piece(g, 0.26, 0.2, 0.26, 0, 0.0, 0);
-  piece(g, 0.28, 0.06, 0.3, 0, -0.1, 0.02);
-  piece(g, 0.28, 0.04, 0.28, 0, 0.1, 0);
+  // The shaft is as wide as the trouser leg it covers, so no trouser shows beside the foot.
+  // The shaft is centred on the boot's own origin, which sits over the leg (see the boot position below), and is
+  // as wide as the leg it covers: 0.39 across, so no trouser shows beside the foot.
+  piece(g, 0.415, 0.2, 0.3, 0, 0.0, 0);
+  piece(g, 0.42, 0.06, 0.34, 0, -0.1, 0.02);
+  piece(g, 0.42, 0.04, 0.32, 0, 0.1, 0);
   return g;
 }
 
