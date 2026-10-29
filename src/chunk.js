@@ -261,7 +261,7 @@ export class Chunk {
         }
         if (top < 0 || this.get(x, top, z) !== BLOCK.GRASS) continue;
         // The trunk is 4 to 5 blocks in most biomes. A biome's `trunk` adds height: birch and taiga trees grow taller,
-        // and the old growth ones taller still. The base is the same oak tree everywhere, since only oak exists.
+        // the old growth ones taller still, and jungle trees are very tall (about 30 blocks).
         const def = BIOME_DEFS[this.biomeAt(x, z)];
         const extra = def.trunk ?? 0;
         const trunk = 4 + Math.floor(valueNoise2D(wx, wz, seed + 3) * 2) + extra;
@@ -269,7 +269,13 @@ export class Chunk {
         const set = woodSet(def.wood);
         const woodId = set.wood;
         const leafId = set.leaves;
-        for (let i = 1; i <= trunk; i++) this.set(x, top + i, z, woodId);
+        // Dark oak trees have a 2 by 2 trunk of four logs per layer. Every other kind has a single column.
+        const thick = def.wood === 'dark' ? 1 : 0;
+        for (let i = 1; i <= trunk; i++) {
+          for (let tx = 0; tx <= thick; tx++) {
+            for (let tz = 0; tz <= thick; tz++) this.set(x + tx, top + i, z + tz, woodId);
+          }
+        }
         const leafBase = top + trunk - 1;
         for (let dy = 0; dy <= 2; dy++) {
           const r = dy === 2 ? 1 : 2;

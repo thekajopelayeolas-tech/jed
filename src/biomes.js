@@ -68,9 +68,9 @@ export const BIOME_DEFS = {
   [BIOME.SNOWY_TAIGA]: { name: 'Snowy Taiga', treeDensity: 0.6, surface: 'grass', lift: 0, alt: false, trunk: 1, wood: 'spruce', sink: 0 },
   [BIOME.OLD_GROWTH_PINE_TAIGA]: { name: 'Old Growth Pine Taiga', treeDensity: 0.5, surface: 'grass', lift: 0, alt: false, trunk: 4, wood: 'spruce', sink: 0 },
   [BIOME.OLD_GROWTH_SPRUCE_TAIGA]: { name: 'Old Growth Spruce Taiga', treeDensity: 0.5, surface: 'grass', lift: 0, alt: false, trunk: 4, wood: 'spruce', sink: 0 },
-  [BIOME.JUNGLE]: { name: 'Jungle', treeDensity: 2.2, surface: 'grass', lift: 0, alt: false, trunk: 3, wood: 'jungle', sink: 0 },
-  [BIOME.SPARSE_JUNGLE]: { name: 'Sparse Jungle', treeDensity: 0.9, surface: 'grass', lift: 0, alt: false, trunk: 3, wood: 'jungle', sink: 0 },
-  [BIOME.BAMBOO_JUNGLE]: { name: 'Bamboo Jungle', treeDensity: 1.6, surface: 'grass', lift: 0, alt: false, trunk: 2, wood: 'jungle', sink: 0 },
+  [BIOME.JUNGLE]: { name: 'Jungle', treeDensity: 2.2, surface: 'grass', lift: 0, alt: false, trunk: 26, wood: 'jungle', sink: 0 },
+  [BIOME.SPARSE_JUNGLE]: { name: 'Sparse Jungle', treeDensity: 0.9, surface: 'grass', lift: 0, alt: false, trunk: 26, wood: 'jungle', sink: 0 },
+  [BIOME.BAMBOO_JUNGLE]: { name: 'Bamboo Jungle', treeDensity: 1.6, surface: 'grass', lift: 0, alt: false, trunk: 26, wood: 'jungle', sink: 0 },
   // Wetland and coast. `channel` is a river: the ground is cut down below sea level so water fills it.
   // `sink` lowers the ground a little, so swamps are flat and wet.
   [BIOME.RIVER]: { name: 'River', treeDensity: 0, surface: 'sand', lift: 0, alt: false, trunk: 0, channel: true, sink: 0 },
