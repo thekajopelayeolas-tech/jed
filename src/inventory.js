@@ -136,9 +136,26 @@ export class Inventory {
   constructor() {
     this.slots = new Array(INV_SIZE).fill(null).map(() => ({ id: BLOCK.AIR, count: 0 }));
     this.selected = 0;
-    // The off-hand is its own slot, separate from the hotbar and the main grid. It holds a shield, which is
-    // carried in the left hand. It is not part of add/remove/countOf, so the hotbar and crafting rules do not change.
+    // The shield slot. It sits in the worn armour column, under the boots (see armour.js). `wornArmour` is the
+    // player's worn armour object, linked once by main.js. Without a link the shield is kept in `offhand` alone,
+    // so the inventory still works on its own (for example in tests).
+    this.wornArmour = null;
     this.offhand = { id: BLOCK.AIR, count: 0 };
+  }
+
+  // The shield currently in the shield slot, as { id, count }. It is the worn armour's shield when linked.
+  get shieldSlot() {
+    if (this.wornArmour) {
+      const id = this.wornArmour.shield ?? BLOCK.AIR;
+      return { id, count: id === BLOCK.AIR ? 0 : 1 };
+    }
+    return this.offhand;
+  }
+
+  // Puts a shield into the shield slot, so it is worn under the boots and can be raised.
+  setShieldSlot(id, count) {
+    if (this.wornArmour) this.wornArmour.shield = count > 0 ? id : BLOCK.AIR;
+    this.offhand = { id, count };
   }
 
   // Moves a shield from a hotbar slot into the off-hand, freeing that hotbar slot. Returns true if it moved.
@@ -146,8 +163,8 @@ export class Inventory {
   equipOffhand(index) {
     const s = this.slots[index];
     if (s.id !== BLOCK.SHIELD || s.count <= 0) return false;
-    if (this.offhand.id !== BLOCK.AIR) return false;
-    this.offhand = { id: BLOCK.SHIELD, count: 1 };
+    if (this.shieldSlot.id !== BLOCK.AIR) return false;
+    this.setShieldSlot(BLOCK.SHIELD, 1);
     s.count -= 1;
     if (s.count <= 0) { s.id = BLOCK.AIR; s.count = 0; }
     return true;
@@ -156,16 +173,17 @@ export class Inventory {
   // Returns the off-hand shield to the inventory. It goes to the first free slot, and stays in the off-hand if the
   // inventory is full. Returns true if it moved.
   unequipOffhand() {
-    if (this.offhand.id === BLOCK.AIR) return false;
+    if (this.shieldSlot.id === BLOCK.AIR) return false;
     if (this.add(BLOCK.SHIELD, 1) === 0) {
-      this.offhand = { id: BLOCK.AIR, count: 0 };
+      this.setShieldSlot(BLOCK.AIR, 0);
       return true;
     }
     return false;
   }
 
   hasOffhandShield() {
-    return this.offhand.id === BLOCK.SHIELD && this.offhand.count > 0;
+    const s = this.shieldSlot;
+    return s.id === BLOCK.SHIELD && s.count > 0;
   }
 
   get selectedItem() {

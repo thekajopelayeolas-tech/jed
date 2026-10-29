@@ -3,11 +3,16 @@
 // incoming damage, and the total reduction is capped at 80%.
 import { BLOCK } from './blocks.js';
 
-export const PARTS = ['helmet', 'chest', 'legs', 'boots'];
+// The worn slots, top to bottom. The shield sits in the slot under the boots. It blocks by its own rule (front hits,
+// see combat.js), not by defence points, so it adds no points here.
+export const PARTS = ['helmet', 'chest', 'legs', 'boots', 'shield'];
 export const DEFENCE_PER_POINT = 0.04;
 export const MAX_REDUCTION = 0.8;
 
 // Armour sets per material: item id for each part, and the defence points each part gives.
+// The shield is one item, not a material, so it is kept apart from the sets above. It has no defence points.
+export const SHIELD_ID = BLOCK.SHIELD;
+
 export const ARMOUR_SETS = {
   wood: {
     ids: { helmet: BLOCK.WOODEN_HELMET, chest: BLOCK.WOODEN_CHEST, legs: BLOCK.WOODEN_LEGS, boots: BLOCK.WOODEN_BOOTS },
@@ -31,8 +36,13 @@ export const ARMOUR_SETS = {
 // Looks up an item id: which part it is, and how many defence points it gives. Null if it is not armour.
 const BY_ID = new Map();
 for (const set of Object.values(ARMOUR_SETS)) {
-  for (const part of PARTS) BY_ID.set(set.ids[part], { part, defence: set.defence[part] });
+  for (const part of PARTS) {
+    if (part === 'shield') continue;
+    BY_ID.set(set.ids[part], { part, defence: set.defence[part] });
+  }
 }
+// The shield sits in its own slot, under the boots. It gives no defence points.
+BY_ID.set(SHIELD_ID, { part: 'shield', defence: 0 });
 
 export function armourInfo(id) {
   return BY_ID.get(id) ?? null;
@@ -40,7 +50,7 @@ export function armourInfo(id) {
 
 // The four worn slots. 0 means the slot is empty.
 export function emptyArmour() {
-  return { helmet: BLOCK.AIR, chest: BLOCK.AIR, legs: BLOCK.AIR, boots: BLOCK.AIR };
+  return { helmet: BLOCK.AIR, chest: BLOCK.AIR, legs: BLOCK.AIR, boots: BLOCK.AIR, shield: BLOCK.AIR };
 }
 
 // Total defence points from the worn pieces.

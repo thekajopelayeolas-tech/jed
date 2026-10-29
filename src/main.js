@@ -72,6 +72,9 @@ const transMat = new THREE.MeshLambertMaterial({ map: atlas, vertexColors: true,
 const world = new World(scene, SEED, opaqueMat, transMat);
 const player = new Player(world, 8, 80, 8);
 const inventory = new Inventory();
+// The shield lives in the worn armour column, under the boots. Linking the armour lets the inventory read and write
+// that slot, so there is one shield, not two copies.
+inventory.wornArmour = player.armour;
 const hud = createHud();
 const drops = new DropManager(scene, world, opaqueMat);
 // The first-person held item. Sprites for non-block items come from the same textures as the drops.
@@ -852,8 +855,8 @@ if (saved) {
   });
   // The off-hand is only restored if it holds a shield. Older saves have none.
   if (saved.offhand?.id === BLOCK.SHIELD && saved.offhand.count > 0) {
-    // The loaded save is the only source here, so the off-hand is restored only from it.
-    inventory.offhand = { id: BLOCK.SHIELD, count: 1 };
+    // The shield goes back into the shield slot, under the boots. Older saves kept it in the off-hand; this is the same.
+    inventory.setShieldSlot(BLOCK.SHIELD, 1);
   }
   const p = saved.player;
   world.update(p.x, p.z, RENDER_DISTANCE, 16);
