@@ -376,10 +376,11 @@ const SPRITES = new Map([
   // Gun: a long iron barrel across the top, a taller wooden stock at the back, a trigger guard (a hollow loop under
   // the barrel), and a grip hanging down in front of it.
   [BLOCK.GUN, layered([
-    // The stock at the back: a wooden block, taller than the barrel, rising above it and down past it.
-    poly([[1, 1], [4, 1], [4, 9], [1, 9]], (px, py) => pick(HANDLE, px < 2.5, px, py)),
-    // The barrel: a long steel bar across rows 4 to 6, clear of the stock's back end.
-    poly([[4, 4], [15, 4], [15, 7], [4, 7]], (px, py) => pick(IRON, py < 5.5, px, py)),
+    // The stock: a wedge at the back, starting under the barrel's back end and sloping down and back toward the grip,
+    // so it reads as the butt of a gun rather than a separate block.
+    poly([[1, 4], [4, 4], [5, 9], [2, 9]], (px, py) => pick(HANDLE, px < 2.5, px, py)),
+    // The barrel: a thinner, longer steel bar across rows 3 and 4, from the stock to the front.
+    poly([[3, 3], [15, 3], [15, 5], [3, 5]], (px, py) => pick(IRON, py < 3.5, px, py)),
     // The trigger guard: a steel loop under the barrel, rows 8 to 12. Its top bar sits under the barrel, then two
     // posts and a bottom bar. The hollow inside (columns 7 to 11, rows 9 to 11) is left empty on purpose, and its
     // middle row has no solid pixel above or below, so the hole shows the background.

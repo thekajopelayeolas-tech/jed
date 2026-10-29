@@ -52,15 +52,28 @@ for (let y = 9; y <= 11; y++) for (let x = 7; x <= 11; x++) {
 }
 check('the gun has a trigger guard: an empty gap enclosed by the gun', guardGap);
 
-// The stock: the back end of the gun is taller than the barrel, so the body is not a single flat bar.
-// The barrel is measured only above the trigger guard (rows 0 to 7), so the guard and grip are not counted as barrel.
+// The stock: a wedge at the back that drops below the barrel, so the gun does not read as one flat bar.
+// The barrel's front end is thin (no more than 4 rows), so the barrel reads as long and slim.
 const colSpan = (x, fromRow, toRow) => {
   let top = -1;
   let bottom = -1;
   for (let y = fromRow; y <= toRow; y++) if (solid(x, y)) { if (top < 0) top = y; bottom = y; }
   return top < 0 ? 0 : bottom - top + 1;
 };
-check('the gun body is not one flat bar: its back end is taller than its barrel', colSpan(2, 0, 9) >= colSpan(13, 0, 7) + 4);
+const stockDropsBelowBarrel = solid(2, 7) || solid(3, 7);
+check('the stock drops below the barrel at the back', stockDropsBelowBarrel);
+// The stock is a wedge, not a block: nothing sits above the barrel at the back, so the back end is not taller than it.
+check('the stock is a wedge: no block rises above the barrel at the back', !solid(1, 2) && !solid(2, 2) && !solid(1, 1));
+// Count only the barrel's steel pixels at the tip (grey, not wood or outline), so the outline below is not counted.
+const isSteel = (x, y) => {
+  if (!solid(x, y)) return false;
+  const i = (y * n + x) * 4;
+  const [r, g, b] = [p[i], p[i + 1], p[i + 2]];
+  return r > 80 && Math.abs(r - b) < 20 && Math.abs(g - r) < 20;
+};
+let tipSteelRows = 0;
+for (let y = 0; y <= 7; y++) if (isSteel(13, y)) tipSteelRows++;
+check('the barrel front is thin: no more than 2 steel rows at the tip', tipSteelRows <= 2);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
