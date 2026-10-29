@@ -372,24 +372,24 @@ const SPRITES = new Map([
     stroke(12, 8, 4, 14, 0.9, HANDLE),
     stroke(4, 2, 4, 14, 0.25, { light: [0.9, 0.9, 0.9], dark: [0.7, 0.7, 0.7] }),
   ])],
-  // Gun: a dark iron barrel across the top, a wooden stock, and a grip hanging below.
-  // Gun: a long iron barrel across the top, a taller wooden stock at the back, a trigger guard (a hollow loop under
-  // the barrel), and a grip hanging down in front of it.
+  // Gun: a long iron barrel on top of a steel receiver, a wooden stock at the back, a wooden grip under the back of the
+  // receiver, and a trigger guard (a hollow loop under the receiver, in front of the grip). The parts overlap so the
+  // gun is one connected shape.
   [BLOCK.GUN, layered([
-    // The stock: a wedge at the back, starting under the barrel's back end and sloping down and back toward the grip,
-    // so it reads as the butt of a gun rather than a separate block.
-    poly([[1, 4], [4, 4], [5, 9], [2, 9]], (px, py) => pick(HANDLE, px < 2.5, px, py)),
-    // The barrel: a thinner, longer steel bar across rows 3 and 4, from the stock to the front.
-    poly([[3, 3], [15, 3], [15, 5], [3, 5]], (px, py) => pick(IRON, py < 3.5, px, py)),
-    // The trigger guard: a steel loop under the barrel, rows 8 to 12. Its top bar sits under the barrel, then two
-    // posts and a bottom bar. The hollow inside (columns 7 to 11, rows 9 to 11) is left empty on purpose, and its
-    // middle row has no solid pixel above or below, so the hole shows the background.
-    poly([[6, 8], [13, 8], [13, 9], [6, 9]], (px, py) => pick(IRON, py < 8.5, px, py)),
-    poly([[6, 9], [7, 9], [7, 13], [6, 13]], (px, py) => pick(IRON, px < 6.5, px, py)),
-    poly([[11, 9], [12, 9], [12, 13], [11, 13]], (px, py) => pick(IRON, px < 11.5, px, py)),
-    poly([[6, 12], [13, 12], [13, 13], [6, 13]], (px, py) => pick(IRON, py < 12.5, px, py)),
-    // The grip hangs below the guard, angled slightly forward.
-    poly([[10, 13], [13, 13], [14, 15], [11, 15]], (px, py) => pick(HANDLE, px < 12, px, py)),
+    // The stock: a wooden butt at the back, joined to the receiver so the gun is one shape.
+    poly([[1, 5], [4, 5], [4, 8], [1, 8]], (px, py) => pick(HANDLE, px < 2.5, px, py)),
+    // The barrel: a long steel bar on top, from the receiver to the muzzle at the front.
+    poly([[5, 4], [15, 4], [15, 6], [5, 6]], (px, py) => pick(IRON, py < 4.5, px, py)),
+    // The receiver: the steel body under the barrel, joining the barrel and the stock.
+    poly([[4, 6], [12, 6], [12, 8], [4, 8]], (px, py) => pick(IRON, py < 6.5, px, py)),
+    // The grip: wood, hanging under the back of the receiver, behind the trigger guard.
+    poly([[4, 8], [7, 8], [7, 14], [4, 14]], (px, py) => pick(HANDLE, px < 5.5, px, py)),
+    // The trigger guard: a steel loop under the receiver, in front of the grip. Its hollow (columns 9 to 11, rows 9 to
+    // 11) is empty, and its centre has no solid pixel next to it, so the hole shows the background.
+    poly([[8, 8], [13, 8], [13, 9], [8, 9]], (px, py) => pick(IRON, py < 8.5, px, py)),
+    poly([[8, 9], [9, 9], [9, 13], [8, 13]], (px, py) => pick(IRON, px < 8.5, px, py)),
+    poly([[12, 9], [13, 9], [13, 13], [12, 13]], (px, py) => pick(IRON, px < 12.5, px, py)),
+    poly([[8, 12], [13, 12], [13, 13], [8, 13]], (px, py) => pick(IRON, py < 12.5, px, py)),
   ])],
   // Bullet: a brass cartridge with an iron tip.
   [BLOCK.BULLET, layered([

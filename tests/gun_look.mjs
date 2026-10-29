@@ -1,5 +1,5 @@
 // The gun reads as a gun: a long barrel across the top, a stock at the back, a grip hanging under the body, and a
-// trigger guard. Checked from the sprite's silhouette.
+// trigger guard. Checked from the sprite's silhouette and colours.
 import { itemPixels, SPRITE_SIZE } from '../src/item-icons.js';
 import { BLOCK } from '../src/blocks.js';
 
@@ -15,9 +15,17 @@ const solid = (x, y) => {
   if (x < 0 || y < 0 || x >= n || y >= n) return false;
   return p[(y * n + x) * 4 + 3] !== 0;
 };
-const lum = (x, y) => {
+// Wood is brown: red well above blue. Steel is grey: red, green and blue close together.
+const isWood = (x, y) => {
+  if (!solid(x, y)) return false;
   const i = (y * n + x) * 4;
-  return (p[i] + p[i + 1] + p[i + 2]) / 3 / 255;
+  return p[i] - p[i + 2] > 40;
+};
+const isSteel = (x, y) => {
+  if (!solid(x, y)) return false;
+  const i = (y * n + x) * 4;
+  const [r, g, b] = [p[i], p[i + 1], p[i + 2]];
+  return r > 80 && Math.abs(r - b) < 20 && Math.abs(g - r) < 20;
 };
 
 // The barrel: a long run of solid pixels in one row, about two thirds of the width.
@@ -52,8 +60,8 @@ for (let y = 9; y <= 11; y++) for (let x = 7; x <= 11; x++) {
 }
 check('the gun has a trigger guard: an empty gap enclosed by the gun', guardGap);
 
-// The stock: a wedge at the back that drops below the barrel, so the gun does not read as one flat bar.
-// The barrel's front end is thin (no more than 4 rows), so the barrel reads as long and slim.
+// The stock sits at the back, below the barrel's level, and the barrel's front end is thin, so the gun is not one
+// flat bar.
 const colSpan = (x, fromRow, toRow) => {
   let top = -1;
   let bottom = -1;
@@ -61,19 +69,37 @@ const colSpan = (x, fromRow, toRow) => {
   return top < 0 ? 0 : bottom - top + 1;
 };
 const stockDropsBelowBarrel = solid(2, 7) || solid(3, 7);
-check('the stock drops below the barrel at the back', stockDropsBelowBarrel);
-// The stock is a wedge, not a block: nothing sits above the barrel at the back, so the back end is not taller than it.
-check('the stock is a wedge: no block rises above the barrel at the back', !solid(1, 2) && !solid(2, 2) && !solid(1, 1));
-// Count only the barrel's steel pixels at the tip (grey, not wood or outline), so the outline below is not counted.
-const isSteel = (x, y) => {
-  if (!solid(x, y)) return false;
-  const i = (y * n + x) * 4;
-  const [r, g, b] = [p[i], p[i + 1], p[i + 2]];
-  return r > 80 && Math.abs(r - b) < 20 && Math.abs(g - r) < 20;
-};
+check('the stock sits at the back, below the barrel level', stockDropsBelowBarrel);
+// Nothing sits above the barrel at the back: the stock does not rise over the barrel.
+check('no block rises above the barrel at the back', !solid(1, 2) && !solid(2, 2) && !solid(1, 1));
+
+// The barrel's front end is thin: count only its steel pixels at the tip, so the outline below is not counted.
 let tipSteelRows = 0;
 for (let y = 0; y <= 7; y++) if (isSteel(13, y)) tipSteelRows++;
 check('the barrel front is thin: no more than 2 steel rows at the tip', tipSteelRows <= 2);
+
+// The whole gun is one connected shape: flood-fill from the barrel tip and reach every solid pixel.
+const seen = new Set();
+const stack = [[13, 4]];
+while (stack.length) {
+  const [x, y] = stack.pop();
+  const key = `${x},${y}`;
+  if (seen.has(key) || !solid(x, y)) continue;
+  seen.add(key);
+  stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+}
+let totalSolid = 0;
+for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (solid(x, y)) totalSolid++;
+check('the gun is one connected shape (every solid pixel joins the barrel)', seen.size === totalSolid);
+
+// A pistol-style grip hangs under the back of the receiver, with the trigger guard in front of it: the grip's pixels
+// in the lower rows sit left of the guard's front post.
+const gripCols = [];
+for (let y = 13; y <= 15; y++) for (let x = 0; x < n; x++) if (isWood(x, y)) gripCols.push(x);
+const guardFrontCols = [];
+for (let y = 9; y <= 12; y++) for (let x = 11; x < n; x++) if (isSteel(x, y)) guardFrontCols.push(x);
+const gripBehindGuard = gripCols.length > 0 && guardFrontCols.length > 0 && Math.max(...gripCols) < Math.min(...guardFrontCols);
+check('the grip hangs behind the trigger guard, the way a pistol grip does', gripBehindGuard);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
