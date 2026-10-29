@@ -456,18 +456,43 @@ export class Mob {
 
     // Knockback fades out over time and is added on top of the AI movement.
     this.knock.multiplyScalar(Math.max(0, 1 - KNOCKBACK_DECAY * dt));
-    this.vel.x = mx * this.def.speed + this.knock.x;
-    this.vel.z = mz * this.def.speed + this.knock.z;
+    // The goal is where the AI wants to go. A land mob walks sideways-and-forward from it: the goal plus a quarter
+    // turn, so it travels diagonally across its body and still closes in on the goal. A pure sideways walk would
+    // never reach a wall on the goal side. The travel is normalised, so speed is the same. Water mobs keep the goal.
+    this.goalX = mx;
+    this.goalZ = mz;
+    let sx = mx;
+    let sz = mz;
+    if (!this.def.water && (mx !== 0 || mz !== 0)) {
+      // Sideways-and-forward, unless a wall is on the goal path. Then the mob goes straight at the wall, so it can
+      // climb it (or be refused by the height limit) rather than sliding along the wall and round its end.
+      const goalBlocked = this.blockAhead(this.goalX * this.def.speed * dt, 0) || this.blockAhead(0, this.goalZ * this.def.speed * dt);
+      if (goalBlocked) {
+        sx = mx;
+        sz = mz;
+      } else {
+        sx = mx - mz;
+        sz = mz + mx;
+        const len = Math.hypot(sx, sz);
+        sx /= len;
+        sz /= len;
+      }
+    }
+    this.vel.x = sx * this.def.speed + this.knock.x;
+    this.vel.z = sz * this.def.speed + this.knock.z;
     // A fish in water floats, so gravity does not pull it down. Out of water, it falls like any mob.
     const inWater = this.def.water && this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y), Math.floor(this.pos.z)) === BLOCK.WATER;
     this.vel.y = inWater ? 0 : Math.max(-40, this.vel.y - GRAVITY * dt);
 
     const stepX = this.vel.x * dt;
     const stepZ = this.vel.z * dt;
-    // If a block is directly in front of the mob, jump before walking into it. The jump runs first, so the
-    // mob rises as it moves and does not stop against the block.
-    if (stepX !== 0 && this.blockAhead(stepX, 0)) this.tryJump(stepX, 0);
-    else if (stepZ !== 0 && this.blockAhead(0, stepZ)) this.tryJump(0, stepZ);
+    // If a wall is directly ahead on the goal path, jump before walking into it. The goal is used rather than the
+    // sideways travel, so a mob that walks sideways still climbs a wall it is heading for. The jump runs first, so
+    // the mob rises as it moves and does not stop against the wall.
+    const goalStepX = this.goalX * this.def.speed * dt;
+    const goalStepZ = this.goalZ * this.def.speed * dt;
+    if (goalStepX !== 0 && this.blockAhead(goalStepX, 0)) this.tryJump(goalStepX, 0);
+    else if (goalStepZ !== 0 && this.blockAhead(0, goalStepZ)) this.tryJump(0, goalStepZ);
     const blockedX = this.moveAxis('x', stepX);
     const blockedZ = this.moveAxis('z', stepZ);
     if (blockedX && this.tryJump(stepX, 0)) this.vel.x = 0;
@@ -490,10 +515,12 @@ export class Mob {
     const swing = moving ? Math.sin(this.walkPhase) * 0.6 : 0;
     this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
     this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
-    // Most mobs face the way they walk. Iron golems and zombies walk backwards, so they face away from their path.
-    if (mx !== 0 || mz !== 0) {
+    // The body faces the way the mob actually travels, which for land mobs is sideways (see the velocity above).
+    // Iron golems and zombies face away from their travel, as before.
+    const [tx, tz] = this.def.water ? [mx, mz] : [-mz, mx];
+    if (tx !== 0 || tz !== 0) {
       const facing = this.def.walksBackwards ? 1 : -1;
-      this.group.rotation.y = Math.atan2(facing * mx, facing * mz);
+      this.group.rotation.y = Math.atan2(facing * tx, facing * tz);
     }
   }
 
