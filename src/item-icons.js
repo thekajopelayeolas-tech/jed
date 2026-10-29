@@ -69,6 +69,12 @@ function ellipse(cx, cy, rx, ry, color) {
   return { inside: (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 < 1, color };
 }
 
+// A ring: the band between two concentric ellipses, the inner one at rInner and the outer one at rOuter.
+function ellipseRing(cx, cy, rInner, rOuter, color) {
+  const inside = (px, py, r) => ((px - cx) / r) ** 2 + ((py - cy) / r) ** 2 < 1;
+  return { inside: (px, py) => inside(px, py, rOuter) && !inside(px, py, rInner), color };
+}
+
 function poly(points, color) {
   return { inside: (px, py) => inPolygon(px, py, points), color };
 }
@@ -353,10 +359,12 @@ const SPRITES = new Map([
     ellipse(8, 8.5, 5.5, 4.8, (px, py) => tint(py < 7 ? [0.86, 0.56, 0.28] : [0.66, 0.36, 0.16], grain(px, py) * 0.08)),
     ellipse(13, 5, 1.4, 1.4, () => [0.96, 0.94, 0.9]),
   ])],
-  // Shield: a round wooden board with an iron boss in the middle.
+  // Shield: a round wooden board with an iron boss in the middle, and an iron trim ring around the edge.
+  // The boss is listed first so it is drawn over the board, and the trim is a ring between the board and its outline.
   [BLOCK.SHIELD, layered([
-    ellipse(8, 8, 6, 6.5, (px, py) => pick(WOOD_HEAD, px < 8, px, py)),
     ellipse(8, 8, 2, 2, (px, py) => pick(IRON, px < 8, px, py)),
+    ellipseRing(8, 8, 5.2, 6.4, (px, py) => pick(IRON, px < 8, px, py)),
+    ellipse(8, 8, 5.2, 5.2, (px, py) => pick(WOOD_HEAD, px < 8, px, py)),
   ])],
   // Bow: a curved stave with a string across it.
   [BLOCK.BOW, layered([
