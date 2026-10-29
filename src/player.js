@@ -10,6 +10,9 @@ const WALK_SPEED = 9.3;
 const SPRINT_MULT = 1.3;
 const JUMP_VEL = 8.0;
 const GRAVITY = 28;
+// Creative flight: a little faster than walking, and climbs or descends at a steady rate.
+const FLY_SPEED_MULT = 2.2;
+const FLY_VERTICAL_SPEED = 9;
 const HALF_WIDTH = 0.3;
 export const HEIGHT = 1.8;
 const EYE = 1.62;
@@ -39,6 +42,22 @@ export class Player {
     this.hunger = new Hunger();
     // Worn armour, one item id per part (helmet, chest, legs, boots). 0 means the slot is empty.
     this.armour = emptyArmour();
+    // Creative flight: when on, gravity is off. Space climbs and Shift descends. Set by the game for creative worlds.
+    this.flying = false;
+    this.canFly = false;
+    this.lastSpaceTap = -Infinity;
+  }
+
+  // Double-tapping Space toggles flight in a creative world. Flight only works when `canFly` is set.
+  // A single press just jumps or climbs, so this is called on each new Space press (not on repeats).
+  tapSpace(nowSeconds) {
+    if (!this.canFly) return;
+    if (nowSeconds - this.lastSpaceTap < 0.35) {
+      this.flying = !this.flying;
+      this.lastSpaceTap = -Infinity;
+    } else {
+      this.lastSpaceTap = nowSeconds;
+    }
   }
 
   // True while the sprint key is held. Sprinting also drains hunger faster.
@@ -159,11 +178,16 @@ export class Player {
     const sprint = this.isSprinting();
     const swimming = bodyInWater(this.world, this.pos, HALF_WIDTH, HEIGHT);
     // In water you move slower, and sprinting does not apply.
-    const speed = WALK_SPEED * (swimming ? SWIM_SPEED_MULT : sprint ? SPRINT_MULT : 1);
+    const speed = WALK_SPEED * (swimming ? SWIM_SPEED_MULT : sprint ? SPRINT_MULT : 1) * (this.flying ? FLY_SPEED_MULT : 1);
 
     this.vel.x = move.x * speed;
     this.vel.z = move.z * speed;
-    if (swimming) {
+    if (this.canFly && this.flying) {
+      // Flying: no gravity. Space climbs, Shift descends, and the player holds still vertically otherwise.
+      this.vel.y = (this.keys.Space ? FLY_VERTICAL_SPEED : 0) - (this.isSprinting() ? FLY_VERTICAL_SPEED : 0);
+      this.onGround = false;
+      this.fallStartY = this.pos.y;
+    } else if (swimming) {
       // Space swims up. Without it you sink slowly, so you can stay at the surface by holding Space.
       this.vel.y = swimVelocityY(this.vel.y, dt, GRAVITY, !!this.keys.Space);
       this.onGround = false;

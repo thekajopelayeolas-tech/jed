@@ -51,6 +51,7 @@ import { buildPlayerModel } from './character-model.js';
 // The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
 // single save and the default seed are used, so an older save still loads.
 import { getWorld, saveKeyFor, deleteWorld } from './worlds.js';
+import { createCreativeUI } from './creative-ui.js';
 const CHOSEN = new URLSearchParams(location.search).get('world');
 const WORLD = CHOSEN ? getWorld(CHOSEN) : null;
 const SEED = WORLD?.seed ?? 1337;
@@ -93,6 +94,8 @@ const mobs = new MobManager(scene, world, SEED);
 mobs.hostileSpawns = MODE !== 'peaceful' && MODE !== 'creative';
 // Creative mode takes no damage. The player's hurt() checks this flag.
 player.invulnerable = MODE === 'creative';
+// Creative mode can fly: double-tap Space to start or stop flying.
+player.canFly = MODE === 'creative';
 
 // Starter items so the hotbar is useful immediately.
 inventory.add(BLOCK.DIRT, 64);
@@ -810,14 +813,17 @@ const crafting = createInventoryUI(inventory, player, opaqueMat);
 const furnaceUI = createFurnaceUI(inventory);
 const chestUI = createChestUI(inventory);
 const recipeBook = createRecipeBookUI(inventory);
+// The creative inventory: every item, free. Only opened in creative worlds (B toggles it there).
+const creativeUI = createCreativeUI(inventory);
 
 // True while any inventory-style panel is open. Movement and mining pause while one is open.
-const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen() || recipeBook.isOpen() || chestUI.isOpen();
+const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen() || recipeBook.isOpen() || chestUI.isOpen() || creativeUI.isOpen();
 
 // Closes whichever panel is open and grabs the mouse back for play. Returns true if a panel was closed.
 function closeAnyPanel() {
   if (chestUI.isOpen()) chestUI.close();
   else if (furnaceUI.isOpen()) furnaceUI.close();
+  else if (creativeUI.isOpen()) creativeUI.close();
   else if (recipeBook.isOpen()) recipeBook.close();
   else if (crafting.isOpen()) crafting.toggle();
   else return false;
@@ -849,9 +855,10 @@ setupInput(renderer.domElement, player, inventory, {
     dropHeldItem();
   },
   onToggleRecipeBook: () => {
-    // B closes whichever panel is open. Otherwise it opens the recipe book.
+    // B closes whichever panel is open. In creative it opens the free item panel. Otherwise it opens the recipe book.
     if (closeAnyPanel()) return;
-    recipeBook.toggle();
+    if (MODE === 'creative') creativeUI.toggle();
+    else recipeBook.toggle();
     document.exitPointerLock();
   },
   isUIOpen: () => anyPanelOpen(),

@@ -25,6 +25,8 @@ export function setupInput(canvas, player, inventory, actions) {
 
   document.addEventListener('keydown', (e) => {
     player.keys[e.code] = true;
+    // A new Space press (not a held key repeating) counts toward a double-tap that toggles flight.
+    if (e.code === 'Space' && !e.repeat && player.tapSpace) player.tapSpace(performance.now() / 1000);
     if (e.code === 'KeyR' && !e.repeat) actions.onRespawn();
     if (e.code === 'KeyE' && !e.repeat) actions.onToggleCrafting();
     if (e.code === 'KeyB' && !e.repeat && actions.onToggleRecipeBook) actions.onToggleRecipeBook();
