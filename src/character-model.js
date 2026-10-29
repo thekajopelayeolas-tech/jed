@@ -110,17 +110,22 @@ function piece(group, w, h, d, x, y, z) {
   return mesh;
 }
 
-// Helmet: a domed cap sitting on the head, a brim at the front that stays above the eyes, and a visor slot.
-// Heights are relative to the head centre: the eyes are at 0.02, the head top is at 0.25.
+// Knight's great helm: a closed, flat-topped helm that wraps the whole head, with a slit across the front above the
+// eyes. Heights are relative to the head centre: the eyes are at 0.02, the head top is at 0.25, the head bottom at -0.25.
 function buildHelmet() {
   const g = new THREE.Group();
-  // The dome is 0.2 tall and sits on the top of the head: its bottom is at the head top (0.25), so its top is at 0.45.
-  piece(g, 0.5, 0.2, 0.5, 0, 0.35, 0);
-  // The brim is a thin band at the top of the forehead, clear of the eyes: it sits above the hair line of the
-  // eyes, not across them. Eyes are at 0.02 relative to the head centre.
+  // The helm is a shell over the head: a top plate over the crown, a back plate, and two side plates. The front is
+  // open below the visor, so the eyes and face show. Each plate is at the head's edge (0.25 from the centre), so the
+  // helm does not stick out past the head.
+  // The top plate is child 0. The brim (child 1) and the visor slit (child 2) follow, so the fit tests can find them.
+  piece(g, 0.5, 0.06, 0.5, 0, 0.22, 0);
+  // The brim is the top band of the visor, across the front above the eyes.
   piece(g, 0.5, 0.05, 0.2, 0, 0.2, 0.2);
-  // The visor is a thin strip just above the brim, so it reads as the front of the helmet and does not cover the eyes.
+  // The visor slit is a thin bar just above the eyes, so the eyes show through below it.
   piece(g, 0.46, 0.05, 0.02, 0, 0.25, 0.3);
+  piece(g, 0.5, 0.5, 0.06, 0, 0.0, -0.22);
+  piece(g, 0.06, 0.5, 0.5, -0.22, 0.0, 0);
+  piece(g, 0.06, 0.5, 0.5, 0.22, 0.0, 0);
   return g;
 }
 

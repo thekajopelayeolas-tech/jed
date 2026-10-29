@@ -39,9 +39,11 @@ const helmetBox = new THREE.Box3().setFromObject(helmet);
 const headCentre = new THREE.Vector3();
 model.parts.head.getWorldPosition(headCentre);
 const eyeY = headCentre.y + 0.02;
-// The brim must sit at or above the eye line, so nothing covers the eyes. It should not sit far above them either,
-// or the helmet floats over the head.
-check('the helmet does not come down over the eyes', helmetBox.min.y >= eyeY);
+// A knight's great helm wraps the whole head, so its sides come down past the eyes. What must stay clear of the eyes
+// is the front: the visor slit and brim sit above the eye line, so nothing covers the eyes from the front.
+const frontBox = new THREE.Box3().setFromObject(helmet.children[1]);
+const slitBox = new THREE.Box3().setFromObject(helmet.children[2]);
+check('the helmet front does not come down over the eyes', Math.min(frontBox.min.y, slitBox.min.y) >= eyeY);
 // The helmet's dome sits on the head: its top is no higher than the head top plus the dome's own 0.2 height.
 const headTop = headCentre.y + 0.25;
 check('the helmet sits on the head, not far above it', helmetBox.max.y <= headTop + 0.22);

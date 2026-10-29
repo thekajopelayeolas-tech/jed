@@ -128,9 +128,11 @@ const LEATHER = { light: [0.72, 0.5, 0.3], dark: [0.5, 0.32, 0.18] };
 // Armour pieces use the material's colour and a silhouette for the slot: helmet, chestplate, leggings, boots.
 function armourSprite(part, palette) {
   if (part === 'helmet') {
+    // A knight's great helm: a squared, flat-topped helm with straight sides and a dark visor slit across the face.
+    // The slit is listed first so it is drawn over the metal (layered keeps the first part that matches).
     return layered([
-      poly([[3, 9], [3, 5], [5, 3], [11, 3], [13, 5], [13, 9]], (px, py) => pick(palette, py < 6, px, py)),
-      poly([[5, 8], [11, 8], [11, 10], [5, 10]], () => [0.15, 0.15, 0.15]),
+      poly([[4, 7], [12, 7], [12, 9], [4, 9]], () => [0.15, 0.15, 0.15]),
+      poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => pick(palette, py < 7, px, py)),
     ]);
   }
   if (part === 'chest') {
