@@ -20,7 +20,8 @@ function fromBase64(str) {
 // Chunks that are loaded now are included, so the current state is saved too.
 // `furnaces` is an optional Map from "x,y,z" to Furnace. Each furnace's contents are kept.
 // `chests` is an optional Map from "x,y,z" to Chest. Each chest's 27 slots are kept.
-export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map(), chests = new Map(), spawnBed = null) {
+// `key` is the localStorage key for this world's save. It defaults to the original single-save key.
+export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map(), chests = new Map(), spawnBed = null, key = KEY) {
   const chunks = {};
   const facing = {};
   for (const [key, data] of world.edits) chunks[key] = toBase64(data);
@@ -50,7 +51,7 @@ export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map
     spawnBed: spawnBed ? { x: spawnBed.x, y: spawnBed.y, z: spawnBed.z } : null,
   };
   try {
-    localStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(key, JSON.stringify(data));
     return true;
   } catch (err) {
     console.warn('Save failed', err);
@@ -59,8 +60,8 @@ export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map
 }
 
 // Returns the saved game or null if there is none or it cannot be read.
-export function loadGame() {
-  const raw = localStorage.getItem(KEY);
+export function loadGame(key = KEY) {
+  const raw = localStorage.getItem(key);
   if (!raw) return null;
   try {
     const data = JSON.parse(raw);

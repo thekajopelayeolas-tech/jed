@@ -49,6 +49,8 @@ export class Player {
   // Damages the player. Ignores hits during the short invulnerability window after a hit.
   // Every hit that lands also costs one hunger point.
   hurt(amount) {
+    // Creative mode takes no damage at all.
+    if (this.invulnerable) return false;
     if (this.hurtCooldown > 0 || this.health <= 0) return false;
     // Worn armour blocks a share of the damage. Hunger still drops by one point per hit.
     const taken = amount * (1 - damageReduction(this.armour));

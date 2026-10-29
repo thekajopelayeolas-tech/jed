@@ -20,6 +20,7 @@ import { Inventory, HOTBAR_SIZE } from './inventory.js';
 import { RENDER_DISTANCE, REACH, SEA_LEVEL, CHUNK_HEIGHT, CHUNK_SIZE } from './constants.js';
 import { createHud } from './hud.js';
 import { setupInput } from './input.js';
+import { createStartScene } from './start-scene.js';
 import { updateDayNight, createSky } from './sky.js';
 import { DropManager, blockGeometry } from './drops.js';
 import { createInventoryUI } from './inventory-ui.js';
@@ -47,7 +48,14 @@ import { createMultiplayer } from './multiplayer.js';
 import { createLobbyUI } from './lobby-ui.js';
 import { buildPlayerModel } from './character-model.js';
 
-const SEED = 1337;
+// The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
+// single save and the default seed are used, so an older save still loads.
+import { getWorld, saveKeyFor } from './worlds.js';
+const CHOSEN = new URLSearchParams(location.search).get('world');
+const WORLD = CHOSEN ? getWorld(CHOSEN) : null;
+const SEED = WORLD?.seed ?? 1337;
+const MODE = WORLD?.mode ?? 'normal';
+const SAVE_KEY = WORLD ? saveKeyFor(WORLD.id) : undefined;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -81,6 +89,10 @@ const drops = new DropManager(scene, world, opaqueMat);
 // Held blocks use the world's atlas material and the same cube geometry as drops, so they look the same as placed blocks.
 const heldView = createHeldView(camera, (id) => itemTexture(THREE, id), opaqueMat, blockGeometry);
 const mobs = new MobManager(scene, world, SEED);
+// Peaceful and creative worlds have no hostile mobs. The night spawn becomes passive there.
+mobs.hostileSpawns = MODE !== 'peaceful' && MODE !== 'creative';
+// Creative mode takes no damage. The player's hurt() checks this flag.
+player.invulnerable = MODE === 'creative';
 
 // Starter items so the hotbar is useful immediately.
 inventory.add(BLOCK.DIRT, 64);
@@ -845,6 +857,12 @@ setupInput(renderer.domElement, player, inventory, {
   isUIOpen: () => anyPanelOpen(),
 });
 
+// The start scene: a title screen on load. Play hides it and grabs the mouse, so the game starts from that click.
+const startScene = createStartScene(() => renderer.domElement.requestPointerLock());
+// Opening a world from My Worlds reloads with its id in the URL. Skip the title then, and let the
+// pause screen's "Click to play" grab the mouse.
+if (WORLD) startScene.hide();
+
 // Multiplayer. The lobby server runs on the host's computer. Set the address in the lobby panel or the page URL.
 // The default is the same machine, which is useful for testing with two tabs.
 const LOBBY_HOST = new URLSearchParams(location.search).get('server') || `${location.hostname || 'localhost'}:8787`;
@@ -938,7 +956,7 @@ function respawnFromDeath() {
 hud.setDeathHandler(respawnFromDeath);
 
 // Restore a saved game if one exists, otherwise start fresh at spawn.
-const saved = loadGame();
+const saved = loadGame(SAVE_KEY);
 let timeOfDay = 0.25;
 if (saved) {
   world.edits = saved.edits;
@@ -974,8 +992,11 @@ if (saved) {
   respawn();
 }
 
+// Set when a hardcore world ends, so the page does not save the dead world again on the way out.
+let worldEnded = false;
 function persist() {
-  saveGame(world, player, inventory, timeOfDay, furnaces, chests, spawnBed);
+  if (worldEnded) return;
+  saveGame(world, player, inventory, timeOfDay, furnaces, chests, spawnBed, SAVE_KEY);
 }
 
 setInterval(persist, 30000);
@@ -1092,10 +1113,18 @@ function frame(now) {
     updateMobArrows(dt);
   }
   player.tickHealth(dt);
-  if (!sleep.isSleeping()) player.hunger.update(dt, player.isSprinting());
+  // Creative has no hunger. Every other mode keeps it.
+  if (!sleep.isSleeping() && MODE !== 'creative') player.hunger.update(dt, player.isSprinting());
 
   // No hearts left: show the death screen. The mouse is freed so the Respawn button can be clicked.
   if (player.health <= 0 && !hud.isDead()) {
+    // Hardcore: the death is final. The world's save is deleted and the player goes back to the title screen.
+    if (MODE === 'hardcore' && SAVE_KEY) {
+      worldEnded = true;
+      try { localStorage.removeItem(SAVE_KEY); } catch (err) { console.warn('Hardcore save could not be removed', err); }
+      location.href = location.pathname;
+      return;
+    }
     hud.setDead(true);
     deathCountdown = AUTO_RESPAWN_SECONDS;
     if (document.pointerLockElement) document.exitPointerLock();

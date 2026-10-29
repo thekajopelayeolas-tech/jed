@@ -625,7 +625,8 @@ export class MobManager {
   // Tries one spawn near the player. Zombies favour night. Passive mobs favour day, and are cows or sheep.
   // Zombies only spawn in the dark: a cell with any light (sky or block) is too bright for a zombie.
   trySpawn(playerPos, timeOfDay) {
-    const night = timeOfDay > 0.5;
+    // In a peaceful or creative world no hostile mob spawns, so the night spawn is passive instead.
+    const night = timeOfDay > 0.5 && this.hostileSpawns !== false;
     const roll = Math.random();
     // Water mobs (fish, salmon, dolphin, squid) are one share of spawns. Everything else is a land mob.
     if (roll < WATER_SPAWN_SHARE) {
