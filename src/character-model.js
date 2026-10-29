@@ -116,10 +116,11 @@ function buildHelmet() {
   const g = new THREE.Group();
   // The dome is 0.2 tall and sits on the top of the head: its bottom is at the head top (0.25), so its top is at 0.45.
   piece(g, 0.58, 0.2, 0.58, 0, 0.35, 0);
-  // The brim is a thin band across the forehead, above the eyes.
-  piece(g, 0.6, 0.06, 0.2, 0, 0.1, 0.2);
-  // The visor slot is a thin strip above the eyes.
-  piece(g, 0.46, 0.06, 0.02, 0, 0.14, 0.3);
+  // The brim is a thin band at the top of the forehead, clear of the eyes: it sits above the hair line of the
+  // eyes, not across them. Eyes are at 0.02 relative to the head centre.
+  piece(g, 0.6, 0.05, 0.2, 0, 0.2, 0.2);
+  // The visor is a thin strip just above the brim, so it reads as the front of the helmet and does not cover the eyes.
+  piece(g, 0.46, 0.05, 0.02, 0, 0.25, 0.3);
   return g;
 }
 
