@@ -707,7 +707,9 @@ export class MobManager {
   }
 
   // Updates spawning and every mob. `onAttack(mob, damage)` is called when a zombie strikes.
-  update(dt, playerPos, timeOfDay, onAttack) {
+  // `others`, `night`, `lookDir` and `fire` are passed through to each mob (see Mob.update). `fire` is how a hunter
+  // shoots: without it, a hunter never shoots, so the manager must forward it.
+  update(dt, playerPos, timeOfDay, onAttack, others = [], night = null, lookDir = null, fire = null) {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0 && this.mobs.length < 14) {
       this.spawnTimer = 1.5;
@@ -720,10 +722,10 @@ export class MobManager {
       const near = villagesNear(playerPos.x, playerPos.z, this.seed, VILLAGE_SPAWN_RANGE);
       this.spawnVillagers(near);
     }
-    const night = timeOfDay > 0.5;
+    const isNight = night ?? timeOfDay > 0.5;
     for (let i = this.mobs.length - 1; i >= 0; i--) {
       const m = this.mobs[i];
-      m.update(dt, playerPos, onAttack, this.mobs.filter((o) => o !== m), night);
+      m.update(dt, playerPos, onAttack, this.mobs.filter((o) => o !== m), isNight, lookDir, fire);
       // Sunlight damage: a burning zombie takes fire damage each tick until it dies or is shaded.
       const burning = shouldBurn(m, this.world, timeOfDay);
       const burnDamage = burnStep(m, dt, burning);

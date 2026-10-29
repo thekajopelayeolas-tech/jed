@@ -1069,7 +1069,7 @@ function frame(now) {
         player.vel.x += away.x * 4;
         player.vel.z += away.z * 4;
       }
-    }, [], false, player.lookDir(), (from, dir, damage) => {
+    }, [], timeOfDay > 0.5, player.lookDir(), (from, dir, damage) => {
       // A hunter's arrow: a projectile aimed at the player. It hurts the player when it reaches them.
       mobArrows.push({ pos: new THREE.Vector3(from.x, from.y, from.z), vel: new THREE.Vector3(dir.x, dir.y, dir.z).multiplyScalar(18), damage, life: 4 });
     });
