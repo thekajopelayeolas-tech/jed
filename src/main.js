@@ -50,7 +50,7 @@ import { buildPlayerModel } from './character-model.js';
 
 // The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
 // single save and the default seed are used, so an older save still loads.
-import { getWorld, saveKeyFor } from './worlds.js';
+import { getWorld, saveKeyFor, deleteWorld } from './worlds.js';
 const CHOSEN = new URLSearchParams(location.search).get('world');
 const WORLD = CHOSEN ? getWorld(CHOSEN) : null;
 const SEED = WORLD?.seed ?? 1337;
@@ -1118,10 +1118,11 @@ function frame(now) {
 
   // No hearts left: show the death screen. The mouse is freed so the Respawn button can be clicked.
   if (player.health <= 0 && !hud.isDead()) {
-    // Hardcore: the death is final. The world's save is deleted and the player goes back to the title screen.
-    if (MODE === 'hardcore' && SAVE_KEY) {
+    // Hardcore: the death is final. The world is deleted from My Worlds and its save is removed,
+    // so it never shows again. The player goes back to the title screen.
+    if (MODE === 'hardcore' && WORLD) {
       worldEnded = true;
-      try { localStorage.removeItem(SAVE_KEY); } catch (err) { console.warn('Hardcore save could not be removed', err); }
+      deleteWorld(WORLD.id);
       location.href = location.pathname;
       return;
     }
