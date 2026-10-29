@@ -114,6 +114,9 @@ export const BLOCK = {
   LAVA: 128,
   // Flowing water: water that spreads out as slabs. A bucket cannot pick it up. Id 129 is new and never reused.
   FLOWING_WATER: 129,
+  // A gun, fired with right-click, and the bullets it fires. Ids 130 and 131 are new and never reused.
+  GUN: 130,
+  BULLET: 131,
   // Birch wood, planks and leaves, for birch forests and the villages in them. Ids 116 to 118 are new and never reused.
   BIRCH_WOOD: 116,
   BIRCH_PLANKS: 117,
@@ -272,6 +275,8 @@ export const BLOCK_DEFS = {
   [BLOCK.SHIELD]: { name: 'Shield', top: [0.7, 0.55, 0.3], side: [0.6, 0.45, 0.25], bottom: [0.6, 0.45, 0.25], solid: false, transparent: true, item: true },
   [BLOCK.BOW]: { name: 'Bow', top: [0.6, 0.4, 0.2], side: [0.6, 0.4, 0.2], bottom: [0.6, 0.4, 0.2], solid: false, transparent: true, item: true },
   [BLOCK.ARROW]: { name: 'Arrow', top: [0.75, 0.75, 0.8], side: [0.75, 0.75, 0.8], bottom: [0.75, 0.75, 0.8], solid: false, transparent: true, item: true },
+  [BLOCK.GUN]: { name: 'Gun', top: [0.35, 0.35, 0.38], side: [0.3, 0.3, 0.33], bottom: [0.35, 0.35, 0.38], solid: false, transparent: true, item: true },
+  [BLOCK.BULLET]: { name: 'Bullet', top: [0.85, 0.7, 0.3], side: [0.85, 0.7, 0.3], bottom: [0.85, 0.7, 0.3], solid: false, transparent: true, item: true },
   [BLOCK.ENDER_PEARL]: { name: 'Ender Pearl', top: [0.1, 0.5, 0.45], side: [0.1, 0.5, 0.45], bottom: [0.1, 0.5, 0.45], solid: false, transparent: true, item: true },
   [BLOCK.BONE]: { name: 'Bone', top: [0.9, 0.88, 0.8], side: [0.9, 0.88, 0.8], bottom: [0.9, 0.88, 0.8], solid: false, transparent: true, item: true },
   [BLOCK.STRING]: { name: 'String', top: [0.92, 0.92, 0.9], side: [0.92, 0.92, 0.9], bottom: [0.92, 0.92, 0.9], solid: false, transparent: true, item: true },

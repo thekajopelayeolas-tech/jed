@@ -35,7 +35,7 @@ import { MobManager, MOB } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
-import { drawAmount, arrowDamage, damageThroughShield, ARROW_SPEED, ARROW_LIFETIME } from './combat.js';
+import { drawAmount, arrowDamage, damageThroughShield, ARROW_SPEED, ARROW_LIFETIME, canFireGun, gunShotDamage } from './combat.js';
 import { bodyInLava, lavaStep } from './lava.js';
 // The lava timer the frame loop keeps: it counts down while the player stands in lava.
 const lavaState = { timer: 0 };
@@ -500,7 +500,27 @@ function combatPress() {
     combat.drawTime = 0;
     return true;
   }
+  // A gun fires straight away on right-click, using one bullet. It needs a bullet in the inventory.
+  if (held === BLOCK.GUN && canFireGun(inventory.countOf(BLOCK.BULLET))) {
+    fireGun();
+    return true;
+  }
   return false;
+}
+
+// Fires one gun shot: a bullet leaves the eye along the look direction and uses one bullet from the inventory.
+// The bullet flies on the arrow path, so it hits the first mob or block it meets.
+function fireGun() {
+  const eye = player.eye;
+  const dir = player.lookDir();
+  const start = eye.clone().add(dir.clone().multiplyScalar(0.8));
+  arrows.push({
+    pos: start,
+    vel: dir.clone().multiplyScalar(ARROW_SPEED),
+    damage: gunShotDamage(),
+    life: ARROW_LIFETIME,
+  });
+  inventory.remove(BLOCK.BULLET, 1);
 }
 
 // The shield is raised while Shift is held and lowered when it is released. Sprinting still uses Shift for movement.

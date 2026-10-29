@@ -25,7 +25,8 @@ const BASIC_IDS = [BLOCK.PLANKS, BLOCK.BIRCH_PLANKS, BLOCK.DARK_OAK_PLANKS, BLOC
 const DOOR_AND_STORAGE_IDS = [DOOR.DOOR, DOOR.OPEN_DOOR, STORAGE.CHEST, BLOCK.BOAT];
 const BUILD_IDS = Object.values(BUILD);
 // The bow and arrows are tools for ranged attacks, so they sit with the tools and utilities.
-const UTILITY_IDS = [BLOCK.BUCKET, BLOCK.WATER_BUCKET, BLOCK.SHEARS, BLOCK.BOW, BLOCK.ARROW, BLOCK.ENDER_PEARL];
+// The gun and its bullets are ranged weapons, so they sit with the bow and arrows.
+const UTILITY_IDS = [BLOCK.BUCKET, BLOCK.WATER_BUCKET, BLOCK.SHEARS, BLOCK.BOW, BLOCK.ARROW, BLOCK.GUN, BLOCK.BULLET, BLOCK.ENDER_PEARL];
 // The shield is defence, so it is grouped with the armour.
 const DEFENCE_IDS = [BLOCK.SHIELD];
 // Food & Drinks: the farm crops and the cooked food they make. Stew is the only drink.

@@ -95,6 +95,9 @@ export const RECIPES = [
   { result: BLOCK.SHIELD, count: 1, shaped: true, pattern: ['PIP', 'PPP', ' P '], key: { P: BLOCK.PLANKS, I: BLOCK.IRON_INGOT } },
   { result: BLOCK.BOW, count: 1, shaped: true, pattern: [' SP', 'S P', ' SP'], key: { S: BLOCK.STICK, P: BLOCK.STRING } },
   { result: BLOCK.ARROW, count: 4, shaped: true, pattern: ['I', 'S', 'S'], key: { I: BLOCK.IRON_INGOT, S: BLOCK.STICK } },
+  // A gun: an iron frame with gunpowder packed in the stock. A bullet: an iron tip on gunpowder.
+  { result: BLOCK.GUN, count: 1, shaped: true, pattern: ['III', 'GI '], key: { I: BLOCK.IRON_INGOT, G: BLOCK.GUNPOWDER } },
+  { result: BLOCK.BULLET, count: 4, shaped: true, pattern: ['I', 'G'], key: { I: BLOCK.IRON_INGOT, G: BLOCK.GUNPOWDER } },
   // Ender pearl: this game has no ender materials, so a pearl is made from a stone and a coal, in a ring.
   { result: BLOCK.ENDER_PEARL, count: 1, shaped: true, pattern: ['SC'], key: { S: BLOCK.STONE, C: BLOCK.COAL } },
 ];

@@ -13,6 +13,18 @@ export const ARROW_MAX_DAMAGE = 9;
 // Arrow speed in blocks per second, and how many seconds it flies before it drops.
 export const ARROW_SPEED = 40;
 export const ARROW_LIFETIME = 4;
+// A gun bullet hits harder than the strongest bow arrow, and flies at the same speed.
+export const GUN_BULLET_DAMAGE = 12;
+
+// A gun fires one bullet per shot, straight away, with no draw. It needs at least one bullet to fire.
+export function canFireGun(bulletCount) {
+  return bulletCount > 0;
+}
+
+// The damage of one gun shot: always the full bullet damage, since a gun does not draw back.
+export function gunShotDamage() {
+  return GUN_BULLET_DAMAGE;
+}
 
 // How far the bow is drawn, from 0 (just pressed) to 1 (full draw).
 export function drawAmount(seconds) {
@@ -34,5 +46,5 @@ export function damageThroughShield(amount, shieldUp, facingHit) {
 
 // True for the three combat items, so a click on one of them is handled as combat, not as building.
 export function isCombatItem(id) {
-  return id === BLOCK.BOW || id === BLOCK.SHIELD || id === BLOCK.ARROW;
+  return id === BLOCK.BOW || id === BLOCK.SHIELD || id === BLOCK.ARROW || id === BLOCK.GUN || id === BLOCK.BULLET;
 }

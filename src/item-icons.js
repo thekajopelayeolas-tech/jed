@@ -350,6 +350,18 @@ const SPRITES = new Map([
     stroke(12, 8, 4, 14, 0.9, HANDLE),
     stroke(4, 2, 4, 14, 0.25, { light: [0.9, 0.9, 0.9], dark: [0.7, 0.7, 0.7] }),
   ])],
+  // Gun: a dark iron barrel across the top, a wooden stock, and a grip hanging below.
+  [BLOCK.GUN, layered([
+    poly([[2, 5], [13, 5], [13, 8], [2, 8]], (px, py) => pick(IRON, py < 6.5, px, py)),
+    poly([[9, 8], [13, 8], [14, 12], [11, 12]], (px, py) => pick(HANDLE, px < 12, px, py)),
+    poly([[3, 8], [9, 8], [9, 10], [3, 10]], (px, py) => pick(HANDLE, py < 9, px, py)),
+    stroke(10, 9, 9, 13, 0.8, HANDLE),
+  ])],
+  // Bullet: a brass cartridge with an iron tip.
+  [BLOCK.BULLET, layered([
+    poly([[6, 6], [10, 6], [10, 14], [6, 14]], (px, py) => tint([0.85, 0.7, 0.3], grain(px, py) * 0.08)),
+    poly([[6, 2], [10, 2], [8, 6], [6, 6]], (px, py) => pick(IRON, px < 8, px, py)),
+  ])],
   // Arrow: a thin shaft with a pointed head and feathered tail.
   [BLOCK.ARROW, layered([
     stroke(2, 14, 13, 3, 0.5, HANDLE),
