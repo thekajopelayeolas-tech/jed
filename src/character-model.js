@@ -89,11 +89,11 @@ export function buildPlayerModel() {
   // and the leg reaches 0.645 below it). The boot is placed so its bottom edge matches the foot.
   const bootL = buildBoots();
   bootL.visible = false;
-  bootL.position.set(-0.115, BOOT_DROP, 0);
+  bootL.position.set(-0.0725, BOOT_DROP, 0);
   legL.add(bootL);
   const bootR = buildBoots();
   bootR.visible = false;
-  bootR.position.set(0.13, BOOT_DROP, 0);
+  bootR.position.set(0.0875, BOOT_DROP, 0);
   legR.add(bootR);
   shells.bootsLeft = bootL;
   shells.bootsRight = bootR;
