@@ -5,6 +5,9 @@ import { PLAYER_SKIN, PLAYER_SHIRT, PLAYER_TROUSERS, PLAYER_HAIR, armourLook } f
 // over the matching part, so it reads as a layer over the clothes. The right hand is a pivot for the held item.
 // Returns { group, parts, hand, shells, materials }.
 const rgb = (c) => new THREE.Color(c[0], c[1], c[2]);
+// How far a boot sits below the leg's origin so its sole meets the foot. Measured from the model (see
+// tests/armour_fit.mjs).
+const BOOT_DROP = -0.555;
 
 function box(w, h, d, colour, x, y, z, parent) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: rgb(colour) }));
@@ -70,7 +73,7 @@ export function buildPlayerModel() {
   // real piece (a helmet with a visor, a chestplate with shoulders, leggings with a belt, boots with a cuff),
   // so it reads as armour and not as a block. All boxes in one shell share a colour, set by applyArmour.
   const shellSpec = {
-    helmet: { parent: head, y: 0.02, build: buildHelmet },
+    helmet: { parent: head, y: 0, build: buildHelmet },
     chest: { parent: body, y: 0, build: buildChestplate },
     legs: { parent: body, y: -0.52, build: buildLeggings },
   };
@@ -82,13 +85,15 @@ export function buildPlayerModel() {
     shells[part] = shell;
   }
   // Boots sit on the feet: one shell per leg.
+  // The boot's sole sits on the foot, which is the bottom of the leg (the leg group's origin is 0.65 above the body,
+  // and the leg reaches 0.645 below it). The boot is placed so its bottom edge matches the foot.
   const bootL = buildBoots();
   bootL.visible = false;
-  bootL.position.set(-0.13, 0.04, 0);
+  bootL.position.set(-0.13, BOOT_DROP, 0);
   legL.add(bootL);
   const bootR = buildBoots();
   bootR.visible = false;
-  bootR.position.set(0.13, 0.04, 0);
+  bootR.position.set(0.13, BOOT_DROP, 0);
   legR.add(bootR);
   shells.bootsLeft = bootL;
   shells.bootsRight = bootR;
@@ -105,12 +110,16 @@ function piece(group, w, h, d, x, y, z) {
   return mesh;
 }
 
-// Helmet: a domed cap over the head, a brim at the front, and a dark visor slot.
+// Helmet: a domed cap sitting on the head, a brim at the front that stays above the eyes, and a visor slot.
+// Heights are relative to the head centre: the eyes are at 0.02, the head top is at 0.25.
 function buildHelmet() {
   const g = new THREE.Group();
-  piece(g, 0.58, 0.44, 0.58, 0, 0.1, 0);
-  piece(g, 0.6, 0.06, 0.2, 0, 0.0, 0.2);
-  piece(g, 0.46, 0.08, 0.02, 0, 0.06, 0.3);
+  // The dome is 0.2 tall and sits on the top of the head: its bottom is at the head top (0.25), so its top is at 0.45.
+  piece(g, 0.58, 0.2, 0.58, 0, 0.35, 0);
+  // The brim is a thin band across the forehead, above the eyes.
+  piece(g, 0.6, 0.06, 0.2, 0, 0.1, 0.2);
+  // The visor slot is a thin strip above the eyes.
+  piece(g, 0.46, 0.06, 0.02, 0, 0.14, 0.3);
   return g;
 }
 
