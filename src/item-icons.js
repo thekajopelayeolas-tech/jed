@@ -288,8 +288,22 @@ const SPRITES = new Map([
     ellipse(8, 9, 5.4, 4.2, (px, py) => tint(py < 8.5 ? [0.8, 0.56, 0.32] : [0.6, 0.38, 0.2], grain(px, py) * 0.08)),
     ellipse(13, 6, 1.3, 1.3, () => [0.96, 0.94, 0.9]),
   ])],
-  [BLOCK.RAW_FISH, poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => tint(py < 8 ? [0.6, 0.75, 0.9] : [0.45, 0.6, 0.78], grain(px, py) * 0.08))],
-  [BLOCK.COOKED_FISH, poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => tint(py < 8 ? [0.8, 0.6, 0.35] : [0.6, 0.42, 0.22], grain(px, py) * 0.08))],
+  // Raw fish: a body with a forked tail reaching the edge, a dark eye, and scales that catch the light on top.
+  [BLOCK.RAW_FISH, layered([
+    poly([[0, 4], [3, 8], [0, 12], [1, 8]], (px, py) => tint([0.45, 0.6, 0.78], grain(px, py) * 0.08)),
+    poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => {
+      if (Math.hypot(px - 5, py - 7.5) < 1.1) return [0.05, 0.05, 0.06];
+      return tint(py < 8 ? [0.6, 0.75, 0.9] : [0.45, 0.6, 0.78], grain(px, py) * 0.12);
+    }),
+  ])],
+  // Cooked fish: the same fish, golden and flaky, with its tail and eye.
+  [BLOCK.COOKED_FISH, layered([
+    poly([[0, 4], [3, 8], [0, 12], [1, 8]], (px, py) => tint([0.6, 0.42, 0.22], grain(px, py) * 0.08)),
+    poly([[2, 8], [5, 5], [11, 5], [14, 8], [11, 11], [5, 11]], (px, py) => {
+      if (Math.hypot(px - 5, py - 7.5) < 1.1) return [0.05, 0.05, 0.06];
+      return tint(py < 8 ? [0.8, 0.6, 0.35] : [0.6, 0.42, 0.22], grain(px, py) * 0.12);
+    }),
+  ])],
   [BLOCK.RAW_MUTTON, ellipse(8, 8.5, 6, 4.6, (px, py) => {
     if (segDist(px, py, 4, 11, 12, 6) < 1) return tint([0.96, 0.9, 0.86], grain(px, py) * 0.06);
     return tint(py < 6.5 ? [0.9, 0.5, 0.5] : [0.75, 0.3, 0.3], grain(px, py) * 0.1);
