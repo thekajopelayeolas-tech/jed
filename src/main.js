@@ -35,7 +35,7 @@ import { MobManager, MOB } from './mobs.js';
 import { saveGame, loadGame } from './save.js';
 import { createAtlasTexture } from './textures.js';
 import { breakTime, canHarvest, attackDamage } from './mining.js';
-import { drawAmount, arrowDamage, damageThroughShield, ARROW_SPEED, ARROW_LIFETIME, canFireGun, gunShotDamage } from './combat.js';
+import { drawAmount, arrowDamage, damageThroughShield, ARROW_SPEED, ARROW_LIFETIME, canFireGun, gunShotDamage, BULLET_SPEED, BULLET_RANGE, bulletBreaks, bulletAfterBreak } from './combat.js';
 import { bodyInLava, lavaStep } from './lava.js';
 // The lava timer the frame loop keeps: it counts down while the player stands in lava.
 const lavaState = { timer: 0 };
@@ -167,6 +167,11 @@ function pickUpBoatAimed() {
 }
 
 function attack() {
+  // A gun is fired with the attack button: a left-click shoots a bullet, and does not break or hit anything.
+  if (inventory.selectedItem.id === BLOCK.GUN) {
+    if (canFireGun(inventory.countOf(BLOCK.BULLET))) fireGun();
+    return;
+  }
   if (pickUpBoatAimed()) return;
   const eye = player.eye;
   const dir = player.lookDir();
@@ -500,27 +505,78 @@ function combatPress() {
     combat.drawTime = 0;
     return true;
   }
-  // A gun fires straight away on right-click, using one bullet. It needs a bullet in the inventory.
-  if (held === BLOCK.GUN && canFireGun(inventory.countOf(BLOCK.BULLET))) {
-    fireGun();
-    return true;
-  }
   return false;
 }
 
+// Bullets in flight. Each one flies far and fast, hits the first mob it meets (at any distance up to BULLET_RANGE),
+// and breaks the blocks it passes through while it has enough speed. Each broken block slows it.
+const bullets = [];
+const bulletVisualGeo = new THREE.BoxGeometry(0.1, 0.1, 0.4);
+const bulletVisualMat = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+
 // Fires one gun shot: a bullet leaves the eye along the look direction and uses one bullet from the inventory.
-// The bullet flies on the arrow path, so it hits the first mob or block it meets.
 function fireGun() {
   const eye = player.eye;
   const dir = player.lookDir();
   const start = eye.clone().add(dir.clone().multiplyScalar(0.8));
-  arrows.push({
+  bullets.push({
     pos: start,
-    vel: dir.clone().multiplyScalar(ARROW_SPEED),
+    dir: dir.clone(),
+    speed: BULLET_SPEED,
+    travelled: 0,
     damage: gunShotDamage(),
-    life: ARROW_LIFETIME,
+    mesh: null,
   });
   inventory.remove(BLOCK.BULLET, 1);
+}
+
+// Moves every bullet, hits the first mob on its path, breaks the blocks it passes through (slowing each time),
+// and removes it when it stops, hits a mob, or reaches its range.
+function updateBullets(dt) {
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    const step = b.speed * dt;
+    const stepVec = b.dir.clone().multiplyScalar(step);
+    const next = b.pos.clone().add(stepVec);
+    b.travelled += step;
+    const hitMob = mobs.raycastMob(b.pos, b.dir, step);
+    if (hitMob && !hitMob.dead) {
+      hitMob.takeHit(b.damage, b.pos.x, b.pos.z);
+      if (hitMob.dead) for (const id of hitMob.def.drops) drops.spawn(id, hitMob.pos.x, hitMob.pos.y, hitMob.pos.z);
+      removeBulletMesh(b);
+      bullets.splice(i, 1);
+      continue;
+    }
+    // Break the block the bullet is in, if it has enough speed. Each break slows it.
+    const cell = { x: Math.floor(next.x), y: Math.floor(next.y), z: Math.floor(next.z) };
+    const blockId = world.getBlock(cell.x, cell.y, cell.z);
+    if (bulletBreaks(blockId, b.speed) && blockId !== BLOCK.WATER) {
+      world.breakWhole(cell.x, cell.y, cell.z);
+      b.speed = bulletAfterBreak(b.speed);
+    } else if (blockId !== BLOCK.AIR && blockId !== BLOCK.WATER) {
+      // Too slow to break it: the bullet stops against the block.
+      removeBulletMesh(b);
+      bullets.splice(i, 1);
+      continue;
+    }
+    b.pos = next;
+    if (b.travelled >= BULLET_RANGE) {
+      removeBulletMesh(b);
+      bullets.splice(i, 1);
+      continue;
+    }
+    // Show the bullet in the air.
+    if (!b.mesh) {
+      b.mesh = new THREE.Mesh(bulletVisualGeo, bulletVisualMat);
+      scene.add(b.mesh);
+    }
+    b.mesh.position.copy(b.pos);
+    b.mesh.lookAt(b.pos.clone().add(b.dir));
+  }
+}
+
+function removeBulletMesh(b) {
+  if (b.mesh) scene.remove(b.mesh);
 }
 
 // The shield is raised while Shift is held and lowered when it is released. Sprinting still uses Shift for movement.
@@ -994,6 +1050,7 @@ function frame(now) {
   world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
   drops.update(dt, player.pos, inventory);
   updateCombat(dt);
+  updateBullets(dt);
   updatePearl(dt);
   if (!anyPanelOpen()) mining.update(dt);
 

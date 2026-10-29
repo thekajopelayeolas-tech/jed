@@ -16,6 +16,27 @@ export const ARROW_LIFETIME = 4;
 // A gun bullet hits harder than the strongest bow arrow, and flies at the same speed.
 export const GUN_BULLET_DAMAGE = 12;
 
+// A gun bullet flies far and fast. It breaks the blocks it passes through while it has enough speed. Each broken
+// block takes a share of its speed, so it can only break a few blocks before it stops.
+export const BULLET_RANGE = 120;
+export const BULLET_SPEED = 300;
+// The speed a bullet must still have to break a block. Below this it stops.
+export const BULLET_BREAK_SPEED = 60;
+// Each block it breaks costs this fraction of its speed.
+export const BULLET_BREAK_LOSS = 0.45;
+
+// True if a bullet at `speed` breaks a block of `blockId`. Air and unbreakable blocks (bedrock) are never broken,
+// and a bullet that is too slow stops.
+export function bulletBreaks(blockId, speed) {
+  if (blockId === BLOCK.AIR || blockId === BLOCK.BEDROCK) return false;
+  return speed >= BULLET_BREAK_SPEED;
+}
+
+// The bullet's speed after it breaks one block.
+export function bulletAfterBreak(speed) {
+  return speed * (1 - BULLET_BREAK_LOSS);
+}
+
 // A gun fires one bullet per shot, straight away, with no draw. It needs at least one bullet to fire.
 export function canFireGun(bulletCount) {
   return bulletCount > 0;
