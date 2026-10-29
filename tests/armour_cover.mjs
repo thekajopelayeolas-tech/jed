@@ -27,13 +27,19 @@ model.shells.helmet.visible = false;
 // shows below the boot.
 model.shells.bootsLeft.visible = true;
 model.group.updateMatrixWorld(true);
-const legBox = box(model.parts.legLeft);
+// The boot is a child of the leg, so the trouser is measured with the boot taken off it.
+const legL = model.parts.legLeft;
+legL.remove(model.shells.bootsLeft);
+model.group.updateMatrixWorld(true);
+const legBox = box(legL);
+legL.add(model.shells.bootsLeft);
+model.group.updateMatrixWorld(true);
 const bootBox = box(model.shells.bootsLeft);
 check('no trouser shows below the boot', legBox.min.y >= bootBox.min.y - 0.01);
 // The boot is also as wide as the leg on the inner side, so no trouser shows beside the foot.
 check('no trouser shows beside the boot on the inner side', bootBox.max.x >= legBox.max.x - 0.01);
-// And the boot is at least as tall as the leg's lower part, so it actually covers the foot.
-check('the boot covers the foot (its sole is at the leg bottom)', Math.abs(bootBox.min.y - legBox.min.y) < 0.02);
+// And the boot's sole reaches at least as low as the trouser's bottom, so the boot covers the end of the leg.
+check('the boot covers the foot (its sole reaches the leg bottom)', bootBox.min.y <= legBox.min.y + 0.01);
 model.shells.bootsLeft.visible = false;
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);

@@ -27,11 +27,25 @@ check('the boots do not overlap by much', gap > -0.03);
 check('the left boot is on the left side', L.max.x <= 0.02);
 check('the right boot is on the right side', R.min.x >= -0.02);
 
-// Each boot still sits on its foot.
-const legL = box(model.parts.legLeft);
-const legR = box(model.parts.legRight);
-check('the left boot sits on the left foot', Math.abs(L.min.y - legL.min.y) < 0.03);
-check('the right boot sits on the right foot', Math.abs(R.min.y - legR.min.y) < 0.03);
+// The boot is a child of its leg, so the trouser is measured with the boot taken off it.
+const trouserBox = (leg, boot) => {
+  leg.remove(boot);
+  model.group.updateMatrixWorld(true);
+  const b = box(leg);
+  leg.add(boot);
+  model.group.updateMatrixWorld(true);
+  return b;
+};
+const legL = trouserBox(model.parts.legLeft, model.shells.bootsLeft);
+const legR = trouserBox(model.parts.legRight, model.shells.bootsRight);
+
+// Each boot is flush with its trouser's outer edge, so it does not stick out on the outside.
+check('the left boot is flush with the left trouser on the outside', Math.abs(L.min.x - legL.min.x) < 0.01);
+check('the right boot is flush with the right trouser on the outside', Math.abs(R.max.x - legR.max.x) < 0.01);
+
+// Each boot's sole reaches the bottom of its trouser, so the boot covers the foot.
+check('the left boot covers the left foot', L.min.y <= legL.min.y + 0.01);
+check('the right boot covers the right foot', R.min.y <= legR.min.y + 0.01);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
