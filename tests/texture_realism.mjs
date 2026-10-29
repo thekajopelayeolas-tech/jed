@@ -34,6 +34,14 @@ function measure(name) {
   return { std, sharp: sharp / n };
 }
 
+// Ground surfaces have natural variation too: grass is not one green, and sand has individual grains.
+// Baselines before this step: grass top 0.039, sand 0.035 (tonal spread), and sand 0.000 sharp detail.
+const grass = measure('grassTop');
+check('grass top varies in tone like real turf', grass.std > 0.06);
+const sand = measure('sand');
+check('sand has tonal variation between grains', sand.std > 0.05);
+check('sand has sharp grain detail', sand.sharp > 0.05);
+
 const stone = measure('stone');
 // The baseline stone is at 0.051. Real stone shows clearly more tonal variation than that, so the bar is 0.07.
 check('stone has real tonal variation, not flat grey', stone.std > 0.07);

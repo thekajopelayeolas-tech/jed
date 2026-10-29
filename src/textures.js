@@ -70,9 +70,15 @@ const shade = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
 const PAINTERS = {
   // Grass: a clumpy green top with blade flecks, so it reads as turf rather than a flat sheet.
   grassTop: (x, y) => {
-    const clump = smooth(x * 0.6, y * 0.6, 21);
+    // Real turf is not one green. Larger patches of lighter and darker grass sit under the blade flecks, and a few
+    // brown specks show where the soil comes through.
+    const patch = smooth(x * 0.35, y * 0.35, 21);
+    const clump = smooth(x * 0.6, y * 0.6, 30);
     const blade = noise(x, y, 22) > 0.8 ? 0.12 : 0;
-    return jitter([GREEN[0] * (0.85 + clump * 0.3) + blade * 0.3, GREEN[1] * (0.85 + clump * 0.3) + blade, GREEN[2] * (0.85 + clump * 0.2)], noise(x, y, 1), 0.06);
+    const soil = noise(x, y, 31) > 0.95 ? 0.45 : 1;
+    const k = (0.7 + patch * 0.5 + clump * 0.1) * soil;
+    const base = [GREEN[0] * k + blade * 0.3, GREEN[1] * k + blade, GREEN[2] * k * 0.9];
+    return jitter(soil < 1 ? shade(DIRT, 0.9) : base, noise(x, y, 1), 0.07);
   },
   // Grass side: a soil body with a ragged green lip along the top, which hangs down unevenly.
   grassSide: (x, y) => {
@@ -99,8 +105,10 @@ const PAINTERS = {
   },
   // Sand: fine grain with faint ripples.
   sand: (x, y) => {
+    // Sand is made of grains: each grain is a little lighter or darker than its neighbours, so the surface is gritty.
     const ripple = Math.sin(y * 1.1 + smooth(x * 0.3, y * 0.3, 27) * 2) * 0.04;
-    return jitter([0.86 + ripple, 0.82 + ripple, 0.6 + ripple], noise(x, y, 8), 0.06);
+    const grain = (noise(x, y, 32) - 0.5) * 0.22;
+    return jitter([0.86 + ripple + grain, 0.82 + ripple + grain, 0.6 + ripple + grain * 0.8], noise(x, y, 8), 0.05);
   },
   // Wood side: bark with long vertical grooves and a darker band at the edges.
   woodSide: (x, y) => {
