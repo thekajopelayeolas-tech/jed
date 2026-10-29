@@ -30,11 +30,11 @@ const far = new THREE.Vector3(200, 61, 200);
   // Both components move by about the same amount, so the cow travels diagonally rather than straight east.
   const dx = m.pos.x - startX;
   const dz = m.pos.z - 0.5;
-  check('a cow asked to walk east moves sideways as well as forward', dz > 0.5 && dx > 0.5 && Math.abs(dx - dz) < 0.2);
-  // The body faces 90 degrees off its path, so it is sideways to the way it walks.
-  const pathYaw = Math.atan2(-1, 0);
-  const diff = Math.abs(Math.atan2(Math.sin(m.group.rotation.y - pathYaw), Math.cos(m.group.rotation.y - pathYaw)));
-  check('a cow walks sideways: its body is turned across its path', Math.abs(diff - Math.PI / 2) < 0.05);
+  check('a cow asked to walk east moves sideways as well as forward', dz < -0.5 && dx > 0.5 && Math.abs(dx + dz) < 0.2);
+  // The body follows the diagonal travel: it faces opposite the way the cow moves (a cow walks facing away).
+  const travelYaw = Math.atan2(m.vel.x, m.vel.z);
+  const diff = Math.abs(Math.atan2(Math.sin(m.group.rotation.y - travelYaw), Math.cos(m.group.rotation.y - travelYaw)));
+  check('a cow faces opposite its diagonal travel', Math.abs(diff - Math.PI) < 0.05);
 }
 
 // The sideways walk still lets a mob climb a 1-block wall on its goal path. A cow whose goal is east climbs a wall

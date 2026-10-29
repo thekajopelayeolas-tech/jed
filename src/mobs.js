@@ -471,8 +471,9 @@ export class Mob {
         sx = mx;
         sz = mz;
       } else {
-        sx = mx - mz;
-        sz = mz + mx;
+        // A -90 degree turn of the goal: (x, z) becomes (z, -x).
+        sx = mx + mz;
+        sz = mz - mx;
         const len = Math.hypot(sx, sz);
         sx /= len;
         sz /= len;
@@ -515,9 +516,9 @@ export class Mob {
     const swing = moving ? Math.sin(this.walkPhase) * 0.6 : 0;
     this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
     this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
-    // The body faces the way the mob actually travels, which for land mobs is sideways (see the velocity above).
-    // Iron golems and zombies face away from their travel, as before.
-    const [tx, tz] = this.def.water ? [mx, mz] : [-mz, mx];
+    // The body follows the way the mob actually travels (the velocity above), using the same convention as before:
+    // most mobs face opposite their travel, and iron golems and zombies face along it (walksBackwards).
+    const [tx, tz] = [sx, sz];
     if (tx !== 0 || tz !== 0) {
       const facing = this.def.walksBackwards ? 1 : -1;
       this.group.rotation.y = Math.atan2(facing * tx, facing * tz);
