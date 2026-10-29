@@ -21,7 +21,6 @@ check('an enderman drops an ender pearl', drops('enderman').includes(BLOCK.ENDER
 check('a horse drops leather', drops('horse').includes(BLOCK.LEATHER));
 check('a fox drops feathers', drops('fox').includes(BLOCK.FEATHER));
 check('a squid drops ink', drops('glow_squid').includes(BLOCK.INK_SAC));
-check('a slime-like jellyfish drops ink, not a stick', !drops('jellyfish').includes(BLOCK.STICK));
 
 // Every catalogue drop name resolves to a real item, so none is silently dropped.
 const names = new Set(EXTRA_MOBS.flatMap((r) => r[9]));

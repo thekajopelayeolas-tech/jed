@@ -39,7 +39,6 @@ export const EXTRA_MOBS = [
   ['seal', 'Seal', false, true, 'fish', 14, 1.6, 0, 0x7a8a9a, ['raw_fish']],
   ['otter', 'Otter', false, true, 'fish', 10, 1.5, 0, 0x8a6a4a, ['raw_fish']],
   ['crab', 'Crab', false, true, 'fish', 8, 0.8, 0, 0xd9663a, ['raw_fish']],
-  ['jellyfish', 'Jellyfish', false, true, 'blob', 6, 0.6, 0, 0xc98ae8, ['ink_sac']],
   ['sea_turtle', 'Sea Turtle', false, true, 'fish', 14, 1.0, 0, 0x6a9a5a, ['scute']],
   ['stingray', 'Stingray', false, true, 'fish', 10, 1.0, 0, 0x7a7a8a, ['raw_fish']],
   ['narwhal', 'Narwhal', false, true, 'fish', 24, 1.4, 0, 0xb8c8d8, ['raw_fish']],

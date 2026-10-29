@@ -91,3 +91,15 @@ export function pearlLanding(from, dir, isSolid) {
   }
   return last ? { x: last.x + 0.5, y: last.y, z: last.z + 0.5 } : null;
 }
+
+// A player counts as directly over or under a mob only when they are this close sideways.
+export const STACK_REACH = 1.2;
+
+// True when the player is stacked on the mob: close sideways, with no body height in common. Heights are feet-based.
+// Above means the player's feet are at or over the mob's head. Below means the player's head is at or under the mob's feet.
+export function verticallyStacked(horizontalDist, mobFeetY, mobHeight, playerFeetY, playerHeight) {
+  if (horizontalDist >= STACK_REACH) return false;
+  const playerAbove = playerFeetY >= mobFeetY + mobHeight;
+  const playerBelow = playerFeetY + playerHeight <= mobFeetY;
+  return playerAbove || playerBelow;
+}

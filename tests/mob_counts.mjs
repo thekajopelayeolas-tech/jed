@@ -17,9 +17,9 @@ const ids = EXTRA_MOBS.map((r) => r[0]);
 
 check('the new hostile mobs are hunter, creeper, spider and enderman', ['hunter', 'creeper', 'spider', 'enderman'].every((id) => hostile.some((r) => r[0] === id)) && hostile.length === 4);
 check('with the zombie there are 5 hostile mobs', hostile.length + EXISTING_HOSTILE === 5);
-check('there are 34 new peaceful mobs (33 plus the wolf)', peaceful.length === 34);
-check('with the existing peaceful mobs there are 45 peaceful mobs', peaceful.length + EXISTING_PEACEFUL === 45);
-check('the total is 50 mobs', hostile.length + peaceful.length + EXISTING_HOSTILE + EXISTING_PEACEFUL === 50);
+check('there are 33 new peaceful mobs (32 plus the wolf)', peaceful.length === 33);
+check('with the existing peaceful mobs there are 44 peaceful mobs', peaceful.length + EXISTING_PEACEFUL === 44);
+check('the total is 49 mobs', hostile.length + peaceful.length + EXISTING_HOSTILE + EXISTING_PEACEFUL === 49);
 check('every new mob has a unique id', new Set(ids).size === ids.length);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);

@@ -11,7 +11,7 @@ const SPRINT_MULT = 1.3;
 const JUMP_VEL = 8.0;
 const GRAVITY = 28;
 const HALF_WIDTH = 0.3;
-const HEIGHT = 1.8;
+export const HEIGHT = 1.8;
 const EYE = 1.62;
 // Health regeneration while hunger is full: 3 hearts every 5 seconds. One heart is 2 HP.
 const HP_PER_HEART = 2;

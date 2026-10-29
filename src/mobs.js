@@ -12,7 +12,9 @@ import {
   creeperFuse, creeperExploded, CREEPER_FUSE_RANGE,
   SPIDER_BITE_RANGE, SPIDER_BITE_DAMAGE,
   endermanAngry, ENDERMAN_DAMAGE,
+  verticallyStacked,
 } from './hostile.js';
+import { HEIGHT as PLAYER_HEIGHT } from './player.js';
 
 const GRAVITY = 26;
 const KNOCKBACK_DECAY = 6;
@@ -389,11 +391,16 @@ export class Mob {
     // Hostile and angry mobs pick a target. Zombies attack the player and villagers. Iron golems attack zombies,
     // and the player too once they are angry. Each target is a mob or the player, and a strike goes to whichever it is.
     // Special hostile kinds (hunter, creeper, spider, enderman) have their own behaviour, from hostile.js.
+    // A mob cannot strike the player while the player is directly above or below it. It still moves and chases.
+    const stackedOnPlayer = verticallyStacked(
+      Math.hypot(playerPos.x - this.pos.x, playerPos.z - this.pos.z),
+      this.pos.y, this.height, playerPos.y, PLAYER_HEIGHT,
+    );
     const special = this.specialAction(dt, playerPos, lookDir, fire);
     if (special) {
       mx = special.mx;
       mz = special.mz;
-      if (special.onAttack) onAttack(this, special.damage);
+      if (special.onAttack && !stackedOnPlayer) onAttack(this, special.damage);
     } else if (this.chooseTarget(playerPos, others) !== null) {
       // Zombies, golems and the rest chase their target as before.
       const target = this.chooseTarget(playerPos, others);
@@ -404,7 +411,7 @@ export class Mob {
       if (tdist < 1.2 && this.attackCooldown <= 0) {
         this.attackCooldown = 1;
         if (target.mob) target.mob.takeHit(this.def.damage ?? this.def.guardDamage, this.pos.x, this.pos.z);
-        else onAttack(this, this.def.damage ?? this.def.guardDamage);
+        else if (!stackedOnPlayer) onAttack(this, this.def.damage ?? this.def.guardDamage);
       }
     } else if (this.tamed) {
       // A tamed wolf keeps close to the player: it walks toward them when far, and waits when near.
