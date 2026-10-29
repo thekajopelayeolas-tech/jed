@@ -435,6 +435,16 @@ function buildPixels(spec) {
           const k = lit ? 1.12 : 0.85;
           rgb = [Math.min(1, rgb[0] * k), Math.min(1, rgb[1] * k), Math.min(1, rgb[2] * k)];
         }
+        // Detail: a soft light from the top left across the whole sprite, and a little fine grain on each pixel, so
+        // the surface reads as worn material rather than flat colour. Applied to every item the same way.
+        const light = 1.1 - 0.28 * ((x + y) / (2 * n));
+        const speck = 1 + (grain(x, y) * 0.2);
+        // A highlight pixel just inside a lit rim and a shadow pixel just inside a shaded rim: the edge of each shape
+        // reads as a crisp bevel, so the item has more detail at its edges, not just a gradient across it.
+        const edgeLit = !at(x - 1, y) || !at(x, y - 1);
+        const edgeShade = !at(x + 1, y) || !at(x, y + 1);
+        const edge = edgeLit ? 1.14 : edgeShade ? 0.84 : 1;
+        rgb = [0, 1, 2].map((c) => Math.min(1, rgb[c] * light * speck * edge));
       } else if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) rgb = OUTLINE;
       if (!rgb) continue;
       const i = (y * n + x) * 4;
