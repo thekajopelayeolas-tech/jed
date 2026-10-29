@@ -39,7 +39,7 @@ import { drawAmount, arrowDamage, damageThroughShield, ARROW_SPEED, ARROW_LIFETI
 import { bodyInLava, lavaStep } from './lava.js';
 // The lava timer the frame loop keeps: it counts down while the player stands in lava.
 const lavaState = { timer: 0 };
-import { blastDamage, pearlLanding, PEARL_SPEED, PEARL_LIFETIME } from './hostile.js';
+import { blastDamage, blastBreaks, pearlLanding, PEARL_SPEED, PEARL_LIFETIME, CREEPER_BLAST_RADIUS } from './hostile.js';
 import { createSleep, sleepPose } from './sleep.js';
 import { foodPoints } from './hunger.js';
 import { spotBesideBed } from './bed-spawn.js';
@@ -309,6 +309,26 @@ function furnaceAt(x, y, z) {
   const key = furnaceKey(x, y, z);
   if (!furnaces.has(key)) furnaces.set(key, new Furnace());
   return furnaces.get(key);
+}
+
+// A creeper's blast breaks every block inside its radius that can be broken. A block that is harvestable with bare
+// hands drops its item, like a break does; a block that needs a tool is destroyed without a drop.
+function blastBlocks(center) {
+  const r = Math.ceil(CREEPER_BLAST_RADIUS);
+  const cx = Math.floor(center.x);
+  const cy = Math.floor(center.y);
+  const cz = Math.floor(center.z);
+  for (let x = cx - r; x <= cx + r; x++) {
+    for (let y = cy - r; y <= cy + r; y++) {
+      for (let z = cz - r; z <= cz + r; z++) {
+        const id = world.getBlock(x, y, z);
+        const d = Math.hypot(x + 0.5 - center.x, y + 0.5 - center.y, z + 0.5 - center.z);
+        if (!blastBreaks(id, d)) continue;
+        world.breakWhole(x, y, z);
+        if (canHarvest(id, BLOCK.AIR)) drops.spawn(DROP_FOR[id] ?? id, x, y, z);
+      }
+    }
+  }
 }
 
 // Right click: sleep if the target is a bed, open a furnace, eat if the held item is food, otherwise place the held block.
@@ -977,9 +997,11 @@ function frame(now) {
       mobArrows.push({ pos: new THREE.Vector3(from.x, from.y, from.z), vel: new THREE.Vector3(dir.x, dir.y, dir.z).multiplyScalar(18), damage, life: 4 });
     });
     // A creeper that blew up hurts everything near it: the player takes the blast, and so do nearby mobs.
+    // It also breaks the blocks inside its radius.
     for (const m of mobs.mobs) {
       if (!m.exploded || m.blasted) continue;
       m.blasted = true;
+      blastBlocks(m.pos);
       const d = player.pos.distanceTo(m.pos);
       const dmg = blastDamage(d);
       if (dmg > 0 && player.hurt(dmg)) showMessage('Boom!');

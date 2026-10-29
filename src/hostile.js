@@ -1,11 +1,13 @@
 // Hostile mob behaviour rules: hunter archery, creeper fuse and blast, spider bite, enderman gaze, and the ender
 // pearl. Pure functions with no DOM or three.js, so tests run in Node. mobs.js and main.js do the moving and hitting.
+import { breakTime } from './mining.js';
 
 // Hunter: it keeps its distance, backs off when the player comes close, and shoots when in range.
 export const HUNTER_RANGE = 14;
 export const HUNTER_MIN_RANGE = 4;
 export const HUNTER_SHOOT_INTERVAL = 2.0;
-export const HUNTER_ARROW_DAMAGE = 3;
+// A hunter's arrow does one heart (2 HP).
+export const HUNTER_ARROW_DAMAGE = 2;
 
 // What a hunter does this frame: 'advance' toward the player, 'retreat' from them, 'shoot', or 'hold'.
 export function hunterAction(distance, canShoot) {
@@ -20,7 +22,8 @@ export const CREEPER_FUSE_RANGE = 3;
 export const CREEPER_CANCEL_RANGE = 6;
 export const CREEPER_FUSE_TIME = 1.5;
 export const CREEPER_BLAST_RADIUS = 3.5;
-export const CREEPER_BLAST_DAMAGE = 12;
+// A creeper's blast does three hearts (6 HP) at the centre, less further out.
+export const CREEPER_BLAST_DAMAGE = 6;
 
 // Advances a creeper's fuse by dt. A fuse of 0 is not lit. Once lit it counts up. Returns the new fuse value, or -1
 // when the fuse was cancelled by the player getting away.
@@ -38,6 +41,14 @@ export function creeperExploded(fuse) {
 export function blastDamage(distance) {
   if (distance >= CREEPER_BLAST_RADIUS) return 0;
   return CREEPER_BLAST_DAMAGE * (1 - distance / CREEPER_BLAST_RADIUS);
+}
+
+// True if a blast at `distance` from a block breaks that block. A block inside the radius breaks unless it can't be
+// mined at all (bedrock, which has an infinite break time, and air, which has nothing to break).
+export function blastBreaks(blockId, distance) {
+  if (blockId === 0) return false;
+  if (distance >= CREEPER_BLAST_RADIUS) return false;
+  return breakTime(blockId, 0) !== Infinity;
 }
 
 // Spider: it runs at the player and bites when close. It climbs walls like the other land mobs.
