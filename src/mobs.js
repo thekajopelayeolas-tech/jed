@@ -456,31 +456,12 @@ export class Mob {
 
     // Knockback fades out over time and is added on top of the AI movement.
     this.knock.multiplyScalar(Math.max(0, 1 - KNOCKBACK_DECAY * dt));
-    // The goal is where the AI wants to go. A land mob walks sideways-and-forward from it: the goal plus a quarter
-    // turn, so it travels diagonally across its body and still closes in on the goal. A pure sideways walk would
-    // never reach a wall on the goal side. The travel is normalised, so speed is the same. Water mobs keep the goal.
+    // Land mobs walk straight toward their goal, so the travel is the goal itself. The goal is kept so a wall on the
+    // path can be climbed (see tryJump).
     this.goalX = mx;
     this.goalZ = mz;
-    let sx = mx;
-    let sz = mz;
-    if (!this.def.water && (mx !== 0 || mz !== 0)) {
-      // Sideways-and-forward, unless a wall is on the goal path. Then the mob goes straight at the wall, so it can
-      // climb it (or be refused by the height limit) rather than sliding along the wall and round its end.
-      const goalBlocked = this.blockAhead(this.goalX * this.def.speed * dt, 0) || this.blockAhead(0, this.goalZ * this.def.speed * dt);
-      if (goalBlocked) {
-        sx = mx;
-        sz = mz;
-      } else {
-        // A -90 degree turn of the goal: (x, z) becomes (z, -x).
-        sx = mx + mz;
-        sz = mz - mx;
-        const len = Math.hypot(sx, sz);
-        sx /= len;
-        sz /= len;
-      }
-    }
-    this.vel.x = sx * this.def.speed + this.knock.x;
-    this.vel.z = sz * this.def.speed + this.knock.z;
+    this.vel.x = mx * this.def.speed + this.knock.x;
+    this.vel.z = mz * this.def.speed + this.knock.z;
     // A fish in water floats, so gravity does not pull it down. Out of water, it falls like any mob.
     const inWater = this.def.water && this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y), Math.floor(this.pos.z)) === BLOCK.WATER;
     this.vel.y = inWater ? 0 : Math.max(-40, this.vel.y - GRAVITY * dt);
@@ -516,12 +497,11 @@ export class Mob {
     const swing = moving ? Math.sin(this.walkPhase) * 0.6 : 0;
     this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
     this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
-    // The body follows the way the mob actually travels (the velocity above), using the same convention as before:
-    // most mobs face opposite their travel, and iron golems and zombies face along it (walksBackwards).
-    const [tx, tz] = [sx, sz];
-    if (tx !== 0 || tz !== 0) {
+    // The body faces the way the mob walks: most mobs face opposite their travel, and iron golems and zombies face
+    // along it (walksBackwards).
+    if (mx !== 0 || mz !== 0) {
       const facing = this.def.walksBackwards ? 1 : -1;
-      this.group.rotation.y = Math.atan2(facing * tx, facing * tz);
+      this.group.rotation.y = Math.atan2(facing * mx, facing * mz);
     }
   }
 

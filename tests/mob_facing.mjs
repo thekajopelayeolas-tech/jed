@@ -27,32 +27,26 @@ function facingWhenWalkingEast(type) {
   return m.group.rotation.y;
 }
 
-// Mobs walk sideways now: asked to walk east, a mob travels across its body and faces that way. A cow, villager,
-// chicken and sheep all face north when asked to walk east (their travel turns a quarter turn to the left).
-// Asked to walk east, the travel is diagonal (a -90 degree turn blended with the goal, toward +x and -z). Most mobs
-// face opposite their travel, so the body points toward +x and +z. Expected yaw: atan2(-vx, -vz) with vx = vz = -1.
-const travelX = 1;
-const travelZ = -1;
-const sideways = Math.atan2(-travelX, -travelZ);
+// Most mobs walk forward: they face the way they walk. A cow, a villager, and a chicken all face east when walking east.
+const forward = Math.atan2(-1, 0);
 for (const [name, type] of [['cow', MOB.COW], ['villager', MOB.VILLAGER], ['chicken', MOB.CHICKEN], ['sheep', MOB.SHEEP]]) {
-  check(`a ${name} faces opposite its diagonal travel when walking east`, Math.abs(facingWhenWalkingEast(type) - sideways) < 1e-6);
+  check(`a ${name} walks forward (faces east when walking east)`, Math.abs(facingWhenWalkingEast(type) - forward) < 1e-6);
 }
 
-// Iron golems and zombies walk the same diagonal, but face along it (walksBackwards), not opposite it.
-const along = Math.atan2(travelX, travelZ);
+// Iron golems and zombies walk backwards: they face away from the way they walk (west when walking east).
+const backward = Math.atan2(1, 0);
 for (const [name, type] of [['iron golem', MOB.IRON_GOLEM], ['zombie', MOB.ZOMBIE]]) {
-  check(`a ${name} faces along its diagonal travel when walking east`, Math.abs(facingWhenWalkingEast(type) - along) < 1e-6);
+  check(`a ${name} walks backwards (faces west when walking east)`, Math.abs(facingWhenWalkingEast(type) - backward) < 1e-6);
 }
 
-// Walking still moves the mob: a villager asked to walk east travels sideways, along +z, not backwards.
+// Walking still moves the mob the right way: a villager walks east, not backwards.
 const v = new Mob(scene, world, MOB.VILLAGER, 0.5, 61, 0.5);
 v.onGround = true;
 v.wanderDir.set(1, 0);
 v.wanderTimer = 99;
-const startZ = v.pos.z;
+const startX = v.pos.x;
 for (let i = 0; i < 20; i++) v.update(0.05, new THREE.Vector3(0, 0, 0), () => {});
-check('a villager asked to walk east travels sideways (along -z)', v.pos.z < startZ - 0.5);
-check('a villager asked to walk east also moves east', v.pos.x > 0.5 + 0.5);
+check('a villager walks east', v.pos.x > startX + 0.5);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;
