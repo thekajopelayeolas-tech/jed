@@ -89,9 +89,13 @@ const PAINTERS = {
   },
   // Stone: grey with mottled patches and small cracks.
   stone: (x, y) => {
-    const mottle = smooth(x * 0.45, y * 0.45, 25);
+    // Real rock is not one grey. Large patches of lighter and darker mineral sit under a finer mottle, and a few
+    // small pits and cracks break the surface.
+    const patch = smooth(x * 0.3, y * 0.3, 25);
+    const mottle = smooth(x * 0.6, y * 0.6, 28);
+    const pit = noise(x, y, 29) > 0.93 ? 0.55 : 1;
     const crack = noise(x, y, 26) > 0.96 ? 0.6 : 1;
-    return jitter(shade(STONE, (0.82 + mottle * 0.3) * crack), noise(x, y, 7), 0.08);
+    return jitter(shade(STONE, (0.7 + patch * 0.45 + mottle * 0.15) * pit * crack), noise(x, y, 7), 0.09);
   },
   // Sand: fine grain with faint ripples.
   sand: (x, y) => {
