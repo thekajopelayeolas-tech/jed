@@ -58,21 +58,26 @@ export function createSky(scene) {
 }
 
 // Advances the day/night cycle. Returns the new time of day in [0, 1).
-export function updateDayNight(scene, sky, timeOfDay, dt, renderDistance) {
+export function updateDayNight(scene, sky, timeOfDay, dt, renderDistance, weather = null) {
   const t = (timeOfDay + dt / DAY_LENGTH) % 1;
   const angle = t * Math.PI * 2;
   const daylight = Math.max(0, Math.sin(angle));
+  const overcast = Math.max(0, Math.min(1, weather?.intensity ?? 0));
   const color = SKY_NIGHT.clone().lerp(SKY_DAY, Math.min(1, daylight * 2));
+  color.lerp(new THREE.Color(0x8996a1), overcast * 0.22);
 
   scene.background = color;
-  scene.fog = new THREE.Fog(color, renderDistance * 12, renderDistance * 16);
+  scene.fog = new THREE.Fog(color, renderDistance * 12 * (1 - overcast * 0.22), renderDistance * 16 * (1 - overcast * 0.2));
   // The dome: a pale band at the horizon and a deeper blue overhead by day, and near-black at night.
   const horizon = SKY_NIGHT.clone().lerp(new THREE.Color(0xdbeeff), Math.min(1, daylight * 2));
   const zenith = SKY_NIGHT.clone().lerp(new THREE.Color(0x3a7bd5), Math.min(1, daylight * 2));
+  const cloud = new THREE.Color(0x8996a1);
+  horizon.lerp(cloud, overcast * 0.3);
+  zenith.lerp(cloud, overcast * 0.18);
   if (sky.dome) paintDome(sky.dome, horizon, zenith);
-  sky.ambient.intensity = 0.2 + daylight * 0.5;
-  sky.sun.intensity = daylight * 0.9;
-  sky.hemi.intensity = 0.1 + daylight * 0.5;
+  sky.ambient.intensity = 0.2 + daylight * 0.5 + overcast * 0.08;
+  sky.sun.intensity = daylight * 0.9 * (1 - overcast * 0.48);
+  sky.hemi.intensity = 0.1 + daylight * 0.5 + overcast * 0.12;
   // The sun is placed far out along its path, so its shadows fall the right way and stay inside the shadow camera.
   sky.sun.position.set(Math.cos(angle) * 60, Math.sin(angle) * 60, 18);
   sky.sun.target.position.set(0, 0, 0);

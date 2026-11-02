@@ -58,7 +58,9 @@ const scene = { add() {}, remove() {} };
 const w = new World(scene, 1337, {}, {});
 w.update(8, 8, 2, 25);
 const sheep = new Mob(scene, w, MOB.SHEEP, 8.5, 60, 8.5);
+check('a sheep model has a distinct visible fleece layer', sheep.model.wool?.visible === true && sheep.model.wool.children.length >= 4);
 check('shearing a sheep gives 2 wool', sheep.shear() === 2);
+check('shearing removes the visible fleece', sheep.model.wool.visible === false);
 check('the sheep is still alive after shearing', sheep.dead === false && sheep.health > 0);
 check('a sheared sheep cannot be sheared again straight away', sheep.shear() === 0);
 const cow = new Mob(scene, w, MOB.COW, 8.5, 60, 8.5);
@@ -66,6 +68,7 @@ check('shears do nothing to a cow', cow.shear() === 0);
 // Wool grows back after the regrow time, and then the sheep can be sheared again.
 for (let t = 0; t < 70; t += 1) sheep.update(1, sheep.pos, 0.5, () => {});
 check('the wool grows back after time', sheep.sheared === false);
+check('regrowth restores the visible fleece', sheep.model.wool.visible === true);
 check('a regrown sheep can be sheared again', sheep.shear() === 2);
 
 // Killing a sheep still drops mutton and wool, as before shears.

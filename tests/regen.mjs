@@ -11,53 +11,53 @@ const world = { getBlock: () => 0 };
 const fresh = (health) => {
   const p = new Player(world, 0, 80, 0);
   p.health = health;
-  p.hunger.value = 9;
+  p.hunger.value = 20;
+  p.hunger.saturation = 0;
   return p;
 };
 
-// Full hunger, half health (10 of 20). Four seconds gives nothing; five seconds gives 3 hearts (6 HP).
+// At 18+ hunger, four seconds restores one health point and costs exhaustion.
 const a = fresh(10);
-a.tickHealth(4.9);
-check('no regen before 5 seconds', a.health === 10);
+a.tickHealth(3.9);
+check('no regen before four seconds', a.health === 10);
 a.tickHealth(0.2);
-check('5 seconds of full hunger restores 3 hearts (10 -> 16)', a.health === 16);
+check('four seconds of high hunger restores one health and adds exhaustion', a.health === 11 && a.hunger.value === 19 && a.hunger.exhaustion === 2);
 
-// The next 5 seconds restore another 3 hearts, capped at 20.
-a.tickHealth(5);
-check('another 5 seconds caps at 20 health', a.health === 20);
+const saturated = fresh(10);
+saturated.hunger.saturation = 5;
+saturated.tickHealth(0.5);
+check('saturation enables fast half-second regen and is consumed', saturated.health === 11 && saturated.hunger.saturation === 4 && saturated.hunger.exhaustion === 2);
 
-// Regen never goes above max.
-const b = fresh(19);
-b.tickHealth(5);
-check('regen is capped at max health (19 -> 20)', b.health === 20);
+// Regeneration is capped at maximum health.
+a.health = 19;
+a.tickHealth(4);
+check('regen is capped at max health (19 -> 20)', a.health === 20);
 
-// Hunger that is not full does not regenerate, and the timer is reset.
+// Below 18 hunger, natural regeneration stops.
 const c = fresh(10);
-c.hunger.value = 8;
+c.hunger.value = 17;
 c.tickHealth(30);
-check('no regen while hunger is below full', c.health === 10);
-c.hunger.value = 9;
-c.tickHealth(4);
-check('timer restarts after hunger returns to full (4s is not enough)', c.health === 10);
+check('no regen while hunger is below 18', c.health === 10);
+c.hunger.value = 18;
+c.tickHealth(3);
+check('regen timer starts when hunger reaches 18', c.health === 10);
 
-// Losing a hunger point while regenerating restarts the 5 second timer.
-const d = fresh(10);
-d.tickHealth(4);
-d.hunger.value = 8;
-d.tickHealth(1);
-d.hunger.value = 9;
-d.tickHealth(4.5);
-check('losing hunger mid-count resets the timer', d.health === 10);
-
-// Damage restarts the timer, so the 5 seconds must be uninterrupted.
+// Damage resets the regeneration timer but does not reduce hunger.
 const e = fresh(10);
-e.tickHealth(4);
+e.tickHealth(3);
 e.hurtCooldown = 0;
 e.hurt(1);
-check('a hit costs one hunger point (9 -> 8)', e.hunger.value === 8);
-e.hunger.value = 9;
-e.tickHealth(4.9);
-check('damage restarts the regen timer', e.health === 9);
+check('a hit does not cost hunger', e.hunger.value === 20);
+e.tickHealth(3.9);
+check('damage restarts the four-second regen timer', e.health === 9);
+e.tickHealth(0.2);
+check('regen resumes after a full post-hit interval', e.health === 10);
+
+// Normal-difficulty starvation stops at half a heart.
+const starving = fresh(2);
+starving.hunger.value = 0;
+starving.tickHealth(12);
+check('starvation deals periodic damage but cannot kill', starving.health === 1);
 
 // Dead players do not regenerate.
 const f = fresh(0);

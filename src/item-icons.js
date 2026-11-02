@@ -75,6 +75,14 @@ function ellipseRing(cx, cy, rInner, rOuter, color) {
   return { inside: (px, py) => inside(px, py, rOuter) && !inside(px, py, rInner), color };
 }
 
+function dyeDust(base, seed) {
+  return ellipse(8, 8, 5, 5, (px, py) => {
+    const grainTone = grain(Math.floor(px / 2) + seed, Math.floor(py / 2));
+    const scale = grainTone > 0.16 ? 1.35 : grainTone < -0.18 ? 0.58 : 0.92;
+    return tint(base.map((channel) => channel * scale), grain(px, py) * 0.1);
+  });
+}
+
 function poly(points, color) {
   return { inside: (px, py) => inPolygon(px, py, points), color };
 }
@@ -123,6 +131,8 @@ function axeSprite(head) {
 const coalColor = (px, py) => (grain(px, py) > 0.15 ? [0.32, 0.32, 0.32] : [0.1, 0.1, 0.11]);
 
 const DIAMOND = { light: [0.7, 0.98, 1], dark: [0.3, 0.75, 0.85] };
+const EMERALD = { light: [0.42, 1, 0.62], dark: [0.08, 0.55, 0.2] };
+const RAINBOW = { light: [1, 0.68, 0.9], dark: [0.48, 0.22, 0.76] };
 const LEATHER = { light: [0.72, 0.5, 0.3], dark: [0.5, 0.32, 0.18] };
 
 // Armour pieces use the material's colour and a silhouette for the slot: helmet, chestplate, leggings, boots.
@@ -263,6 +273,14 @@ const SPRITES = new Map([
   [BLOCK.DIAMOND_CHEST, armourSprite('chest', DIAMOND)],
   [BLOCK.DIAMOND_LEGS, armourSprite('legs', DIAMOND)],
   [BLOCK.DIAMOND_BOOTS, armourSprite('boots', DIAMOND)],
+  [BLOCK.EMERALD_HELMET, armourSprite('helmet', EMERALD)],
+  [BLOCK.EMERALD_CHEST, armourSprite('chest', EMERALD)],
+  [BLOCK.EMERALD_LEGS, armourSprite('legs', EMERALD)],
+  [BLOCK.EMERALD_BOOTS, armourSprite('boots', EMERALD)],
+  [BLOCK.RAINBOW_HELMET, armourSprite('helmet', RAINBOW)],
+  [BLOCK.RAINBOW_CHEST, armourSprite('chest', RAINBOW)],
+  [BLOCK.RAINBOW_LEGS, armourSprite('legs', RAINBOW)],
+  [BLOCK.RAINBOW_BOOTS, armourSprite('boots', RAINBOW)],
   [BLOCK.COAL, layered([
     ellipse(5, 6, 2.8, 2.6, coalColor),
     ellipse(10.5, 8.5, 3, 2.8, coalColor),
@@ -329,6 +347,16 @@ const SPRITES = new Map([
     stroke(5, 15, 4, 5, 0.8, { light: [0.95, 0.85, 0.4], dark: [0.7, 0.55, 0.2] }),
     stroke(11, 15, 12, 5, 0.8, { light: [0.95, 0.85, 0.4], dark: [0.7, 0.55, 0.2] }),
   ])],
+  [BLOCK.WHEAT_SEEDS, layered([
+    ellipse(4, 11, 1.8, 2.4, (px, py) => tint([0.72, 0.58, 0.23], grain(px, py) * 0.12)),
+    ellipse(8, 7.5, 1.8, 2.4, (px, py) => tint([0.82, 0.7, 0.31], grain(px, py) * 0.12)),
+    ellipse(12, 11, 1.8, 2.4, (px, py) => tint([0.72, 0.58, 0.23], grain(px, py) * 0.12)),
+  ])],
+  [BLOCK.EMERALD, poly([[8, 2], [13, 6], [11, 12], [8, 14], [5, 12], [3, 6]], (px, py) => pick(EMERALD, px < 8, px, py))],
+  [BLOCK.RED_DYE, dyeDust([0.9, 0.12, 0.12], 13)],
+  [BLOCK.YELLOW_DYE, dyeDust([1, 0.78, 0.1], 17)],
+  [BLOCK.BLUE_DYE, dyeDust([0.2, 0.42, 0.95], 23)],
+  [BLOCK.WHITE_DYE, dyeDust([0.95, 0.95, 0.86], 31)],
   // Bread: a domed loaf with a golden crust that darkens toward the base, and two scored slashes on top.
   [BLOCK.BREAD, ellipse(8, 9, 6, 4.2, (px, py) => {
     if (segDist(px, py, 5, 6.5, 8, 7.5) < 0.5 || segDist(px, py, 8, 6.5, 11, 7.5) < 0.5) return [0.5, 0.3, 0.14];
@@ -479,7 +507,7 @@ function buildPixels(spec) {
         // reads as a crisp bevel, so the item has more detail at its edges, not just a gradient across it.
         const edgeLit = !at(x - 1, y) || !at(x, y - 1);
         const edgeShade = !at(x + 1, y) || !at(x, y + 1);
-        const edge = edgeLit ? 1.14 : edgeShade ? 0.84 : 1;
+        const edge = edgeLit ? 1.25 : edgeShade ? 0.68 : 1;
         rgb = [0, 1, 2].map((c) => Math.min(1, rgb[c] * light * speck * edge));
       } else if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) rgb = OUTLINE;
       if (!rgb) continue;

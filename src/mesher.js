@@ -29,20 +29,20 @@ function cornerAO(world, wx, y, wz, f, c) {
   const ax = wx + f.dir[0];
   const ay = y + f.dir[1];
   const az = wz + f.dir[2];
-  // The two in-plane axes are the ones the face normal does not point along.
-  // For each, the corner's side (0 = negative, 1 = positive) gives the neighbour offset.
-  const inPlane = [];
-  if (f.dir[0] === 0) inPlane.push([0, c[0] === 0 ? -1 : 1]);
-  if (f.dir[1] === 0) inPlane.push([1, c[1] === 0 ? -1 : 1]);
-  if (f.dir[2] === 0) inPlane.push([2, c[2] === 0 ? -1 : 1]);
-  const [[axisA, sA], [axisB, sB]] = inPlane;
-  const offA = [0, 0, 0];
-  const offB = [0, 0, 0];
-  offA[axisA] = sA;
-  offB[axisB] = sB;
-  const sideA = isOccluder(world, ax + offA[0], ay + offA[1], az + offA[2]);
-  const sideB = isOccluder(world, ax + offB[0], ay + offB[1], az + offB[2]);
-  const diag = isOccluder(world, ax + offA[0] + offB[0], ay + offA[1] + offB[1], az + offA[2] + offB[2]);
+  let aX = 0, aY = 0, aZ = 0, bX = 0, bY = 0, bZ = 0;
+  if (f.dir[0] !== 0) {
+    aY = c[1] === 0 ? -1 : 1;
+    bZ = c[2] === 0 ? -1 : 1;
+  } else if (f.dir[1] !== 0) {
+    aX = c[0] === 0 ? -1 : 1;
+    bZ = c[2] === 0 ? -1 : 1;
+  } else {
+    aX = c[0] === 0 ? -1 : 1;
+    bY = c[1] === 0 ? -1 : 1;
+  }
+  const sideA = isOccluder(world, ax + aX, ay + aY, az + aZ);
+  const sideB = isOccluder(world, ax + bX, ay + bY, az + bZ);
+  const diag = isOccluder(world, ax + aX + bX, ay + aY + bY, az + aZ + bZ);
   // Standard voxel AO: if both sides are solid the corner is fully occluded.
   if (sideA && sideB) return 0;
   return 3 - sideA - sideB - diag;
@@ -133,19 +133,19 @@ export function buildChunkGeometry(chunk, world) {
           const isFront = BLOCK_TILES[id].front !== undefined && side !== null && isFrontFace(chunk.getFacing(x, y, z), side);
           const tileName = isFront ? BLOCK_TILES[id].front : (BLOCK_TILES[id][f.face] ?? BLOCK_TILES[id].side);
           const [u0, v0, u1, v1] = tileUV(TILE_INDEX[tileName]);
-          const uvs = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
+          const uvs = [u0, v0, u1, v0, u1, v1, u0, v1];
           const base = target.pos.length / 3;
+          const aoValues = def.transparent ? [3, 3, 3, 3] : f.corners.map((corner) => cornerAO(world, wx, y, wz, f, corner));
           f.corners.forEach((c, i) => {
             // Ambient occlusion: 3 = open, 0 = fully occluded. Scale brightness from 0.55 up to 1.
-            const k = lf * f.shade * (0.55 + 0.15 * cornerAO(world, wx, y, wz, f, c));
+            const k = lf * f.shade * (0.55 + 0.15 * aoValues[i]);
             target.pos.push(x + c[0], y + c[1], z + c[2]);
             target.nor.push(f.dir[0], f.dir[1], f.dir[2]);
             target.col.push(k, k, k);
-            target.uv.push(uvs[i][0], uvs[i][1]);
+            target.uv.push(uvs[i * 2], uvs[i * 2 + 1]);
           });
           // Split the quad along the diagonal with the smaller AO sum so shading interpolates without a seam.
-          const ao = (i) => cornerAO(world, wx, y, wz, f, f.corners[i]);
-          if (ao(0) + ao(2) > ao(1) + ao(3)) {
+          if (aoValues[0] + aoValues[2] > aoValues[1] + aoValues[3]) {
             target.idx.push(base + 1, base + 2, base + 3, base + 1, base + 3, base);
           } else {
             target.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);

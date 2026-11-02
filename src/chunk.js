@@ -80,6 +80,8 @@ export class Chunk {
     // True once a player edits this chunk, so it is saved instead of regenerated.
     this.modified = false;
     this.biomes = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
+    this.surfaceHeights = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
+    this.cropIndices = new Set();
     this.sky = new Uint8Array(CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE);
     this.blockLight = new Uint8Array(CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE);
   }
@@ -108,9 +110,20 @@ export class Chunk {
 
   set(x, y, z, id, facing = 0) {
     if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z >= CHUNK_SIZE) return;
-    this.blocks[Chunk.index(x, y, z)] = id;
-    this.facing[Chunk.index(x, y, z)] = facing & 3;
+    const index = Chunk.index(x, y, z);
+    this.blocks[index] = id;
+    if (id === BLOCK.WHEAT_CROP_0 || id === BLOCK.WHEAT_CROP_1 || id === BLOCK.WHEAT_CROP_2 || id === BLOCK.WHEAT_CROP_3) this.cropIndices.add(index);
+    else this.cropIndices.delete(index);
+    this.facing[index] = facing & 3;
     this.dirty = true;
+  }
+
+  reindexCrops() {
+    this.cropIndices.clear();
+    for (let index = 0; index < this.blocks.length; index++) {
+      const id = this.blocks[index];
+      if (id === BLOCK.WHEAT_CROP_0 || id === BLOCK.WHEAT_CROP_1 || id === BLOCK.WHEAT_CROP_2 || id === BLOCK.WHEAT_CROP_3) this.cropIndices.add(index);
+    }
   }
 
   getFacing(x, y, z) {
@@ -118,6 +131,7 @@ export class Chunk {
   }
 
   generate(seed) {
+    this.cropIndices.clear();
     const ox = this.cx * CHUNK_SIZE;
     const oz = this.cz * CHUNK_SIZE;
     for (let x = 0; x < CHUNK_SIZE; x++) {
@@ -143,6 +157,7 @@ export class Chunk {
           // column empty above the sea.
           surface = Math.max(4, Math.min(CHUNK_HEIGHT - 2, baseSurface + (def.lift ?? 0) - (def.sink ?? 0)));
         }
+        this.surfaceHeights[x + CHUNK_SIZE * z] = surface;
         this.biomes[x + CHUNK_SIZE * z] = biome;
         // The surface block: sand in deserts and some low ground, gravel in gravelly windswept hills, stone on peaks,
         // and grass elsewhere.
@@ -224,7 +239,7 @@ export class Chunk {
           // Never overwrite bedrock, and only build into air or water.
           const current = this.get(lx, c.y, lz);
           if (current === BLOCK.BEDROCK) continue;
-          this.set(lx, c.y, lz, c.id);
+          this.set(lx, c.y, lz, c.id, c.facing ?? 0);
         }
       }
     }
@@ -238,10 +253,12 @@ export class Chunk {
     const iron = valueNoise2D(wx * 0.2, y * 0.2 + wz * 0.2, seed + 37);
     const diamond = valueNoise2D(wx * 0.25, y * 0.25 + wz * 0.25, seed + 41);
     const rainbow = valueNoise2D(wx * 0.3, y * 0.3 + wz * 0.3, seed + 43);
+    const emerald = valueNoise2D(wx * 0.22, y * 0.22 + wz * 0.22, seed + 47);
     if (y < 12 && coal > 0.78) return BLOCK.COAL_ORE;
     if (y < 16 && iron > 0.8) return BLOCK.IRON_ORE;
     if (y < 10 && diamond > 0.96) return BLOCK.DIAMOND_ORE;
     if (y < 6 && rainbow > 0.985) return BLOCK.RAINBOW_ORE;
+    if (y < 32 && emerald > 0.99) return BLOCK.EMERALD_ORE;
     return BLOCK.STONE;
   }
 
@@ -255,11 +272,8 @@ export class Chunk {
         const density = BIOME_DEFS[this.biomeAt(x, z)].treeDensity;
         if (density <= 0) continue;
         if (valueNoise2D(wx * 0.9, wz * 0.9, seed + 555) < 1 - 0.18 * density) continue;
-        let top = -1;
-        for (let y = CHUNK_HEIGHT - 1; y >= 0; y--) {
-          if (this.get(x, y, z) !== BLOCK.AIR) { top = y; break; }
-        }
-        if (top < 0 || this.get(x, top, z) !== BLOCK.GRASS) continue;
+        const top = this.surfaceHeights[x + CHUNK_SIZE * z];
+        if (this.get(x, top, z) !== BLOCK.GRASS) continue;
         // The trunk is 4 to 5 blocks in most biomes. A biome's `trunk` adds height: birch and taiga trees grow taller,
         // the old growth ones taller still, and jungle trees are very tall (about 30 blocks).
         const def = BIOME_DEFS[this.biomeAt(x, z)];

@@ -57,6 +57,10 @@ const W = BLOCK.WHEAT, WB = BLOCK.WHEAT_BLOCK;
 check('nine wheat make a wheat block', matchRecipe(grid([[W, W, W], [W, W, W], [W, W, W]]), 3)?.result === WB);
 check('a wheat block makes nine wheat', RECIPES.some((r) => r.result === W && r.count === 9 && r.key.W === WB));
 check('bread is made from wheat', matchRecipe(grid([[W, W, W]]), 3)?.result === BLOCK.BREAD);
+for (const [flower, dye] of [[BLOCK.RED_FLOWER, BLOCK.RED_DYE], [BLOCK.YELLOW_FLOWER, BLOCK.YELLOW_DYE], [BLOCK.BLUE_FLOWER, BLOCK.BLUE_DYE], [BLOCK.WHITE_FLOWER, BLOCK.WHITE_DYE]]) {
+  check(`${BLOCK_DEFS[flower].name} makes its matching dye`, matchRecipe(grid([[flower]]), 3)?.result === dye);
+  check(`${BLOCK_DEFS[dye].name} appears under Farming & Dyes`, categoryOf(dye) === 'Farming & Dyes');
+}
 
 // Food & Drinks: the new food items are in their own recipe category.
 check('bread is in Food & Drinks', categoryOf(BLOCK.BREAD) === 'Food & Drinks');
@@ -68,10 +72,13 @@ check('wheat block has a texture', !!BLOCK_TILES[WB]);
 for (const id of [BLOCK.WHEAT, BLOCK.BREAD, BLOCK.CAKE, BLOCK.COOKIES, BLOCK.STEW, BLOCK.RAW_CHICKEN, BLOCK.COOKED_CHICKEN, BLOCK.EGG]) {
   check(`${BLOCK_DEFS[id].name} is an item with a sprite`, isItem(id) && !!itemPixels(id));
 }
+check('wheat seeds are an item with a sprite', isItem(BLOCK.WHEAT_SEEDS) && !!itemPixels(BLOCK.WHEAT_SEEDS));
+check('emerald is an item with a sprite', isItem(BLOCK.EMERALD) && !!itemPixels(BLOCK.EMERALD));
 
-// Villages get farm plots (wheat blocks on planks) and an animal pen (a planks fence).
+// Villages get a central irrigated crop farm with flowers and an animal pen.
 const farm = farmCells(60);
-check('a farm has wheat blocks on planks', farm.some((c) => c.id === WB) && farm.some((c) => c.id === BLOCK.PLANKS));
+check('a village farm has tilled rows, growing crops, and irrigation', farm.some((c) => c.id === BLOCK.FARMLAND) && farm.some((c) => c.id === BLOCK.WHEAT_CROP_3) && farm.some((c) => c.id === BLOCK.WATER));
+check('a village farm grows dye flowers around its edge', [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER, BLOCK.BLUE_FLOWER, BLOCK.WHITE_FLOWER].every((id) => farm.some((c) => c.id === id)));
 check('the animal pen is a planks fence', penCells(60).every((c) => c.id === BLOCK.PLANKS));
 
 // Iron golems: a golem is peaceful until a villager is hit, then it turns on the player.

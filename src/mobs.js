@@ -5,6 +5,7 @@ import { shouldBurn, burnStep } from './burning.js';
 import { buildMobModel } from './mob-model.js';
 import { LIGHT } from './lighting.js';
 import { villagesNear, LEVEL_BOX, HOUSES } from './village.js';
+import { isBedHead } from './building.js';
 import { EXTRA_MOBS } from './mob-catalogue.js';
 import { torchSpawnCell, findTorches } from './torch-spawn.js';
 import {
@@ -24,6 +25,7 @@ export const CLIMB_HEIGHT = 1;
 // Shearing a sheep gives this much wool, and its wool grows back after this many seconds.
 export const SHEARED_WOOL = 2;
 export const SHEEP_WOOL_REGROW = 60;
+const FLEECE_WOOL = new Map([[0xc83232, BLOCK.RED_WOOL], [0xe9c12b, BLOCK.YELLOW_WOOL], [0x365bd8, BLOCK.BLUE_WOOL], [0xf0eee4, BLOCK.WOOL]]);
 // A tamed wolf this far from the player teleports back to them, and is never removed for distance.
 export const TAME_TELEPORT_RANGE = 24;
 
@@ -160,6 +162,11 @@ export class Mob {
     // Sheep can be sheared for wool. A sheared sheep keeps living, and its wool grows back after a while.
     this.sheared = false;
     this.woolTimer = 0;
+    this.fleeceColor = 0xffffff;
+    this.fleeceWoolId = BLOCK.WOOL;
+    this.bedTarget = null;
+    this.enteredHome = false;
+    this.sleeping = false;
     // A wolf can be tamed with a bone. A tamed wolf follows the player and does not wander off.
     this.tamed = false;
     // True while the mob is standing on something. Jumps need it, so a mob cannot jump in mid-air.
@@ -384,6 +391,7 @@ export class Mob {
       this.woolTimer -= dt;
       if (this.woolTimer <= 0) this.sheared = false;
     }
+    if (this.model.wool) this.model.wool.visible = !this.sheared;
     this.hitFlash = Math.max(0, this.hitFlash - dt);
 
     let mx = 0;
@@ -432,17 +440,43 @@ export class Mob {
       mz = this.wanderDir.y;
     }
 
-    // At night a villager walks to the nearest house door, opens it, and goes inside. It stays in until morning.
+    // At night a villager opens its assigned house door and walks to its own bed. Sleeping never advances world time.
     if (this.type === MOB.VILLAGER && this.home) {
-      const inside = this.indoorTarget(night);
-      if (inside) {
-        const idx = inside.x - this.pos.x;
-        const idz = inside.z - this.pos.z;
-        const idist = Math.hypot(idx, idz);
-        if (idist > 0.2) { mx = idx / idist; mz = idz / idist; }
-        else { mx = 0; mz = 0; }
-        // Standing at the door opens it, so the villager can walk through.
-        if (idist < 1.2) this.world.openDoorAt?.(Math.floor(inside.x), Math.floor(this.pos.y), Math.floor(inside.z));
+      if (!night) {
+        this.sleeping = false;
+        this.enteredHome = false;
+      } else if (this.bedTarget) {
+        const wasEnteredHome = this.enteredHome;
+        const target = this.enteredHome ? this.bedTarget : this.bedTarget.door;
+        const dx = target.x - this.pos.x;
+        const dz = target.z - this.pos.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance > 0.4) {
+          mx = dx / distance;
+          mz = dz / distance;
+          this.sleeping = false;
+        } else if (!this.enteredHome) {
+          this.enteredHome = true;
+          this.sleeping = false;
+        } else {
+          mx = 0;
+          mz = 0;
+          this.sleeping = true;
+        }
+        const doorDistance = Math.hypot(this.bedTarget.door.x - this.pos.x, this.bedTarget.door.z - this.pos.z);
+        if (!wasEnteredHome && doorDistance < 1.2) {
+          this.world.openDoorAt?.(this.bedTarget.door.blockX, Math.floor(this.pos.y), this.bedTarget.door.blockZ);
+        }
+      } else {
+        const inside = this.indoorTarget(night);
+        if (inside) {
+          const dx = inside.x - this.pos.x;
+          const dz = inside.z - this.pos.z;
+          const distance = Math.hypot(dx, dz);
+          if (distance > 0.2) { mx = dx / distance; mz = dz / distance; }
+          else { mx = 0; mz = 0; }
+          if (distance < 1.2) this.world.openDoorAt?.(Math.floor(inside.x), Math.floor(this.pos.y), Math.floor(inside.z));
+        }
       }
     }
 
@@ -504,11 +538,17 @@ export class Mob {
     const swing = moving ? Math.sin(this.walkPhase) * 0.6 : 0;
     this.model.legs.forEach((leg, i) => { leg.rotation.x = i % 2 === 0 ? swing : -swing; });
     this.model.arms.forEach((arm, i) => { arm.rotation.x = i % 2 === 0 ? -swing : swing; });
+    if (this.model.tail) this.model.tail.rotation.z = Math.sin(this.walkPhase * 0.7 + 1) * 0.18;
     // The body faces the way the mob walks: most mobs face opposite their travel, and iron golems and zombies face
     // along it (walksBackwards).
     if (mx !== 0 || mz !== 0) {
       const facing = this.def.walksBackwards ? 1 : -1;
       this.group.rotation.y = Math.atan2(facing * mx, facing * mz);
+    }
+    this.group.rotation.z = 0;
+    if (this.sleeping && this.bedTarget) {
+      this.group.position.set(this.bedTarget.x, this.bedTarget.y + 1.05, this.bedTarget.z);
+      this.group.rotation.z = Math.PI / 2;
     }
   }
 
@@ -549,7 +589,20 @@ export class Mob {
     if (this.type !== MOB.SHEEP || this.sheared || this.dead) return 0;
     this.sheared = true;
     this.woolTimer = SHEEP_WOOL_REGROW;
+    if (this.model.wool) this.model.wool.visible = false;
     return SHEARED_WOOL;
+  }
+
+  dyeFleece(color) {
+    if (this.type !== MOB.SHEEP || this.dead || this.fleeceColor === color) return false;
+    this.fleeceColor = color;
+    this.fleeceWoolId = FLEECE_WOOL.get(color) ?? BLOCK.WOOL;
+    for (const material of this.model.woolMaterials ?? []) material.color.setHex(color);
+    return true;
+  }
+
+  dropIds() {
+    return this.def.drops.map((id) => this.type === MOB.SHEEP && id === BLOCK.WOOL ? this.fleeceWoolId : id);
   }
 
   // Applies damage and knockback away from (fromX, fromZ). Returns true if the mob died.
@@ -606,6 +659,31 @@ export class MobManager {
     }
   }
 
+  findBedTarget(home) {
+    const occupied = new Set(this.mobs
+      .filter((m) => m.type === MOB.VILLAGER && !m.dead && m.bedTarget)
+      .map((m) => `${m.bedTarget.x},${m.bedTarget.y},${m.bedTarget.z}`));
+    for (const house of HOUSES) {
+      const bx = home.x + house.x + 1;
+      const bz = home.z + (house.doorZ === 0 ? house.z + house.d - 2 : house.z + 1);
+      for (let y = CHUNK_HEIGHT - 2; y > 0; y--) {
+        const id = this.world.getBlock(bx, y, bz);
+        if (id === BLOCK.AIR) continue;
+        if (!isBedHead(id)) continue;
+        if (occupied.has(`${bx + 0.5},${y},${bz + 0.5}`)) break;
+        const doorBlockX = home.x + house.x + Math.floor(house.w / 2);
+        const doorBlockZ = home.z + house.z + house.doorZ;
+        return {
+          x: bx + 0.5,
+          y,
+          z: bz + 0.5,
+          door: { x: doorBlockX + 0.5, z: doorBlockZ + 0.5, blockX: doorBlockX, blockZ: doorBlockZ },
+        };
+      }
+    }
+    return null;
+  }
+
   // Puts one villager or golem on the ground at a random cell in the village's levelled area, if it is clear.
   placeOnVillageGround(type, home) {
     const x = home.x + Math.floor(LEVEL_BOX.x0 + Math.random() * (LEVEL_BOX.x1 - LEVEL_BOX.x0));
@@ -617,6 +695,7 @@ export class MobManager {
       if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR) return;
       const mob = new Mob(this.scene, this.world, type, x + 0.5, y + 1, z + 0.5);
       mob.home = home;
+      if (type === MOB.VILLAGER) mob.bedTarget = this.findBedTarget(home);
       this.mobs.push(mob);
       return;
     }

@@ -32,17 +32,31 @@ export const FURNACE_STATE = {
 // Single-cell blocks return an empty list.
 // The bed's block id, repeated here because blocks.js imports this file, so importing BLOCK back would be a cycle.
 // It is fixed (BLOCK.BED is 21 in blocks.js) and checked by a test.
-const BED_ID = 21;
 // The bed's second half (the foot). It is all red, so it is its own block. Placing a bed writes a foot next to it.
 // Id 80 is new and never reused.
 export const BED_FOOT = 80;
+export const BED_COLORS = {
+  red: { head: 21, foot: BED_FOOT, dye: 142 },
+  blue: { head: 156, foot: 157, dye: 144 },
+  yellow: { head: 158, foot: 159, dye: 143 },
+  white: { head: 160, foot: 161, dye: 145 },
+};
+const BED_HEADS = new Set(Object.values(BED_COLORS).map((b) => b.head));
+const BED_FEET = new Set(Object.values(BED_COLORS).map((b) => b.foot));
+export function isBedId(id) { return BED_HEADS.has(id) || BED_FEET.has(id); }
+export function isBedHead(id) { return BED_HEADS.has(id); }
+export function isBedFoot(id) { return BED_FEET.has(id); }
+export function bedHeadFor(id) { return [...Object.values(BED_COLORS)].find((b) => b.head === id || b.foot === id)?.head ?? null; }
+export function bedFootFor(id) { return [...Object.values(BED_COLORS)].find((b) => b.head === id || b.foot === id)?.foot ?? null; }
+export function bedPairFor(id) { return Object.values(BED_COLORS).find((b) => b.head === id || b.foot === id) ?? null; }
+export function bedVariantForDye(dyeId) { return Object.values(BED_COLORS).find((b) => b.dye === dyeId) ?? null; }
 export function partOffsets(id, facing) {
   if (id === DOOR.DOOR || id === DOOR.OPEN_DOOR) return [{ dx: 0, dy: 1, dz: 0 }];
-  if (id === BED_ID) {
+  if (BED_HEADS.has(id)) {
     const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
     return [{ dx: sx, dy: 0, dz: sz }];
   }
-  if (id === BED_FOOT) {
+  if (BED_FEET.has(id)) {
     // The foot's head is the other cell, one step back along the facing.
     const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
     return [{ dx: -sx, dy: 0, dz: -sz }];

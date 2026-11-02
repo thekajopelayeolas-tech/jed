@@ -14,8 +14,8 @@ const PALETTES = {
   sheep: { skin: 0x4a4a4a, shirt: 0xf4f4ee, trousers: 0x3c3c3c, eye: 0x111111, patch: 0xf4f4ee, nose: 0x3a3a3a },
   // Pig: pink body and snout, short legs.
   pig: { skin: 0xf0a0a8, shirt: 0xf0a0a8, trousers: 0xd98890, eye: 0x111111 },
-  // Rabbit: soft brown body with a pale belly and long ears.
-  rabbit: { skin: 0xb08a62, shirt: 0xc9a77c, trousers: 0x8a6a48, eye: 0x111111 },
+  // Rabbit: warm brown coat, cream underside, pink nose and bright eyes.
+  rabbit: { skin: 0xc99a68, shirt: 0xb98555, trousers: 0x795335, eye: 0x20170f },
   // Chicken: white body with a red comb and yellow legs.
   chicken: { skin: 0xf5f5f5, shirt: 0xf5f5f5, trousers: 0xe8b33a, eye: 0x111111 },
   // Villager: brown robe over pale skin.
@@ -169,6 +169,12 @@ export function buildMobModel(kind) {
     const body = part(0.8, 0.5, 0.5, p.shirt, 0, 0.55, 0);
     const head = part(0.4, 0.4, 0.4, p.skin, 0.5, 0.65, 0);
     const snout = part(0.1, 0.12, 0.2, p.trousers, 0.73, 0.6, 0);
+    const nostrilL = part(0.025, 0.045, 0.04, 0x66383a, 0.79, 0.61, -0.055);
+    const nostrilR = part(0.025, 0.045, 0.04, 0x66383a, 0.79, 0.61, 0.055);
+    const earL = part(0.12, 0.16, 0.08, p.skin, 0.44, 0.94, -0.14);
+    const earR = part(0.12, 0.16, 0.08, p.skin, 0.44, 0.94, 0.14);
+    const innerEarL = part(0.06, 0.09, 0.02, 0xc76c76, 0.47, 0.95, -0.19);
+    const innerEarR = part(0.06, 0.09, 0.02, 0xc76c76, 0.47, 0.95, 0.19);
     const legs = [];
     for (const [x, z] of [[-0.25, -0.18], [-0.25, 0.18], [0.25, -0.18], [0.25, 0.18]]) {
       const leg = new THREE.Group();
@@ -178,34 +184,62 @@ export function buildMobModel(kind) {
       group.add(leg);
     }
     // A pig has a short curly tail, and dark eyes on the front of its head.
-    const tail = part(0.12, 0.12, 0.06, p.skin, -0.45, 0.7, 0);
+    // A curled tail is built from short segments instead of a single stub.
+    const tail = new THREE.Group();
+    tail.position.set(-0.4, 0.66, 0);
+    tail.add(part(0.08, 0.08, 0.06, p.skin, -0.06, 0.02, 0));
+    tail.add(part(0.06, 0.1, 0.06, p.skin, -0.1, 0.09, 0));
+    tail.add(part(0.06, 0.08, 0.06, p.skin, -0.04, 0.16, 0));
     const eyeL = part(0.05, 0.05, 0.02, p.eye, 0.72, 0.72, -0.12);
     const eyeR = part(0.05, 0.05, 0.02, p.eye, 0.72, 0.72, 0.12);
-    group.add(body, head, snout, tail, eyeL, eyeR);
-    return { group, legs, arms: [], materials, height: 0.9 };
+    group.add(body, head, snout, nostrilL, nostrilR, earL, earR, innerEarL, innerEarR, tail, eyeL, eyeR);
+    return { group, legs, arms: [], tail, materials, height: 0.9 };
   }
 
-  // Rabbit: small body, round head with long ears, two hind legs.
+  // Rabbit: compact body, tall separated ears, cheek puffs, whiskers, buck teeth and four feet.
   if (kind === 'rabbit') {
-    const body = part(0.4, 0.35, 0.35, p.shirt, 0, 0.35, 0);
-    const head = part(0.25, 0.25, 0.25, p.skin, 0.2, 0.55, 0);
-    const earL = part(0.06, 0.25, 0.08, p.skin, 0.2, 0.8, -0.07);
-    const earR = part(0.06, 0.25, 0.08, p.skin, 0.2, 0.8, 0.07);
+    const body = part(0.48, 0.34, 0.34, p.shirt, -0.02, 0.36, 0);
+    const rump = part(0.2, 0.27, 0.35, p.trousers, -0.19, 0.38, 0);
+    const belly = part(0.28, 0.09, 0.29, 0xe9d9c1, 0.02, 0.19, 0);
+    const head = part(0.31, 0.3, 0.3, p.skin, 0.23, 0.58, 0);
+    const earL = new THREE.Group();
+    const earR = new THREE.Group();
+    earL.position.set(0.16, 0.72, -0.105);
+    earR.position.set(0.16, 0.72, 0.105);
+    earL.rotation.x = -0.12;
+    earR.rotation.x = 0.12;
+    earL.add(part(0.075, 0.38, 0.08, p.skin, 0, 0.19, 0));
+    earR.add(part(0.075, 0.38, 0.08, p.skin, 0, 0.19, 0));
+    const innerEarL = part(0.02, 0.29, 0.035, 0xe7a6a0, 0.045, 0.19, 0);
+    const innerEarR = part(0.02, 0.29, 0.035, 0xe7a6a0, 0.045, 0.19, 0);
+    earL.add(innerEarL);
+    earR.add(innerEarR);
     const legs = [];
-    for (const z of [-0.1, 0.1]) {
+    for (const [x, z, hind] of [[-0.14, -0.12, true], [-0.14, 0.12, true], [0.12, -0.12, false], [0.12, 0.12, false]]) {
       const leg = new THREE.Group();
-      leg.position.set(-0.1, 0.2, z);
-      leg.add(part(0.12, 0.2, 0.12, p.trousers, 0, -0.1, 0));
+      leg.position.set(x, 0.23, z);
+      leg.add(part(hind ? 0.16 : 0.11, hind ? 0.21 : 0.17, 0.12, p.trousers, 0, -0.08, 0));
+      leg.add(part(0.15, 0.07, 0.12, 0xe9d9c1, 0.055, -0.18, 0));
       legs.push(leg);
       group.add(leg);
     }
-    // A rabbit has dark eyes, a pink nose, and a small white cotton tail at the back.
-    const eyeL = part(0.05, 0.05, 0.02, p.eye, 0.33, 0.6, -0.08);
-    const eyeR = part(0.05, 0.05, 0.02, p.eye, 0.33, 0.6, 0.08);
-    const nose = part(0.04, 0.04, 0.04, 0xe8a6a6, 0.33, 0.52, 0);
-    const cotton = part(0.1, 0.1, 0.1, 0xf4f4f4, -0.22, 0.38, 0);
-    group.add(body, head, earL, earR, eyeL, eyeR, nose, cotton);
-    return { group, legs, arms: [], materials, height: 0.6 };
+    // Eyes sit on the side/front of the face with a white glint so they remain readable in dim scenes.
+    const eyeL = part(0.035, 0.07, 0.035, 0xf7ead5, 0.34, 0.63, -0.13);
+    const eyeR = part(0.035, 0.07, 0.035, 0xf7ead5, 0.34, 0.63, 0.13);
+    const pupilL = part(0.025, 0.045, 0.025, p.eye, 0.36, 0.63, -0.14);
+    const pupilR = part(0.025, 0.045, 0.025, p.eye, 0.36, 0.63, 0.14);
+    const muzzleL = part(0.12, 0.1, 0.12, 0xf1e3cc, 0.39, 0.51, -0.055);
+    const muzzleR = part(0.12, 0.1, 0.12, 0xf1e3cc, 0.39, 0.51, 0.055);
+    const nose = part(0.05, 0.045, 0.07, 0xe58f98, 0.46, 0.55, 0);
+    const mouth = part(0.018, 0.065, 0.018, 0x62463d, 0.455, 0.48, 0);
+    const toothL = part(0.035, 0.05, 0.025, 0xfff5dc, 0.45, 0.435, -0.018);
+    const toothR = part(0.035, 0.05, 0.025, 0xfff5dc, 0.45, 0.435, 0.018);
+    const whiskerL = part(0.012, 0.012, 0.2, 0xe3d5bf, 0.4, 0.51, -0.15);
+    const whiskerR = part(0.012, 0.012, 0.2, 0xe3d5bf, 0.4, 0.51, 0.15);
+    const cotton = part(0.16, 0.16, 0.16, 0xf7f3e8, -0.29, 0.42, 0);
+    group.add(body, rump, belly, head, earL, earR, eyeL, eyeR, pupilL, pupilR, muzzleL, muzzleR, nose, mouth, toothL, toothR, whiskerL, whiskerR, cotton);
+    group.scale.y = 0.65;
+    return { group, legs, arms: [], ears: [earL, earR], materials, height: 0.72 };
   }
 
   // Chicken: a small round body, a head with a red comb, and two thin legs.
@@ -228,7 +262,10 @@ export function buildMobModel(kind) {
     const feathers = part(0.12, 0.2, 0.25, p.shirt, -0.26, 0.5, 0);
     const eyeL = part(0.04, 0.04, 0.02, p.eye, 0.2, 0.7, -0.1);
     const eyeR = part(0.04, 0.04, 0.02, p.eye, 0.2, 0.7, 0.1);
-    group.add(body, head, comb, beak, wingL, wingR, feathers, eyeL, eyeR);
+    const wattle = part(0.06, 0.1, 0.05, 0xd9342b, 0.24, 0.53, 0);
+    const toeL = part(0.1, 0.035, 0.04, p.trousers, 0.035, 0.025, -0.08);
+    const toeR = part(0.1, 0.035, 0.04, p.trousers, 0.035, 0.025, 0.08);
+    group.add(body, head, comb, beak, wingL, wingR, feathers, eyeL, eyeR, wattle, toeL, toeR);
     return { group, legs, arms: [], materials, height: 0.7 };
   }
 
@@ -296,11 +333,14 @@ export function buildMobModel(kind) {
   }
 
   // Cow: head at the front, body, four legs. The body is patched brown and white, with a white face and pink nose.
-  const body = part(0.9, 0.5, 0.5, p.shirt, 0, 0.6, 0);
-  const patchA = part(0.3, 0.3, 0.52, p.patch, -0.2, 0.7, 0);
-  const patchB = part(0.2, 0.2, 0.52, p.patch, 0.2, 0.55, 0);
+  const isSheep = kind === 'sheep';
+  const body = part(0.9, 0.5, 0.5, isSheep ? 0x9b866f : p.shirt, 0, 0.6, 0);
+  const patchA = isSheep ? null : part(0.3, 0.3, 0.52, p.patch, -0.2, 0.7, 0);
+  const patchB = isSheep ? null : part(0.2, 0.2, 0.52, p.patch, 0.2, 0.55, 0);
   const head = part(0.4, 0.4, 0.4, p.skin, 0.55, 0.75, 0);
   const nose = part(0.1, 0.12, 0.2, p.nose, 0.78, 0.68, 0);
+  const eyeL = part(0.025, 0.065, 0.065, p.eye, 0.755, 0.82, -0.13);
+  const eyeR = part(0.025, 0.065, 0.065, p.eye, 0.755, 0.82, 0.13);
   const legs = [];
   for (const [x, z] of [[-0.3, -0.18], [-0.3, 0.18], [0.3, -0.18], [0.3, 0.18]]) {
     const leg = new THREE.Group();
@@ -309,37 +349,73 @@ export function buildMobModel(kind) {
     legs.push(leg);
     group.add(leg);
   }
-  // Cow: two small pale horns on top of the head.
-  const hornL = part(0.06, 0.12, 0.06, 0xe8e0c8, 0.5, 0.97, -0.14);
-  const hornR = part(0.06, 0.12, 0.06, 0xe8e0c8, 0.5, 0.97, 0.14);
-  group.add(body, patchA, patchB, head, nose, hornL, hornR);
+  group.add(body, head, nose, eyeL, eyeR);
+  if (!isSheep) group.add(patchA, patchB);
+  let wool = null;
+  let woolMaterials = [];
+  if (isSheep) {
+    // Layered fleece rounds out the silhouette. It is independently hidden when the sheep is sheared.
+    wool = new THREE.Group();
+    wool.name = 'sheep-wool';
+    const woolMaterialStart = materials.length;
+    wool.add(
+      part(0.96, 0.58, 0.56, p.shirt, -0.02, 0.62, 0),
+      part(0.3, 0.24, 0.58, p.shirt, -0.32, 0.76, 0),
+      part(0.28, 0.25, 0.56, p.shirt, 0.27, 0.72, 0),
+      part(0.3, 0.2, 0.42, p.shirt, -0.05, 0.96, 0),
+      part(0.3, 0.24, 0.34, p.shirt, 0.43, 0.82, 0),
+    );
+    woolMaterials = materials.slice(woolMaterialStart);
+    group.add(wool);
+  }
+  // Only cows have horns; giving every catalogue quadruped horns made the shared body look like a cow costume.
+  if (kind === 'cow') {
+    const hornL = part(0.06, 0.12, 0.06, 0xe8e0c8, 0.5, 0.97, -0.14);
+    const hornR = part(0.06, 0.12, 0.06, 0xe8e0c8, 0.5, 0.97, 0.14);
+    group.add(hornL, hornR);
+    // A small udder and teats under the belly distinguish a cow's silhouette from other quadrupeds.
+    group.add(part(0.22, 0.13, 0.2, 0xe7a6a6, -0.05, 0.31, 0));
+    for (const z of [-0.07, 0.07]) group.add(part(0.035, 0.1, 0.035, 0xe7a6a6, -0.02, 0.22, z));
+  }
   // Catalogue quadrupeds share this body, so each one gets its own features on top of it. The features are placed
   // from the body's centre, so a kind with a tall head, a shell, or a tail reads as itself.
   // Sheep: a woolly top and dark eyes, so it reads as a sheep and not a plain white cow.
   if (kind === 'sheep') {
-    group.add(part(0.46, 0.14, 0.46, p.shirt, -0.05, 0.92, 0), part(0.06, 0.06, 0.02, p.eye, 0.76, 0.8, -0.1), part(0.06, 0.06, 0.02, p.eye, 0.76, 0.8, 0.1));
+    group.add(part(0.07, 0.1, 0.06, p.skin, 0.4, 0.84, -0.22), part(0.07, 0.1, 0.06, p.skin, 0.4, 0.84, 0.22));
   }
   const feature = QUAD_FEATURES[kind];
   if (feature) feature(part, group, p);
-  return { group, legs, arms: [], materials, height: 0.9 };
+  return { group, legs, arms: [], wool, woolMaterials, materials, height: 0.9 };
 }
 
 // Extra parts for the catalogue quadrupeds. Each adds a feature that sets it apart from the others.
 const QUAD_FEATURES = {
-  horse: (part, g, p) => { g.add(part(0.12, 0.6, 0.14, p.trousers, 0.62, 0.95, 0), part(0.1, 0.12, 0.3, p.trousers, 0.7, 0.9, 0)); },
+  horse: (part, g, p) => {
+    g.add(part(0.12, 0.6, 0.14, p.trousers, 0.62, 0.95, 0), part(0.1, 0.12, 0.3, p.trousers, 0.7, 0.9, 0));
+    g.add(part(0.08, 0.14, 0.07, p.trousers, 0.55, 1.03, -0.12), part(0.08, 0.14, 0.07, p.trousers, 0.55, 1.03, 0.12));
+    g.add(part(0.16, 0.38, 0.32, p.trousers, 0.34, 1.02, 0), part(0.26, 0.08, 0.12, p.trousers, -0.55, 0.58, 0));
+    for (const [x, z] of [[-0.3, -0.18], [-0.3, 0.18], [0.3, -0.18], [0.3, 0.18]]) g.add(part(0.17, 0.1, 0.17, 0x332820, x, 0.03, z));
+  },
   donkey: (part, g, p) => { g.add(part(0.1, 0.4, 0.08, p.trousers, 0.58, 1.0, 0.12), part(0.1, 0.4, 0.08, p.trousers, 0.58, 1.0, -0.12)); },
   mule: (part, g, p) => { g.add(part(0.12, 0.55, 0.14, p.trousers, 0.62, 0.95, 0), part(0.1, 0.4, 0.08, p.trousers, 0.58, 1.0, 0.12)); },
   llama: (part, g, p) => { g.add(part(0.12, 0.4, 0.12, p.skin, 0.52, 1.1, 0), part(0.14, 0.2, 0.16, p.skin, 0.58, 1.3, 0)); },
-  goat: (part, g, p) => { g.add(part(0.05, 0.22, 0.05, 0xd9d4c4, 0.5, 1.0, 0.1), part(0.05, 0.22, 0.05, 0xd9d4c4, 0.5, 1.0, -0.1)); },
+  goat: (part, g, p) => { g.add(part(0.05, 0.22, 0.05, 0xd9d4c4, 0.5, 1.0, 0.1), part(0.05, 0.22, 0.05, 0xd9d4c4, 0.5, 1.0, -0.1), part(0.1, 0.16, 0.08, p.trousers, 0.67, 0.58, 0)); },
   camel: (part, g, p) => { g.add(part(0.3, 0.3, 0.3, p.shirt, 0, 1.0, 0)); },
   sniffer: (part, g, p) => { g.add(part(0.3, 0.12, 0.12, p.trousers, 0.85, 0.7, 0)); },
   armadillo: (part, g, p) => { g.add(part(0.85, 0.3, 0.5, 0x8a5a3a, -0.02, 0.85, 0)); },
   ocelot: (part, g, p) => { g.add(part(0.04, 0.3, 0.04, p.trousers, -0.65, 0.7, 0)); },
   cat: (part, g, p) => { g.add(part(0.05, 0.25, 0.05, p.trousers, -0.65, 0.8, 0)); },
   fox: (part, g, p) => { g.add(part(0.08, 0.14, 0.08, p.trousers, 0.5, 1.05, 0.1), part(0.08, 0.14, 0.08, p.trousers, 0.5, 1.05, -0.1), part(0.3, 0.12, 0.12, p.shirt, -0.6, 0.6, 0)); },
-  panda: (part, g, p) => { g.add(part(0.14, 0.14, 0.14, 0x2a2a2a, 0.62, 0.95, 0.14), part(0.14, 0.14, 0.14, 0x2a2a2a, 0.62, 0.95, -0.14)); },
+  panda: (part, g, p) => {
+    g.add(part(0.14, 0.14, 0.14, 0x2a2a2a, 0.55, 1.0, 0.15), part(0.14, 0.14, 0.14, 0x2a2a2a, 0.55, 1.0, -0.15));
+    g.add(part(0.04, 0.28, 0.1, 0x2a2a2a, 0.76, 0.76, 0.12), part(0.04, 0.28, 0.1, 0x2a2a2a, 0.76, 0.76, -0.12));
+  },
   polar_bear: (part, g, p) => { g.add(part(0.4, 0.4, 0.4, p.skin, 0.1, 0.9, 0)); },
-  turtle: (part, g, p) => { g.add(part(0.9, 0.1, 0.7, 0x4a6a3a, 0, 0.92, 0)); },
+  turtle: (part, g, p) => {
+    g.add(part(0.76, 0.2, 0.62, 0x4a6a3a, -0.02, 0.91, 0));
+    g.add(part(0.54, 0.1, 0.44, 0x6a8a4a, -0.02, 1.04, 0), part(0.1, 0.22, 0.08, 0x6a8a4a, 0.65, 0.75, 0));
+    g.add(part(0.07, 0.07, 0.07, p.eye, 0.69, 0.81, -0.14), part(0.07, 0.07, 0.07, p.eye, 0.69, 0.81, 0.14));
+  },
   spider: (part, g, p) => { g.add(part(0.5, 0.4, 0.4, p.shirt, -0.5, 0.7, 0), part(0.25, 0.25, 0.25, 0xd01010, 0.7, 0.85, 0.12), part(0.25, 0.25, 0.25, 0xd01010, 0.7, 0.85, -0.12)); },
   frog: (part, g, p) => { g.add(part(0.2, 0.1, 0.2, p.skin, 0.5, 0.95, 0.12), part(0.2, 0.1, 0.2, p.skin, 0.5, 0.95, -0.12)); },
 };

@@ -27,13 +27,21 @@ function heartIcon(full) {
 }
 
 // A burger, drawn from burger.png. An empty burger is the same picture, greyed out, so the empty points still show.
-function hungerIcon(full) {
-  const el = document.createElement('img');
-  el.src = burgerUrl;
-  el.alt = '';
-  el.draggable = false;
-  el.style.cssText = `width:14px;height:14px;image-rendering:pixelated;flex:none;${full ? '' : 'filter:grayscale(1) brightness(0.45);'}`;
-  return el;
+function hungerIcon(fill) {
+  const wrap = document.createElement('span');
+  wrap.style.cssText = 'position:relative;width:14px;height:14px;display:inline-block;flex:none;';
+  const empty = document.createElement('img');
+  empty.src = burgerUrl;
+  empty.alt = '';
+  empty.draggable = false;
+  empty.style.cssText = 'position:absolute;inset:0;width:14px;height:14px;image-rendering:pixelated;filter:grayscale(1) brightness(0.45);';
+  const filled = document.createElement('img');
+  filled.src = burgerUrl;
+  filled.alt = '';
+  filled.draggable = false;
+  filled.style.cssText = `position:absolute;inset:0;width:14px;height:14px;image-rendering:pixelated;clip-path:inset(0 ${(1 - fill) * 100}% 0 0);`;
+  wrap.append(empty, filled);
+  return wrap;
 }
 
 // The crack pattern for one stage: more dark cracks appear as the stage grows. Drawn as SVG lines over a square.
@@ -77,8 +85,9 @@ function makeMeter(parent) {
       shownKind = kind;
       row.innerHTML = '';
       for (let i = 0; i < total; i++) {
-        const isFull = i < filled;
-        const icon = kind === 'heart' ? heartIcon(isFull) : kind === 'armour' ? armourIcon(isFull) : hungerIcon(isFull);
+        const amount = Math.max(0, Math.min(1, filled - i));
+        const isFull = amount >= 1;
+        const icon = kind === 'heart' ? heartIcon(isFull) : kind === 'armour' ? armourIcon(isFull) : hungerIcon(amount);
         row.appendChild(icon);
       }
     },
@@ -100,7 +109,7 @@ export function createHud() {
   info.style.cssText = 'position:absolute;left:8px;top:8px;font-size:13px;line-height:1.4;white-space:pre;';
   root.appendChild(info);
 
-  // Hearts and hunger sit above the hotbar: hearts on the left, hunger on the right, nine icons each.
+  // Hearts and hunger sit above the hotbar: ten icons each, with hunger showing half-points.
   const stats = document.createElement('div');
   stats.style.cssText = 'position:absolute;left:50%;bottom:86px;transform:translateX(-50%);display:flex;gap:24px;';
   root.appendChild(stats);
@@ -215,18 +224,19 @@ export function createHud() {
       status.textContent = text;
       status.style.display = text ? 'block' : 'none';
     },
-    update({ inventory, target, health: hp, maxHealth, hunger, armour, timeOfDay, pos, chunks }) {
+    update({ inventory, target, health: hp, maxHealth, hunger, armour, timeOfDay, pos, chunks, weather = 'Clear' }) {
       info.textContent =
         `XYZ: ${pos.x.toFixed(1)} ${pos.y.toFixed(1)} ${pos.z.toFixed(1)}\n` +
         `Chunks: ${chunks}\n` +
         `Time: ${(timeOfDay * 100).toFixed(0)}%` +
+        (weather !== 'Clear' ? `\nWeather: ${weather}` : '') +
         (target ? `\nLooking at: ${target}` : '');
-      // Each heart is 2 health; each hunger icon is 1 point out of 9.
+      // Each heart is 2 health; each hunger icon is 2 points, including half-filled states.
       heartBar.set(Math.ceil(hp / 2), Math.ceil(maxHealth / 2), 'heart');
       // Armour shows as shields, one per 2 defence points, up to 10 shields (a full diamond set is 12 points).
       const armourShields = Math.min(MAX_ARMOUR_SHIELDS, Math.ceil(armour / 2));
       armourBar.set(armourShields, MAX_ARMOUR_SHIELDS, 'armour');
-      hungerBar.set(hunger, MAX_HUNGER, 'hunger');
+      hungerBar.set(hunger / 2, MAX_HUNGER / 2, 'hunger');
 
       for (let i = 0; i < HOTBAR_SIZE; i++) {
         const slot = inventory.slots[i];

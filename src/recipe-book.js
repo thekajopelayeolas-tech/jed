@@ -31,8 +31,10 @@ const UTILITY_IDS = [BLOCK.BUCKET, BLOCK.WATER_BUCKET, BLOCK.SHEARS, BLOCK.BOW, 
 const DEFENCE_IDS = [BLOCK.SHIELD];
 // Food & Drinks: the farm crops and the cooked food they make. Stew is the only drink.
 const FOOD_IDS = [BLOCK.WHEAT, BLOCK.WHEAT_BLOCK, BLOCK.BREAD, BLOCK.CAKE, BLOCK.COOKIES, BLOCK.STEW, BLOCK.COOKED_CHICKEN];
+const FARM_IDS = [BLOCK.WHEAT_SEEDS, BLOCK.RED_DYE, BLOCK.YELLOW_DYE, BLOCK.BLUE_DYE, BLOCK.WHITE_DYE];
 export const CATEGORIES = [
   { name: 'Food & Drinks', test: (id) => FOOD_IDS.includes(id) },
+  { name: 'Farming & Dyes', test: (id) => FARM_IDS.includes(id) },
   // Tools & Utilities: the basics, doors, and storage, plus the tools with a tool class (pickaxes, axes, swords,
   // shovels, hoes), buckets, shears, and the bow.
   { name: 'Tools & Utilities', test: (id) => BASIC_IDS.includes(id) || DOOR_AND_STORAGE_IDS.includes(id) || TOOL_ITEMS[id] !== undefined || UTILITY_IDS.includes(id) },

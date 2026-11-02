@@ -15,6 +15,8 @@ export const MATERIAL_COLOURS = {
   stone: [0.55, 0.55, 0.55],
   iron: [0.85, 0.85, 0.9],
   diamond: [0.4, 0.9, 0.95],
+  emerald: [0.15, 0.72, 0.3],
+  rainbow: [0.72, 0.3, 0.82],
 };
 
 // Returns, for each body part the armour covers, the colour and material it should be drawn with.

@@ -4,6 +4,7 @@ import { BLOCK } from '../src/blocks.js';
 const WOOD_PICK = BLOCK.WOODEN_PICKAXE;
 const STONE_PICK = BLOCK.STONE_PICKAXE;
 const IRON_PICK = BLOCK.IRON_PICKAXE;
+const DIAMOND_PICK = BLOCK.DIAMOND_PICKAXE;
 const IRON_SWORD = BLOCK.IRON_SWORD;
 
 let failed = 0;
@@ -25,6 +26,7 @@ check('stone drops with wooden pickaxe', canHarvest(BLOCK.STONE, WOOD_PICK) === 
 check('coal needs a wooden pickaxe (bare hand: no drop)', canHarvest(BLOCK.COAL_ORE, 0) === false);
 check('iron ore needs a stone pickaxe (wood: no drop)', canHarvest(BLOCK.IRON_ORE, WOOD_PICK) === false);
 check('iron ore drops with stone pickaxe', canHarvest(BLOCK.IRON_ORE, STONE_PICK) === true);
+check('emerald ore requires a diamond-tier pickaxe', canHarvest(BLOCK.EMERALD_ORE, IRON_PICK) === false && canHarvest(BLOCK.EMERALD_ORE, DIAMOND_PICK) === true);
 check('dirt drops bare-handed', canHarvest(BLOCK.DIRT, 0) === true);
 
 // Weapon damage: bare hand 1, and the held sword sets the value.

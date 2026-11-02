@@ -36,6 +36,7 @@ const golems = mm.mobs.filter((m) => m.type === MOB.IRON_GOLEM && m.home && m.ho
 check(`a village gets up to ${VILLAGERS_PER_VILLAGE} villagers`, villagers.length > 0 && villagers.length <= VILLAGERS_PER_VILLAGE);
 check(`a village gets exactly ${GOLEMS_PER_VILLAGE} iron golem`, golems.length === GOLEMS_PER_VILLAGE);
 check('a village never gets more than its villager limit', villagers.length <= VILLAGERS_PER_VILLAGE);
+check('villagers are assigned unique generated beds', villagers.length > 0 && villagers.every((m) => m.bedTarget) && new Set(villagers.map((m) => `${m.bedTarget.x},${m.bedTarget.y},${m.bedTarget.z}`)).size === villagers.length);
 
 // Villagers and golems stand on solid ground, never in the air or underground.
 const grounded = [...villagers, ...golems].every((m) => {

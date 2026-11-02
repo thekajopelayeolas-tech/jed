@@ -1,0 +1,31 @@
+import { BLOCK } from './blocks.js';
+
+// A compact village market: villagers buy farm goods and sell useful supplies for emeralds.
+export const VILLAGER_TRADES = [
+  { id: 'wheat', input: { id: BLOCK.WHEAT, count: 10 }, output: { id: BLOCK.EMERALD, count: 1 } },
+  { id: 'chicken', input: { id: BLOCK.COOKED_CHICKEN, count: 5 }, output: { id: BLOCK.EMERALD, count: 2 } },
+  { id: 'flowers', input: { id: BLOCK.RED_FLOWER, count: 4 }, output: { id: BLOCK.EMERALD, count: 1 } },
+  { id: 'bread', input: { id: BLOCK.EMERALD, count: 1 }, output: { id: BLOCK.BREAD, count: 3 } },
+  { id: 'iron', input: { id: BLOCK.EMERALD, count: 3 }, output: { id: BLOCK.IRON_INGOT, count: 2 } },
+  { id: 'diamond', input: { id: BLOCK.EMERALD, count: 12 }, output: { id: BLOCK.DIAMOND, count: 1 } },
+  { id: 'emerald-helmet', input: { id: BLOCK.EMERALD, count: 8 }, output: { id: BLOCK.EMERALD_HELMET, count: 1 } },
+  { id: 'emerald-chest', input: { id: BLOCK.EMERALD, count: 14 }, output: { id: BLOCK.EMERALD_CHEST, count: 1 } },
+  { id: 'rainbow-gem', input: { id: BLOCK.EMERALD, count: 20 }, output: { id: BLOCK.RAINBOW_GEM, count: 1 } },
+];
+
+export function canFitTradeOutput(inventory, output) {
+  const matchingSpace = inventory.slots.reduce((sum, slot) => sum + (slot.id === output.id ? Math.max(0, 64 - slot.count) : 0), 0);
+  const emptySlots = inventory.slots.reduce((sum, slot) => sum + (slot.id === BLOCK.AIR ? 64 : 0), 0);
+  return matchingSpace + emptySlots >= output.count;
+}
+
+export function canMakeTrade(inventory, offer) {
+  return inventory.countOf(offer.input.id) >= offer.input.count && canFitTradeOutput(inventory, offer.output);
+}
+
+// Atomic transaction: insufficient payment or reward capacity leaves the inventory unchanged.
+export function executeTrade(inventory, offer) {
+  if (!canMakeTrade(inventory, offer)) return false;
+  if (!inventory.remove(offer.input.id, offer.input.count)) return false;
+  return inventory.add(offer.output.id, offer.output.count) === 0;
+}

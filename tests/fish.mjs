@@ -73,7 +73,10 @@ check('a fish model has no arms', model.arms.length === 0);
 
 // Pigs and rabbits have legs, so they walk like cows.
 check('a pig model has four legs', buildMobModel(MOB.PIG).legs.length === 4);
-check('a rabbit model has two legs', buildMobModel(MOB.RABBIT).legs.length === 2);
+const rabbit = buildMobModel(MOB.RABBIT);
+check('a rabbit model has four legs', rabbit.legs.length === 4);
+check('a rabbit model has two tall ears', rabbit.ears.length === 2 && rabbit.height >= 0.7);
+check('a rabbit model has separate eyes and a fluffy tail', rabbit.group.children.length >= 15);
 
 console.log(failed === 0 ? 'ALL PASS' : `${failed} FAILED`);
 if (failed) process.exitCode = 1;

@@ -1,67 +1,68 @@
-// Hunger model: 9 points, shown as 9 icons. Pure logic with no DOM or three.js, so tests run in Node.
+// Vanilla-style hunger, saturation, and exhaustion. Pure logic so tests run in Node.
 import { BLOCK } from './blocks.js';
 
-export const MAX_HUNGER = 9;
-// Seconds between natural hunger drops while standing or walking.
-export const HUNGER_INTERVAL = 30;
-// Sprinting uses hunger faster: time counts double toward the next drop.
-export const SPRINT_HUNGER_MULT = 2;
+export const MAX_HUNGER = 20;
+export const MAX_SATURATION = 20;
+export const EXHAUSTION_PER_HUNGER = 4;
+export const MAX_EXHAUSTION = 40;
 
 function clamp(v) {
   return Math.max(0, Math.min(MAX_HUNGER, Math.floor(v)));
 }
 
-// Hunger points restored by each edible item id. Ids not listed here cannot be eaten.
-// Raw beef gives 3 points. Cooked beef is better, giving 5. Rotten flesh is safe but poor (2 points).
-export const FOOD_POINTS = {
-  [BLOCK.BEEF]: 3,
-  [BLOCK.COOKED_BEEF]: 5,
-  [BLOCK.ROTTEN_FLESH]: 2,
-  [BLOCK.RAW_MUTTON]: 2,
-  [BLOCK.COOKED_MUTTON]: 4,
-  [BLOCK.RAW_PORK]: 3,
-  [BLOCK.COOKED_PORK]: 5,
-  [BLOCK.RAW_RABBIT]: 2,
-  [BLOCK.COOKED_RABBIT]: 4,
-  [BLOCK.RAW_FISH]: 2,
-  [BLOCK.COOKED_FISH]: 4,
-  [BLOCK.BREAD]: 5,
-  [BLOCK.CAKE]: 6,
-  [BLOCK.COOKIES]: 2,
-  [BLOCK.STEW]: 6,
-  [BLOCK.RAW_CHICKEN]: 2,
-  [BLOCK.COOKED_CHICKEN]: 6,
+// Food points and vanilla saturation modifiers. Eating restores points * modifier * 2 saturation.
+export const FOOD = {
+  [BLOCK.BEEF]: [3, 0.3], [BLOCK.COOKED_BEEF]: [8, 0.8],
+  [BLOCK.ROTTEN_FLESH]: [4, 0.1],
+  [BLOCK.RAW_MUTTON]: [2, 0.3], [BLOCK.COOKED_MUTTON]: [6, 0.8],
+  [BLOCK.RAW_PORK]: [3, 0.3], [BLOCK.COOKED_PORK]: [8, 0.8],
+  [BLOCK.RAW_RABBIT]: [3, 0.3], [BLOCK.COOKED_RABBIT]: [5, 0.6],
+  [BLOCK.RAW_FISH]: [2, 0.1], [BLOCK.COOKED_FISH]: [5, 0.6],
+  [BLOCK.BREAD]: [5, 0.6], [BLOCK.CAKE]: [2, 0.4], [BLOCK.COOKIES]: [2, 0.1],
+  [BLOCK.STEW]: [6, 0.6], [BLOCK.RAW_CHICKEN]: [2, 0.3], [BLOCK.COOKED_CHICKEN]: [6, 0.6],
 };
+// Kept as a points-only lookup for callers that only need to check whether food is edible.
+export const FOOD_POINTS = Object.fromEntries(Object.entries(FOOD).map(([id, [points]]) => [id, points]));
 
 export function foodPoints(id) {
-  return FOOD_POINTS[id] ?? 0;
+  return FOOD[id]?.[0] ?? 0;
+}
+
+export function foodSaturation(id) {
+  const [points, modifier] = FOOD[id] ?? [0, 0];
+  return points * modifier * 2;
 }
 
 export class Hunger {
-  constructor(value = MAX_HUNGER) {
+  constructor(value = MAX_HUNGER, saturation = 5, exhaustion = 0) {
     this.value = clamp(value);
-    this.timer = 0;
+    this.saturation = Math.max(0, Math.min(this.value, saturation));
+    this.exhaustion = Math.max(0, Math.min(MAX_EXHAUSTION, exhaustion));
   }
 
-  // Drains hunger over time, faster while sprinting. Returns true if a point was lost this step.
-  update(dt, sprinting = false) {
-    if (this.value <= 0) return false;
-    this.timer += dt * (sprinting ? SPRINT_HUNGER_MULT : 1);
-    if (this.timer < HUNGER_INTERVAL) return false;
-    this.timer -= HUNGER_INTERVAL;
-    this.value = Math.max(0, this.value - 1);
-    return true;
+  // Activity accumulates exhaustion; each four points consume saturation before hunger.
+  addExhaustion(amount) {
+    if (Number.isFinite(amount) && amount > 0) this.exhaustion = Math.min(MAX_EXHAUSTION, this.exhaustion + amount);
   }
 
-  // Taking damage costs one hunger point.
-  onDamage() {
-    this.value = Math.max(0, this.value - 1);
+  update() {
+    let lostHunger = false;
+    while (this.exhaustion >= EXHAUSTION_PER_HUNGER) {
+      this.exhaustion -= EXHAUSTION_PER_HUNGER;
+      if (this.saturation > 0) this.saturation = Math.max(0, this.saturation - 1);
+      else if (this.value > 0) {
+        this.value--;
+        lostHunger = true;
+      }
+    }
+    return lostHunger;
   }
 
-  // Eating adds the food's points, capped at the maximum. Returns the points actually restored.
-  eat(points) {
+  // Eating restores hunger and saturation. Returns the hunger points actually restored.
+  eat(points, saturation = 0) {
     const before = this.value;
     this.value = clamp(this.value + points);
+    this.saturation = Math.min(this.value, MAX_SATURATION, this.saturation + Math.max(0, saturation));
     return this.value - before;
   }
 
@@ -69,7 +70,7 @@ export class Hunger {
     return MAX_HUNGER;
   }
 
-  // True when every point is filled. Health only regenerates while this is true.
+  // Vanilla natural regeneration is available above 18 hunger points.
   get full() {
     return this.value >= MAX_HUNGER;
   }

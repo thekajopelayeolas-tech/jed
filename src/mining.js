@@ -30,6 +30,7 @@ const HARDNESS = {
   [BLOCK.COAL_ORE]: { hardness: 3.0, tool: TOOL.PICKAXE, tier: 1 },
   [BLOCK.IRON_ORE]: { hardness: 3.0, tool: TOOL.PICKAXE, tier: 2 },
   [BLOCK.DIAMOND_ORE]: { hardness: 4.0, tool: TOOL.PICKAXE, tier: 3 },
+  [BLOCK.EMERALD_ORE]: { hardness: 4.0, tool: TOOL.PICKAXE, tier: 4 },
   [BLOCK.RAINBOW_ORE]: { hardness: 5.0, tool: TOOL.PICKAXE, tier: 3 },
   [BLOCK.FURNACE]: { hardness: 3.5, tool: TOOL.PICKAXE, tier: 1 },
   [BLOCK.GLASS]: { hardness: 0.3, tool: null, tier: 0 },

@@ -1,11 +1,9 @@
 import { BLOCK } from './blocks.js';
-import { partOffsets, BED_FOOT, DOOR } from './building.js';
+import { partOffsets, DOOR, bedFootFor, bedPairFor, isBedId } from './building.js';
 
 const DOOR_CLOSED = DOOR.DOOR;
 const DOOR_OPEN = DOOR.OPEN_DOOR;
 
-// The bed's head id, repeated from blocks.js (BLOCK.BED) because blocks.js imports building.js.
-const BED_ID = 21;
 import { Chunk, surfaceHeight } from './chunk.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
 import { buildChunkGeometry, createChunkMeshes } from './mesher.js';
@@ -20,6 +18,8 @@ export class World {
     this.opaqueMat = opaqueMat;
     this.transMat = transMat;
     this.chunks = new Map();
+    this.litChunks = new Set();
+    this.pendingLighting = [];
     // Block data for edited chunks that have been unloaded. Key is "cx,cz", value is a Uint8Array.
     this.edits = new Map();
     // Facing for edited chunks, kept beside `edits` with the same keys. Blocks are stored by id, so this stays separate.
@@ -54,9 +54,9 @@ export class World {
       const cur = this.getBlock(wx + p.dx, wy + p.dy, wz + p.dz);
       if (cur !== BLOCK.AIR && cur !== BLOCK.WATER) return false;
     }
-    // A bed's head is the bed block, and its other half is the foot, which has its own red texture.
+    // A bed head gets the matching colored foot block, using the same stored facing.
     const headId = id;
-    const otherId = id === BED_ID ? BED_FOOT : id;
+    const otherId = bedFootFor(id) ?? id;
     if (!this.setBlock(wx, wy, wz, headId, facing)) return false;
     for (const p of parts) this.setBlock(wx + p.dx, wy + p.dy, wz + p.dz, otherId, facing);
     return true;
@@ -72,8 +72,9 @@ export class World {
     // A door's other half is directly above or below it. A bed's other half is along its facing, in either
     // direction (the same facing is stored on both halves, so the bed's first half is the one behind).
     const facing = this.facingAt(wx, wy, wz);
-    const isBed = id === BED_ID || id === BED_FOOT;
-    const bedIds = [BED_ID, BED_FOOT];
+    const bed = bedPairFor(id);
+    const bedIds = bed ? [bed.head, bed.foot] : [];
+    const isBed = isBedId(id);
     const [sx, sz] = [[0, 1], [-1, 0], [0, -1], [1, 0]][facing & 3];
     // Each shape has its own neighbours. A door's other half is the cell above or below. A bed's other half is
     // the cell along its facing, in either direction, and it may be either bed id (head or foot).
@@ -197,6 +198,8 @@ export class World {
           this.scene.remove(chunk.mesh);
           chunk.mesh.traverse((o) => o.geometry && o.geometry.dispose());
         }
+        this.litChunks.delete(key);
+        this.pendingLighting = this.pendingLighting.filter((entry) => entry.key !== key);
         this.chunks.delete(key);
       }
     }
@@ -209,12 +212,19 @@ export class World {
       toLoad.push({ cx, cz, d: (cx - pcx) ** 2 + (cz - pcz) ** 2 });
     }
     toLoad.sort((a, b) => a.d - b.d);
-    for (let i = 0; i < Math.min(budget, toLoad.length); i++) {
+    const staged = budget === 1;
+    const pendingAtStart = this.pendingLighting.length;
+    const hasLitDirtyAtStart = [...this.chunks].some(([key, chunk]) => chunk.dirty && this.litChunks.has(key));
+    const generationLimit = staged
+      ? pendingAtStart === 0 && !hasLitDirtyAtStart ? Math.min(1, toLoad.length) : 0
+      : Math.min(budget, toLoad.length);
+    for (let i = 0; i < generationLimit; i++) {
       const { cx, cz } = toLoad[i];
       const chunk = new Chunk(cx, cz);
       const saved = this.edits.get(World.key(cx, cz));
       if (saved) {
         chunk.blocks.set(saved);
+        chunk.reindexCrops();
         // Facing is restored when it was saved. Older saves have none, so blocks keep the default south.
         const savedFacing = this.facingEdits.get(World.key(cx, cz));
         if (savedFacing) chunk.facing.set(savedFacing);
@@ -232,17 +242,32 @@ export class World {
         chunk.generate(this.seed);
       }
       this.chunks.set(World.key(cx, cz), chunk);
-      lightChunk(this, chunk, cx * CHUNK_SIZE, cz * CHUNK_SIZE);
+      const key = World.key(cx, cz);
+      if (staged) this.pendingLighting.push({ key, chunk, cx, cz });
+      else {
+        lightChunk(this, chunk, cx * CHUNK_SIZE, cz * CHUNK_SIZE);
+        this.litChunks.add(key);
+      }
       this.markDirty(cx - 1, cz);
       this.markDirty(cx + 1, cz);
       this.markDirty(cx, cz - 1);
       this.markDirty(cx, cz + 1);
     }
 
-    // Rebuild meshes for dirty chunks, limited per frame.
+    if (staged && pendingAtStart > 0) {
+      const entry = this.pendingLighting.shift();
+      if (entry && this.chunks.get(entry.key) === entry.chunk) {
+        lightChunk(this, entry.chunk, entry.cx * CHUNK_SIZE, entry.cz * CHUNK_SIZE);
+        this.litChunks.add(entry.key);
+      }
+    }
+
+    // Interactive loads rebuild at most one previously lit chunk per frame; tests and bulk loading retain an explicit larger budget.
     let rebuilt = 0;
+    const meshBudget = staged ? (pendingAtStart === 0 && generationLimit === 0 && !this.pendingLighting.length ? 1 : 0) : budget * 2;
     for (const chunk of this.chunks.values()) {
-      if (!chunk.dirty || rebuilt >= budget * 2) continue;
+      const key = World.key(chunk.cx, chunk.cz);
+      if (!chunk.dirty || !this.litChunks.has(key) || rebuilt >= meshBudget) continue;
       this.rebuildMesh(chunk);
       rebuilt++;
     }

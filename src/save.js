@@ -40,7 +40,11 @@ export function saveGame(world, player, inventory, timeOfDay, furnaces = new Map
     chests: chestData,
     chunks,
     facing,
-    player: { x: player.pos.x, y: player.pos.y, z: player.pos.z, health: player.health, hunger: player.hunger.value, yaw: player.yaw, pitch: player.pitch },
+    player: {
+      x: player.pos.x, y: player.pos.y, z: player.pos.z, health: player.health,
+      hunger: player.hunger.value, saturation: player.hunger.saturation, exhaustion: player.hunger.exhaustion,
+      yaw: player.yaw, pitch: player.pitch,
+    },
     inventory: inventory.slots.map((s) => ({ id: s.id, count: s.count })),
     // The off-hand shield, kept with the inventory. Saves from before the off-hand have none, so it is empty.
     offhand: { id: inventory.offhand.id, count: inventory.offhand.count },

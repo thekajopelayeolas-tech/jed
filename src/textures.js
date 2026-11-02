@@ -23,6 +23,21 @@ const PLANK = [0.75, 0.6, 0.38];
 const BARK = [0.4, 0.28, 0.14];
 const LEAF = [0.2, 0.5, 0.15];
 const NONE = [0, 0, 0, 0];
+const flowerPainter = (petal, seed) => (x, y) => {
+  if ((x === 7 || x === 8) && y >= 7 && y <= 15) return [0.18, 0.52, 0.12, 1];
+  if (y >= 9 && y <= 11 && ((x >= 4 && x <= 6) || (x >= 9 && x <= 11)) && (x + y) % 2 === 0) return [0.25, 0.62, 0.16, 1];
+  const dx = x - 7.5;
+  const dy = y - 5.5;
+  if (dx * dx + dy * dy <= 18 && noise(x, y, seed) > 0.08) return [...petal, 1];
+  if ((x === 6 || x === 9) && y >= 3 && y <= 7 && noise(x, y, seed + 1) > 0.15) return [...petal, 1];
+  return NONE;
+};
+const bedTopColor = (x, y, blanket, seed) => y < 6
+  ? jitter([0.95, 0.95, 0.92], noise(x, y, seed), 0.06)
+  : jitter(blanket, noise(x, y, seed + 1), 0.08);
+const bedSideColor = (x, y, blanket, seed) => y >= 13
+  ? jitter([0.4, 0.28, 0.14], noise(x, y, seed), 0.1)
+  : jitter(blanket.map((c) => c * 0.82), noise(x, y, seed + 1), 0.08);
 
 // Painters for one kind of tree: its wood sides and top, its planks, and its leaves. Each kind takes its own colours
 // and a seed, so the dark oak, spruce and jungle trees look different without repeating the texture code.
@@ -200,14 +215,43 @@ const PAINTERS = {
   bedSide: (x, y) => (y >= 13 ? jitter([0.4, 0.28, 0.14], noise(x, y, 22), 0.1) : jitter([0.7, 0.12, 0.12], noise(x, y, 23), 0.08)),
   // Bed foot: solid red blanket on every face, with a little grain so it reads as cloth.
   bedRed: (x, y) => jitter([0.8, 0.15, 0.15], noise(x, y, 24), 0.08),
+  bedBlueTop: (x, y) => bedTopColor(x, y, [0.18, 0.32, 0.88], 120),
+  bedBlueSide: (x, y) => bedSideColor(x, y, [0.18, 0.32, 0.88], 122),
+  bedBlueFoot: (x, y) => jitter([0.18, 0.32, 0.88], noise(x, y, 124), 0.08),
+  bedYellowTop: (x, y) => bedTopColor(x, y, [0.98, 0.78, 0.12], 126),
+  bedYellowSide: (x, y) => bedSideColor(x, y, [0.98, 0.78, 0.12], 128),
+  bedYellowFoot: (x, y) => jitter([0.98, 0.78, 0.12], noise(x, y, 130), 0.08),
+  bedWhiteTop: (x, y) => bedTopColor(x, y, [0.92, 0.92, 0.86], 132),
+  bedWhiteSide: (x, y) => bedSideColor(x, y, [0.92, 0.92, 0.86], 134),
+  bedWhiteFoot: (x, y) => jitter([0.92, 0.92, 0.86], noise(x, y, 136), 0.06),
   // Wool: soft white fibres with a little grain.
   wool: (x, y) => jitter([0.92, 0.92, 0.9], noise(x, y, 31), 0.1),
+  woolRed: (x, y) => jitter([0.8, 0.15, 0.15], noise(x, y, 160), 0.1),
+  woolYellow: (x, y) => jitter([0.95, 0.78, 0.15], noise(x, y, 162), 0.1),
+  woolBlue: (x, y) => jitter([0.2, 0.35, 0.85], noise(x, y, 164), 0.1),
   // Wheat block: a bundle of golden wheat stalks, bound with a darker band.
   wheatBlock: (x, y) => {
     const band = y === 5 || y === 10;
     if (band) return jitter([0.55, 0.42, 0.2], noise(x, y, 90), 0.06);
     return jitter([0.85, 0.72, 0.3], noise(x, y, 91), 0.1);
   },
+  farmland: (x, y) => {
+    const furrow = y === 3 || y === 11 || x % 6 === 0;
+    return jitter(furrow ? [0.25, 0.16, 0.09] : [0.38, 0.25, 0.14], noise(x, y, 140), 0.08);
+  },
+  crop0: (x, y) => (y >= 11 && (x === 7 || x === 8) ? [0.26, 0.68, 0.18, 1] : NONE),
+  crop1: (x, y) => ((x === 7 || x === 8) && y >= 8 ? [0.28, 0.7, 0.18, 1] : (y >= 10 && ((x === 5 && y === 10) || (x === 10 && y === 9)) ? [0.32, 0.76, 0.2, 1] : NONE)),
+  crop2: (x, y) => (((x === 7 || x === 8) && y >= 4) || (x === 5 && y >= 9 && y <= 11) || (x === 10 && y >= 8 && y <= 10) ? [0.35, 0.75, 0.2, 1] : NONE),
+  crop3: (x, y) => {
+    if ((x === 7 || x === 8) && y >= 1) return y < 7 ? [0.92, 0.76, 0.22, 1] : [0.42, 0.72, 0.18, 1];
+    if (y >= 4 && y <= 8 && (x === 5 || x === 10)) return [0.88, 0.7, 0.18, 1];
+    if (y >= 8 && y <= 11 && (x === 4 || x === 11)) return [0.36, 0.68, 0.18, 1];
+    return NONE;
+  },
+  redFlower: flowerPainter([0.92, 0.12, 0.12], 150),
+  yellowFlower: flowerPainter([1, 0.78, 0.1], 152),
+  blueFlower: flowerPainter([0.2, 0.42, 0.95], 154),
+  whiteFlower: flowerPainter([0.95, 0.95, 0.86], 156),
   // Furnace: grey stone with a dark firebox opening on the front.
   furnaceSide: (x, y) => (x >= 4 && x <= 11 && y >= 6 && y <= 12 ? [0.12, 0.1, 0.09, 1] : jitter([0.45, 0.45, 0.45], noise(x, y, 24), 0.14)),
   furnaceTop: (x, y) => jitter([0.42, 0.42, 0.42], noise(x, y, 25), 0.14),
@@ -223,6 +267,7 @@ const PAINTERS = {
   },
   // Diamond ore: stone with pale cyan gems.
   diamondOre: (x, y) => (noise(x, y, 26) > 0.9 ? [0.45, 0.92, 0.95, 1] : jitter(STONE, noise(x, y, 27), 0.18)),
+  emeraldOre: (x, y) => (noise(x, y, 28) > 0.9 ? [0.1, 0.82, 0.32, 1] : jitter(STONE, noise(x, y, 29), 0.18)),
   // Stone bricks: grey stone laid in offset rows with dark mortar.
   stoneBricks: (x, y) => {
     const row = Math.floor(y / 4);
@@ -315,7 +360,26 @@ export const BLOCK_TILES = {
   // The bed's foot is all red on every face, so it is a plain red tile.
   [BED_FOOT]: { top: 'bedRed', side: 'bedRed', bottom: 'bedRed' },
   [BLOCK.WOOL]: { top: 'wool', side: 'wool', bottom: 'wool' },
+  [BLOCK.RED_WOOL]: { top: 'woolRed', side: 'woolRed', bottom: 'woolRed' },
+  [BLOCK.YELLOW_WOOL]: { top: 'woolYellow', side: 'woolYellow', bottom: 'woolYellow' },
+  [BLOCK.BLUE_WOOL]: { top: 'woolBlue', side: 'woolBlue', bottom: 'woolBlue' },
   [BLOCK.WHEAT_BLOCK]: { top: 'wheatBlock', side: 'wheatBlock', bottom: 'wheatBlock' },
+  [BLOCK.FARMLAND]: { top: 'farmland', side: 'dirt', bottom: 'dirt' },
+  [BLOCK.WHEAT_CROP_0]: { top: 'crop0', side: 'crop0', bottom: 'crop0' },
+  [BLOCK.WHEAT_CROP_1]: { top: 'crop1', side: 'crop1', bottom: 'crop1' },
+  [BLOCK.WHEAT_CROP_2]: { top: 'crop2', side: 'crop2', bottom: 'crop2' },
+  [BLOCK.WHEAT_CROP_3]: { top: 'crop3', side: 'crop3', bottom: 'crop3' },
+  [BLOCK.RED_FLOWER]: { top: 'redFlower', side: 'redFlower', bottom: 'redFlower' },
+  [BLOCK.YELLOW_FLOWER]: { top: 'yellowFlower', side: 'yellowFlower', bottom: 'yellowFlower' },
+  [BLOCK.BLUE_FLOWER]: { top: 'blueFlower', side: 'blueFlower', bottom: 'blueFlower' },
+  [BLOCK.WHITE_FLOWER]: { top: 'whiteFlower', side: 'whiteFlower', bottom: 'whiteFlower' },
+  [BLOCK.EMERALD_ORE]: { top: 'emeraldOre', side: 'emeraldOre', bottom: 'emeraldOre' },
+  [BLOCK.BLUE_BED]: { top: 'bedBlueTop', side: 'bedBlueSide', bottom: 'planks' },
+  [BLOCK.BLUE_BED_FOOT]: { top: 'bedBlueFoot', side: 'bedBlueFoot', bottom: 'bedBlueFoot' },
+  [BLOCK.YELLOW_BED]: { top: 'bedYellowTop', side: 'bedYellowSide', bottom: 'planks' },
+  [BLOCK.YELLOW_BED_FOOT]: { top: 'bedYellowFoot', side: 'bedYellowFoot', bottom: 'bedYellowFoot' },
+  [BLOCK.WHITE_BED]: { top: 'bedWhiteTop', side: 'bedWhiteSide', bottom: 'planks' },
+  [BLOCK.WHITE_BED_FOOT]: { top: 'bedWhiteFoot', side: 'bedWhiteFoot', bottom: 'bedWhiteFoot' },
   // `front` is the tile for the side the block faces. Blocks without one look the same on every side.
   [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceFront', bottom: 'furnaceTop' },
   [FURNACE_STATE.LIT]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceLitSide', bottom: 'furnaceTop' },

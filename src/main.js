@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BLOCK, BLOCK_DEFS, isItem, isSolid } from './blocks.js';
-import { DOOR, STORAGE, FURNACE_STATE, BED_FOOT } from './building.js';
+import { DOOR, STORAGE, FURNACE_STATE, bedHeadFor, bedVariantForDye, isBedHead, isBedId, partOffsets } from './building.js';
 import { facingToward } from './facing.js';
 import { BOAT_ID, BOAT_TURN_RATE, boatSpotAt, nextBoatPosition } from './boat.js';
 import { useBucket } from './utilities.js';
@@ -22,9 +22,11 @@ import { createHud } from './hud.js';
 import { setupInput } from './input.js';
 import { createStartScene } from './start-scene.js';
 import { updateDayNight, createSky } from './sky.js';
+import { WeatherSystem } from './weather.js';
 import { DropManager, blockGeometry } from './drops.js';
 import { createInventoryUI } from './inventory-ui.js';
 import { createFurnaceUI } from './furnace-ui.js';
+import { createTradeUI } from './trade-ui.js';
 import { createRecipeBookUI } from './recipe-book-ui.js';
 import { createHeldView } from './held-view.js';
 import { itemTexture } from './item-icons.js';
@@ -42,11 +44,12 @@ import { bodyInLava, lavaStep } from './lava.js';
 const lavaState = { timer: 0 };
 import { blastDamage, blastBreaks, pearlLanding, PEARL_SPEED, PEARL_LIFETIME, CREEPER_BLAST_RADIUS } from './hostile.js';
 import { createSleep, sleepPose } from './sleep.js';
-import { foodPoints } from './hunger.js';
+import { foodPoints, foodSaturation } from './hunger.js';
 import { spotBesideBed } from './bed-spawn.js';
 import { createMultiplayer } from './multiplayer.js';
 import { createLobbyUI } from './lobby-ui.js';
 import { buildPlayerModel } from './character-model.js';
+import { cropDrops, grassSeedDrop, plantWheatSeed, tillSoil, tickCropGrowth } from './farming.js';
 
 // The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
 // single save and the default seed are used, so an older save still loads.
@@ -73,6 +76,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // The camera is in the scene so the held item, which is attached to it, is drawn.
 scene.add(camera);
 const sky = createSky(scene);
+const weather = new WeatherSystem(scene, SEED);
 
 const atlas = createAtlasTexture(THREE);
 const opaqueMat = new THREE.MeshLambertMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 });
@@ -133,7 +137,7 @@ function respawn() {
   const sx = 8;
   const sz = 8;
   // Load nearby terrain before searching for the surface.
-  world.update(sx, sz, 2, 16);
+  world.update(sx, sz, 0, 16);
   player.respawn(sx, findSpawn(sx, sz), sz);
 }
 
@@ -145,12 +149,17 @@ function targetHit() {
 // Coal and iron ore drop the item they are mined into, so the furnace and crafting use real materials.
 const DROP_FOR = {
   [BLOCK.GRASS]: BLOCK.DIRT,
+  [BLOCK.FARMLAND]: BLOCK.DIRT,
   [BLOCK.STONE]: BLOCK.COBBLESTONE,
   [BLOCK.COAL_ORE]: BLOCK.COAL,
   [BLOCK.DIAMOND_ORE]: BLOCK.DIAMOND,
   [BLOCK.RAINBOW_ORE]: BLOCK.RAINBOW_GEM,
+  [BLOCK.EMERALD_ORE]: BLOCK.EMERALD,
   // An open door drops a closed door, so breaking it never leaves an open door in the inventory.
   [DOOR.OPEN_DOOR]: DOOR.DOOR,
+  [BLOCK.BLUE_BED_FOOT]: BLOCK.BLUE_BED,
+  [BLOCK.YELLOW_BED_FOOT]: BLOCK.YELLOW_BED,
+  [BLOCK.WHITE_BED_FOOT]: BLOCK.WHITE_BED,
   // A lit furnace drops a furnace, not its lit state.
   [FURNACE_STATE.LIT]: BLOCK.FURNACE,
 };
@@ -205,7 +214,7 @@ function attack() {
     // Any tamed wolf takes the player's target, so it attacks the same mob until it dies.
     for (const w of mobs.mobs) if (w.tamed && w !== mob) w.wolfTarget = mob;
     mob.takeHit(dmg, player.pos.x, player.pos.z);
-    if (mob.dead) for (const id of mob.def.drops) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
+    if (mob.dead) for (const id of mob.dropIds()) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
     return;
   }
   mining.start();
@@ -221,7 +230,16 @@ function finishBreak(hit) {
   if (cleared.length > 0) {
     // One item per block, not one per cell, so a two-part block still gives a single door or bed.
     // Breaking the bed's foot gives back a bed, the same as breaking its head.
-    if (drop) drops.spawn(DROP_FOR[hit.id] ?? (hit.id === BED_FOOT ? BLOCK.BED : hit.id), x, y, z);
+      const harvestedCrop = cropDrops(hit.id);
+      if (drop && harvestedCrop) {
+        for (const item of harvestedCrop) for (let i = 0; i < item.count; i++) drops.spawn(item.id, x, y, z);
+      } else if (drop) {
+        drops.spawn(DROP_FOR[hit.id] ?? (bedHeadFor(hit.id) ?? hit.id), x, y, z);
+      }
+      if (hit.id === BLOCK.GRASS) {
+        const seed = grassSeedDrop();
+        if (seed) drops.spawn(seed, x, y, z);
+      }
     // A furnace also gives back everything it held, so breaking it never loses items.
     if (hit.id === BLOCK.FURNACE || hit.id === FURNACE_STATE.LIT) {
       const key = furnaceKey(x, y, z);
@@ -390,8 +408,96 @@ function shearAimedSheep() {
     showMessage('This sheep is already sheared.');
     return true;
   }
-  for (let i = 0; i < wool; i++) drops.spawn(BLOCK.WOOL, mob.pos.x, mob.pos.y, mob.pos.z);
+  for (let i = 0; i < wool; i++) drops.spawn(mob.fleeceWoolId, mob.pos.x, mob.pos.y, mob.pos.z);
   return true;
+}
+
+const DYE_COLOURS = new Map([
+  [BLOCK.RED_DYE, 0xc83232],
+  [BLOCK.YELLOW_DYE, 0xe9c12b],
+  [BLOCK.BLUE_DYE, 0x365bd8],
+  [BLOCK.WHITE_DYE, 0xf0eee4],
+]);
+
+function dyeAimedSheep() {
+  const dyeId = inventory.selectedItem.id;
+  const colour = DYE_COLOURS.get(dyeId);
+  if (colour === undefined || inventory.selectedItem.count <= 0) return false;
+  const eye = player.eye;
+  const direction = player.lookDir();
+  const blockHit = targetHit();
+  const blockDistance = blockHit
+    ? eye.distanceTo(new THREE.Vector3(blockHit.block.x + 0.5, blockHit.block.y + 0.5, blockHit.block.z + 0.5))
+    : REACH;
+  const mob = mobs.raycastMob(eye, direction, blockDistance);
+  if (!mob || mob.type !== MOB.SHEEP) return false;
+  if (mob.dyeFleece(colour)) {
+    inventory.consumeSelected(1);
+    showMessage('Sheep dyed!');
+  } else {
+    showMessage('That sheep already has this color.');
+  }
+  return true;
+}
+
+function dyeBed(hit) {
+  const dyeId = inventory.selectedItem.id;
+  const variant = bedVariantForDye(dyeId);
+  if (!variant || !isBedId(hit.id)) return false;
+  const facing = world.facingAt(hit.block.x, hit.block.y, hit.block.z);
+  const head = isBedHead(hit.id)
+    ? { ...hit.block }
+    : (() => {
+      const offset = partOffsets(hit.id, facing)[0];
+      return { x: hit.block.x + offset.dx, y: hit.block.y, z: hit.block.z + offset.dz };
+    })();
+  const footOffset = partOffsets(variant.head, facing)[0];
+  const foot = { x: head.x + footOffset.dx, y: head.y, z: head.z + footOffset.dz };
+  const oldHead = world.getBlock(head.x, head.y, head.z);
+  const sameColour = oldHead === variant.head;
+  if (!sameColour) {
+    if (!world.setBlock(head.x, head.y, head.z, variant.head, facing)) return true;
+    if (!world.setBlock(foot.x, foot.y, foot.z, variant.foot, facing)) {
+      world.setBlock(head.x, head.y, head.z, oldHead, facing);
+      return true;
+    }
+    inventory.consumeSelected(1);
+    showMessage('Bed dyed!');
+  } else {
+    showMessage('That bed already has this color.');
+  }
+  return true;
+}
+
+function tradeAimedVillager() {
+  const eye = player.eye;
+  const direction = player.lookDir();
+  const blockHit = targetHit();
+  const blockDistance = blockHit
+    ? eye.distanceTo(new THREE.Vector3(blockHit.block.x + 0.5, blockHit.block.y + 0.5, blockHit.block.z + 0.5))
+    : REACH;
+  const villager = mobs.raycastMob(eye, direction, blockDistance);
+  if (!villager || villager.type !== MOB.VILLAGER) return false;
+  if (crafting?.isOpen()) crafting.toggle();
+  if (furnaceUI?.isOpen()) furnaceUI.close();
+  if (chestUI?.isOpen()) chestUI.close();
+  tradeUI.open(villager);
+  document.exitPointerLock();
+  return true;
+}
+
+function farmAction(hit) {
+  const held = inventory.selectedItem;
+  const { x, y, z } = hit.block;
+  if ([BLOCK.WOODEN_HOE, BLOCK.STONE_HOE, BLOCK.IRON_HOE].includes(held.id) && (hit.id === BLOCK.GRASS || hit.id === BLOCK.DIRT)) {
+    if (tillSoil(world, x, y, z)) showMessage('Soil tilled. Add water and plant seeds.');
+    return true;
+  }
+  if (held.id === BLOCK.WHEAT_SEEDS && held.count > 0 && hit.id === BLOCK.FARMLAND) {
+    if (plantWheatSeed(world, x, y, z)) inventory.consumeSelected(1);
+    return true;
+  }
+  return false;
 }
 
 // Buckets. Returns true if the click was used by one of them.
@@ -557,7 +663,7 @@ function updateBullets(dt) {
     const hitMob = mobs.raycastMob(b.pos, b.dir, step);
     if (hitMob && !hitMob.dead) {
       hitMob.takeHit(b.damage, b.pos.x, b.pos.z);
-      if (hitMob.dead) for (const id of hitMob.def.drops) drops.spawn(id, hitMob.pos.x, hitMob.pos.y, hitMob.pos.z);
+      if (hitMob.dead) for (const id of hitMob.dropIds()) drops.spawn(id, hitMob.pos.x, hitMob.pos.y, hitMob.pos.z);
       removeBulletMesh(b);
       bullets.splice(i, 1);
       continue;
@@ -633,7 +739,7 @@ function updateCombat(dt) {
     const hitMob = mobs.raycastMob(a.pos, step.clone().normalize(), step.length());
     if (hitMob && !hitMob.dead) {
       hitMob.takeHit(a.damage, a.pos.x, a.pos.z);
-      if (hitMob.dead) for (const id of hitMob.def.drops) drops.spawn(id, hitMob.pos.x, hitMob.pos.y, hitMob.pos.z);
+      if (hitMob.dead) for (const id of hitMob.dropIds()) drops.spawn(id, hitMob.pos.x, hitMob.pos.y, hitMob.pos.z);
       arrows.splice(i, 1);
       continue;
     }
@@ -655,6 +761,10 @@ function useOrPlace() {
   if (combatPress()) return;
   if (useUtility()) return;
   const hit = targetHit();
+  if (tradeAimedVillager()) return;
+  if (hit && dyeBed(hit)) return;
+  if (dyeAimedSheep()) return;
+  if (hit && farmAction(hit)) return;
   // Holding a boat: right-click on water places it. Right-click on a placed boat gets in it.
   if (inventory.selectedItem.id === BOAT_ID && inventory.selectedItem.count > 0) {
     if (hit && placeBoat(hit)) return;
@@ -669,7 +779,7 @@ function useOrPlace() {
     }
   }
   // Either half of a bed starts sleep, so you can sleep from the head or the foot.
-  if (hit && (hit.id === BLOCK.BED || hit.id === BED_FOOT)) {
+  if (hit && isBedId(hit.id)) {
     if (sleep.start(timeOfDay)) {
       // Remember the bed and put the player on it, so the sleeping view lies on the mattress.
       sleepBed = { x: hit.block.x, y: hit.block.y, z: hit.block.z, facing: world.facingAt(hit.block.x, hit.block.y, hit.block.z) };
@@ -736,7 +846,7 @@ function eat() {
     showMessage('You are full.');
     return true;
   }
-  player.hunger.eat(points);
+  player.hunger.eat(points, foodSaturation(item.id));
   inventory.consumeSelected(1);
   return true;
 }
@@ -773,7 +883,7 @@ function placeBlock() {
   let facing = facingToward(x, z, player.pos.x, player.pos.z);
   // A bed's head must be the cell nearest the player, with its foot further away. The foot is placed along the
   // facing, so a bed faces away from the player (the foot lands behind the head, farther from them).
-  if (item.id === BLOCK.BED) facing = (facing + 2) & 3;
+  if (isBedHead(item.id)) facing = (facing + 2) & 3;
   // Doors and beds take two cells. placeWhole writes both, or neither if the second cell is blocked.
   if (world.placeWhole(x, y, z, item.id, facing)) inventory.consumeSelected(1);
 }
@@ -812,16 +922,18 @@ let sleepBed = null;
 const crafting = createInventoryUI(inventory, player, opaqueMat);
 const furnaceUI = createFurnaceUI(inventory);
 const chestUI = createChestUI(inventory);
+const tradeUI = createTradeUI(inventory);
 const recipeBook = createRecipeBookUI(inventory);
 // The creative inventory: every item, free. Only opened in creative worlds (B toggles it there).
 const creativeUI = createCreativeUI(inventory);
 
 // True while any inventory-style panel is open. Movement and mining pause while one is open.
-const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen() || recipeBook.isOpen() || chestUI.isOpen() || creativeUI.isOpen();
+const anyPanelOpen = () => crafting.isOpen() || furnaceUI.isOpen() || recipeBook.isOpen() || chestUI.isOpen() || tradeUI.isOpen() || creativeUI.isOpen();
 
 // Closes whichever panel is open and grabs the mouse back for play. Returns true if a panel was closed.
 function closeAnyPanel() {
-  if (chestUI.isOpen()) chestUI.close();
+  if (tradeUI.isOpen()) tradeUI.close();
+  else if (chestUI.isOpen()) chestUI.close();
   else if (furnaceUI.isOpen()) furnaceUI.close();
   else if (creativeUI.isOpen()) creativeUI.close();
   else if (recipeBook.isOpen()) recipeBook.close();
@@ -980,10 +1092,12 @@ if (saved) {
     inventory.setShieldSlot(BLOCK.SHIELD, 1);
   }
   const p = saved.player;
-  world.update(p.x, p.z, RENDER_DISTANCE, 16);
+  world.update(p.x, p.z, 0, 16);
   player.respawn(p.x, p.y, p.z);
   player.health = p.health ?? player.maxHealth;
   player.hunger.value = Math.max(0, Math.min(player.hunger.max, Math.floor(p.hunger ?? player.hunger.max)));
+  player.hunger.saturation = Math.max(0, Math.min(player.hunger.value, p.saturation ?? 5));
+  player.hunger.exhaustion = Math.max(0, Math.min(40, p.exhaustion ?? 0));
   player.yaw = p.yaw ?? 0;
   player.pitch = p.pitch ?? 0;
   for (const [key, data] of Object.entries(saved.furnaces ?? {})) furnaces.set(key, Furnace.fromJSON(data));
@@ -1010,6 +1124,7 @@ setInterval(persist, 30000);
 window.addEventListener('beforeunload', persist);
 
 let last = performance.now();
+let cropGrowthAccumulator = 0;
 
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
@@ -1070,12 +1185,18 @@ function frame(now) {
     sleepBed = null;
     showMessage('You got up.');
   }
+  weather.update(dt, world, player);
   if (!sleep.isSleeping()) {
-    timeOfDay = updateDayNight(scene, sky, timeOfDay, dt, RENDER_DISTANCE);
+    timeOfDay = updateDayNight(scene, sky, timeOfDay, dt, RENDER_DISTANCE, weather.state);
   } else {
-    updateDayNight(scene, sky, timeOfDay, 0, RENDER_DISTANCE);
+    updateDayNight(scene, sky, timeOfDay, 0, RENDER_DISTANCE, weather.state);
   }
-  world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 2);
+  world.update(player.pos.x, player.pos.z, RENDER_DISTANCE, 1);
+  cropGrowthAccumulator += dt;
+  if (cropGrowthAccumulator >= 12) {
+    cropGrowthAccumulator -= 12;
+    tickCropGrowth(world);
+  }
   drops.update(dt, player.pos, inventory);
   updateCombat(dt);
   updateBullets(dt);
@@ -1121,7 +1242,7 @@ function frame(now) {
   }
   player.tickHealth(dt);
   // Creative has no hunger. Every other mode keeps it.
-  if (!sleep.isSleeping() && MODE !== 'creative') player.hunger.update(dt, player.isSprinting());
+  if (!sleep.isSleeping() && MODE !== 'creative') player.hunger.update();
 
   // No hearts left: show the death screen. The mouse is freed so the Respawn button can be clicked.
   if (player.health <= 0 && !hud.isDead()) {
@@ -1181,6 +1302,7 @@ function frame(now) {
     timeOfDay,
     pos: player.pos,
     chunks: world.chunks.size,
+    weather: weather.label(),
   });
 
   // Sleep and message feedback. Sleep text takes priority over timed messages.

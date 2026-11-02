@@ -31,6 +31,14 @@ export const ARMOUR_SETS = {
     // Diamond gives one more point per piece than iron, so a full set blocks more.
     defence: { helmet: 4, chest: 5, legs: 4, boots: 3 },
   },
+  emerald: {
+    ids: { helmet: BLOCK.EMERALD_HELMET, chest: BLOCK.EMERALD_CHEST, legs: BLOCK.EMERALD_LEGS, boots: BLOCK.EMERALD_BOOTS },
+    defence: { helmet: 3, chest: 5, legs: 4, boots: 2 },
+  },
+  rainbow: {
+    ids: { helmet: BLOCK.RAINBOW_HELMET, chest: BLOCK.RAINBOW_CHEST, legs: BLOCK.RAINBOW_LEGS, boots: BLOCK.RAINBOW_BOOTS },
+    defence: { helmet: 4, chest: 6, legs: 5, boots: 3 },
+  },
 };
 
 // Looks up an item id: which part it is, and how many defence points it gives. Null if it is not armour.

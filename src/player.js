@@ -16,10 +16,10 @@ const FLY_VERTICAL_SPEED = 9;
 const HALF_WIDTH = 0.3;
 export const HEIGHT = 1.8;
 const EYE = 1.62;
-// Health regeneration while hunger is full: 3 hearts every 5 seconds. One heart is 2 HP.
-const HP_PER_HEART = 2;
-const REGEN_INTERVAL = 5;
-const REGEN_HEARTS = 3;
+const SATURATED_REGEN_INTERVAL = 0.5;
+const REGEN_INTERVAL = 4;
+const REGEN_EXHAUSTION = 6;
+const STARVATION_INTERVAL = 4;
 // Stepping up onto a stair: the tallest step the player climbs without jumping, and how fast the rise is.
 const STEP_HEIGHT = 1.0;
 const STEP_SPEED = 14;
@@ -38,6 +38,8 @@ export class Player {
     this.maxHealth = 20;
     this.fallStartY = y;
     this.regenTimer = 0;
+    this.saturatedRegenTimer = 0;
+    this.starvationTimer = 0;
     this.hurtCooldown = 0;
     this.hunger = new Hunger();
     // Worn armour, one item id per part (helmet, chest, legs, boots). 0 means the slot is empty.
@@ -60,38 +62,70 @@ export class Player {
     }
   }
 
-  // True while the sprint key is held. Sprinting also drains hunger faster.
+  // True while the sprint key is held.
   isSprinting() {
     return !!(this.keys.ShiftLeft || this.keys.ShiftRight);
   }
 
   // Damages the player. Ignores hits during the short invulnerability window after a hit.
-  // Every hit that lands also costs one hunger point.
+  // Damage does not directly consume hunger; activity exhaustion handles food use.
   hurt(amount) {
     // Creative mode takes no damage at all.
     if (this.invulnerable) return false;
     if (this.hurtCooldown > 0 || this.health <= 0) return false;
-    // Worn armour blocks a share of the damage. Hunger still drops by one point per hit.
+    // Worn armour blocks a share of the damage.
     const taken = amount * (1 - damageReduction(this.armour));
     this.health = Math.max(0, this.health - taken);
     this.hurtCooldown = 0.5;
     this.regenTimer = 0;
-    this.hunger.onDamage();
+    this.saturatedRegenTimer = 0;
     return true;
   }
 
-  // While hunger is full, every REGEN_INTERVAL seconds restores REGEN_HEARTS hearts.
-  // Losing a point of hunger or taking damage restarts the timer.
+  // Natural regeneration consumes exhaustion; starvation deals damage at an empty hunger bar.
   tickHealth(dt) {
     this.hurtCooldown = Math.max(0, this.hurtCooldown - dt);
-    if (this.health <= 0 || this.health >= this.maxHealth || !this.hunger.full) {
+    if (this.health <= 0) {
       this.regenTimer = 0;
+      this.starvationTimer = 0;
       return;
     }
-    this.regenTimer += dt;
-    if (this.regenTimer >= REGEN_INTERVAL) {
-      this.regenTimer -= REGEN_INTERVAL;
-      this.health = Math.min(this.maxHealth, this.health + REGEN_HEARTS * HP_PER_HEART);
+
+    if (this.hunger.value >= 18 && this.health < this.maxHealth) {
+      if (this.hunger.saturation > 0) {
+        this.regenTimer = 0;
+        this.saturatedRegenTimer += dt;
+        while (this.saturatedRegenTimer >= SATURATED_REGEN_INTERVAL && this.hunger.saturation > 0 && this.health < this.maxHealth) {
+          this.saturatedRegenTimer -= SATURATED_REGEN_INTERVAL;
+          this.health = Math.min(this.maxHealth, this.health + 1);
+          this.hunger.addExhaustion(REGEN_EXHAUSTION);
+          this.hunger.update();
+        }
+        if (this.hunger.saturation <= 0) this.saturatedRegenTimer = 0;
+      } else {
+        this.saturatedRegenTimer = 0;
+        this.regenTimer += dt;
+        if (this.regenTimer >= REGEN_INTERVAL) {
+          this.regenTimer %= REGEN_INTERVAL;
+          this.health = Math.min(this.maxHealth, this.health + 1);
+          this.hunger.addExhaustion(REGEN_EXHAUSTION);
+          this.hunger.update();
+        }
+      }
+    } else {
+      this.regenTimer = 0;
+      this.saturatedRegenTimer = 0;
+    }
+
+    if (this.hunger.value === 0) {
+      this.starvationTimer += dt;
+      if (this.starvationTimer >= STARVATION_INTERVAL) {
+        this.starvationTimer %= STARVATION_INTERVAL;
+        // Normal-difficulty starvation cannot reduce health below half a heart.
+        this.health = Math.max(1, this.health - 1);
+      }
+    } else {
+      this.starvationTimer = 0;
     }
   }
 
@@ -165,6 +199,8 @@ export class Player {
   }
 
   update(dt) {
+    const startX = this.pos.x;
+    const startZ = this.pos.z;
     const wasOnGround = this.onGround;
     const forward = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
@@ -195,6 +231,7 @@ export class Player {
       if (this.keys.Space && this.onGround) {
         this.vel.y = JUMP_VEL;
         this.onGround = false;
+        this.hunger.addExhaustion(sprint ? 0.2 : 0.05);
       }
       this.vel.y -= GRAVITY * dt;
       if (this.vel.y < -50) this.vel.y = -50;
@@ -206,6 +243,11 @@ export class Player {
     if ((blockedX || blockedZ) && this.onGround && !swimming) this.stepUp(dt, move);
     const fallingBeforeMove = this.vel.y < 0;
     const blockedY = this.moveAxis('y', this.vel.y * dt);
+    const horizontalDistance = Math.hypot(this.pos.x - startX, this.pos.z - startZ);
+    if (horizontalDistance > 0) {
+      const exhaustionPerBlock = swimming ? 0.01 : sprint ? 0.1 : 0.01;
+      this.hunger.addExhaustion(horizontalDistance * exhaustionPerBlock);
+    }
     // Landed if vertical movement was stopped while falling.
     this.onGround = blockedY && fallingBeforeMove;
     // Water breaks a fall: while the body is in water, the fall start follows the player, so landing
@@ -217,7 +259,6 @@ export class Player {
       if (fall > 3) {
         this.health = Math.max(0, this.health - Math.floor(fall - 3));
         this.regenTimer = 0;
-        this.hunger.onDamage();
       }
     }
     if (this.onGround || this.vel.y > 0) this.fallStartY = this.pos.y;
@@ -228,6 +269,9 @@ export class Player {
     this.vel.set(0, 0, 0);
     this.health = this.maxHealth;
     this.hunger = new Hunger();
+    this.regenTimer = 0;
+    this.saturatedRegenTimer = 0;
+    this.starvationTimer = 0;
     this.fallStartY = y;
   }
 

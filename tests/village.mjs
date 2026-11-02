@@ -1,7 +1,7 @@
 import { Chunk, surfaceHeight, VILLAGE_LIFT } from '../src/chunk.js';
 import { villageCentre, houseCells, pathCells, farmCells, penCells, HOUSES, REGION, LEVEL_BOX } from '../src/village.js';
 import { BLOCK } from '../src/blocks.js';
-import { DOOR } from '../src/building.js';
+import { BED_COLORS, DOOR, isBedId } from '../src/building.js';
 
 let failed = 0;
 const check = (name, cond) => {
@@ -48,6 +48,7 @@ const doorsPlaced = HOUSES.map((h) => {
 });
 check('each house doorway holds a closed door', doorsPlaced.every(Boolean));
 check('houses include planks, cobblestone and glass', ['PLANKS', 'COBBLESTONE', 'GLASS'].every((n) => cells.some((c) => c.id === BLOCK[n])));
+check('every village house has a paired bed', cells.filter((c) => isBedId(c.id)).length === HOUSES.length * 2 && cells.some((c) => c.id === BED_COLORS.red.head));
 
 // Chunk generation: a village's cells land in the generated chunks, with the ground at its height.
 const chunkCX = Math.floor(v.x / 16);

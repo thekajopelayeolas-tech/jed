@@ -10,7 +10,7 @@ const check = (name, cond) => {
 // Every material has all four pieces, and each piece is recognised as armour for the right part.
 const parts = ['helmet', 'chest', 'legs', 'boots'];
 const materials = Object.keys(ARMOUR_SETS);
-check('four materials: wood, stone, iron, diamond', materials.join(',') === 'wood,stone,iron,diamond');
+check('six materials include emerald and rainbow', materials.join(',') === 'wood,stone,iron,diamond,emerald,rainbow');
 const complete = materials.every((m) => parts.every((p) => armourInfo(ARMOUR_SETS[m].ids[p])?.part === p));
 check('every material has all four pieces recognised by part', complete);
 
@@ -31,7 +31,7 @@ check('full diamond set reduces damage by 64%', Math.abs(damageReduction(diamond
 // Better materials protect more than worse ones (full set comparison).
 const full = (m) => ({ helmet: ARMOUR_SETS[m].ids.helmet, chest: ARMOUR_SETS[m].ids.chest, legs: ARMOUR_SETS[m].ids.legs, boots: ARMOUR_SETS[m].ids.boots });
 const d = (m) => defencePoints(full(m));
-check('defence rises wood < stone < iron < diamond', d('wood') < d('stone') && d('stone') < d('iron') && d('iron') < d('diamond'));
+check('defence rises through emerald, diamond, and rainbow', d('wood') < d('stone') && d('stone') < d('iron') && d('iron') < d('emerald') && d('emerald') < d('diamond') && d('diamond') < d('rainbow'));
 
 // Reduction is capped so the player always takes some damage.
 check('reduction is capped at 80%', damageReduction(diamond) <= MAX_REDUCTION);
