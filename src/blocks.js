@@ -148,6 +148,9 @@ export const BLOCK = {
   YELLOW_BED_FOOT: 159,
   WHITE_BED: 160,
   WHITE_BED_FOOT: 161,
+  GOLD_ORE: 162,
+  GOLD_INGOT: 163,
+
   RED_WOOL: 162,
   YELLOW_WOOL: 163,
   BLUE_WOOL: 164,
@@ -215,6 +218,9 @@ export function isItem(id) {
 }
 
 export const BLOCK_DEFS = {
+  [BLOCK.GOLD_ORE]: { name: 'Gold Ore', top: [0.9, 0.8, 0.2], side: [0.9, 0.8, 0.2], bottom: [0.9, 0.8, 0.2], solid: true, transparent: false },
+  [BLOCK.GOLD_INGOT]: { name: 'Gold Ingot', top: [1.0, 0.9, 0.1], side: [1.0, 0.9, 0.1], bottom: [1.0, 0.9, 0.1], solid: false, transparent: true, item: true },
+
   [BLOCK.GRASS]: { name: 'Grass', top: [0.36, 0.7, 0.25], side: [0.45, 0.32, 0.18], bottom: [0.45, 0.32, 0.18], solid: true, transparent: false },
   [BLOCK.DIRT]: { name: 'Dirt', top: [0.45, 0.32, 0.18], side: [0.45, 0.32, 0.18], bottom: [0.45, 0.32, 0.18], solid: true, transparent: false },
   [BLOCK.STONE]: { name: 'Stone', top: [0.5, 0.5, 0.5], side: [0.5, 0.5, 0.5], bottom: [0.5, 0.5, 0.5], solid: true, transparent: false },

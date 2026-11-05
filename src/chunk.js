@@ -253,9 +253,11 @@ export class Chunk {
     const iron = valueNoise2D(wx * 0.2, y * 0.2 + wz * 0.2, seed + 37);
     const diamond = valueNoise2D(wx * 0.25, y * 0.25 + wz * 0.25, seed + 41);
     const rainbow = valueNoise2D(wx * 0.3, y * 0.3 + wz * 0.3, seed + 43);
+    const gold = valueNoise2D(wx * 0.2, y * 0.2 + wz * 0.2, seed + 49);
     const emerald = valueNoise2D(wx * 0.22, y * 0.22 + wz * 0.22, seed + 47);
     if (y < 12 && coal > 0.78) return BLOCK.COAL_ORE;
     if (y < 16 && iron > 0.8) return BLOCK.IRON_ORE;
+    if (y < 12 && gold > 0.95) return BLOCK.GOLD_ORE;
     if (y < 10 && diamond > 0.96) return BLOCK.DIAMOND_ORE;
     if (y < 6 && rainbow > 0.985) return BLOCK.RAINBOW_ORE;
     if (y < 32 && emerald > 0.99) return BLOCK.EMERALD_ORE;
