@@ -43,8 +43,8 @@ export const MOB = {
   ZOMBIE: 'zombie',
   VILLAGER: 'villager',
   IRON_GOLEM: 'iron_golem',
-};
   ARMOUR_STAND: 'armour_stand',
+};
 
 for (const [id] of EXTRA_MOBS) MOB[id.toUpperCase()] = id;
 
