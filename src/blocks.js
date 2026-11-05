@@ -110,6 +110,8 @@ export const BLOCK = {
   HONEYCOMB: 113,
   SCUTE: 114,
   BAMBOO: 115,
+  POOP: 116,
+  DRAGON: 117,
   // Lava pools in some deep caves. Id 128 is new and never reused.
   LAVA: 128,
   // Flowing water: water that spreads out as slabs. A bucket cannot pick it up. Id 129 is new and never reused.
