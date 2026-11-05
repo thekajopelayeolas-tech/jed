@@ -2,7 +2,7 @@
 // The world is split into square regions. Each region gets at most one village, chosen by a seeded hash,
 // so every chunk that needs it computes the same answer without storing anything.
 import { BLOCK } from './blocks.js';
-import { BED_COLORS, DOOR } from './building.js';
+import { BED_COLORS, DOOR, BUILD } from './building.js';
 import { valueNoise2D } from './noise.js';
 
 export const REGION = 64;

@@ -4,7 +4,7 @@ import { fbm2D, valueNoise2D } from './noise.js';
 import { BIOME, BIOME_DEFS, biomeAt } from './biomes.js';
 import { woodSet } from './wood.js';
 import { LIGHT } from './lighting.js';
-import { REGION, villageCentre, houseCells, pathCells, farmCells, penCells, HOUSES, LEVEL_BOX } from './village.js';
+import { REGION, villageCentre, houseCells, pathCells, farmCells, penCells, wallCells, HOUSES, LEVEL_BOX } from './village.js';
 
 // Caves: a 3D noise field. Cells where it is near its peak become air, so tunnels wind through the rock.
 // Two octaves give irregular cave shapes. Noise is sampled per cell using a flattened 2D lookup on (x+z, y).
