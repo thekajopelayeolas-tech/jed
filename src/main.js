@@ -203,6 +203,10 @@ function attack() {
     if (canFireGun(inventory.countOf(BLOCK.BULLET))) fireGun();
     return;
   }
+  if (inventory.selectedItem.id === BLOCK.MAP) {
+    teleportToVillage();
+    return;
+  }
   if (pickUpBoatAimed()) return;
   const eye = player.eye;
   const dir = player.lookDir();
@@ -762,19 +766,18 @@ function updateCombat(dt) {
     if (a.life <= 0) arrows.splice(i, 1);
   }
 }
-function useMap() {
+
+function teleportToVillage() {
   const near = villagesNear(player.pos.x, player.pos.z, SEED, 2000);
   if (near.length > 0) {
     const v = near[0];
-    showMessage(`Map points to a village at X: ${Math.floor(v.x)}, Z: ${Math.floor(v.z)}`);
+    player.pos.set(v.x, 80, v.z);
+    player.vel.set(0, 0, 0);
+    showMessage(`Teleported to village at X: ${Math.floor(v.x)}, Z: ${Math.floor(v.z)}`);
   } else {
-    showMessage('The map shows no nearby villages.');
+    showMessage('No nearby villages to teleport to.');
   }
-  if (inventory.selectedItem.id === BLOCK.MAP) { useMap(); return; }
-
 }
-
-
 
 function useOrPlace() {
   // Shears on a sheep take its wool. Otherwise the held item acts as usual.
