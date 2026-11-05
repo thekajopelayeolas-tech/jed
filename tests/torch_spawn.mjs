@@ -1,7 +1,7 @@
 // Torch light is the brightest the game allows, and peaceful mobs only spawn where there is open sky.
 import { World } from '../src/world.js';
 import { BLOCK } from '../src/blocks.js';
-import { MAX_LIGHT } from '../src/lighting.js';
+import { MAX_LIGHT, TORCH_EMISSION } from '../src/lighting.js';
 import { MobManager, MOB } from '../src/mobs.js';
 
 let failed = 0;
@@ -21,7 +21,7 @@ for (let x = bx - 1; x <= bx + 5; x++) for (let y = by - 1; y <= by + 5; y++) fo
   w.setBlock(x, y, z, inside ? BLOCK.AIR : BLOCK.STONE);
 }
 w.setBlock(bx + 2, by + 2, bz + 2, BLOCK.TORCH);
-check('the cell next to a torch is at the brightest level', w.getLight(bx + 3, by + 2, bz + 2, 1) === MAX_LIGHT - 1);
+check('the cell next to a torch is at the brightest level', w.getLight(bx + 3, by + 2, bz + 2, 1) === TORCH_EMISSION - 1);
 
 // Peaceful land mobs need open sky. A column whose sky light is zero is refused, so a cow never spawns in the dark.
 // Sky light spreads sideways, so the test forces the sky channel to zero rather than relying on a roof alone.
