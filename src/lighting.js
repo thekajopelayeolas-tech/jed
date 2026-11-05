@@ -26,9 +26,9 @@ function stepCost(ch, level, d) {
 
 // Converts a light level into a brightness multiplier for vertex colors.
 export function lightFactor(level) {
-  // A gentler curve than before (0.9 per level), so light near a torch stays bright and falls off more slowly.
+  // A gentler curve than before (0.8 per level), so light near a torch stays bright and falls off more slowly.
   // The scale doubled, so each step is half as strong. This keeps the brightness the same as the old 0-15 curve.
-  return Math.max(0.1, Math.pow(0.9, (MAX_LIGHT - level) / 2));
+  return Math.max(0.1, Math.pow(0.88, (MAX_LIGHT - level) / 2));
 }
 
 // Spreads light outward from the given seeds ({x, y, z, level}) with a BFS.
