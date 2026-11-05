@@ -21,6 +21,11 @@ export const DOOR = {
   DOOR: 76,
   OPEN_DOOR: 77,
 };
+export const WHEAT_CROP_0 = 134;
+export const WHEAT_CROP_1 = 135;
+export const WHEAT_CROP_2 = 136;
+export const WHEAT_CROP_3 = 137;
+
 
 // The furnace while it is smelting: the same block, drawn with a glowing fire in its firebox.
 export const FURNACE_STATE = {
@@ -74,6 +79,8 @@ export const STORAGE = {
 // A full cube is one box. A slab is the lower half. Stairs are a lower slab plus an upper back step.
 export const FULL_BOX = [[0, 0, 0, 1, 1, 1]];
 export const SLAB_BOX = [[0, 0, 0, 1, 0.5, 1]];
+export const CROP_BOX = [[0.3, 0, 0.3, 0.7, 1, 0.7]];
+
 // Stairs face +x: a full-width lower slab, plus an upper step covering the back half (x from 0 to 0.5).
 export const STAIR_BOXES = [
   [0, 0, 0, 1, 0.5, 1],
@@ -133,6 +140,11 @@ export const SHAPE = {
   [BUILD.STONE_STAIRS]: 'stairs',
   [BUILD.BRICK_STAIRS]: 'stairs',
   [BUILD.CONCRETE_STAIRS]: 'stairs',
+  [WHEAT_CROP_0]: 'crop',
+  [WHEAT_CROP_1]: 'crop',
+  [WHEAT_CROP_2]: 'crop',
+  [WHEAT_CROP_3]: 'crop',
+
   [DOOR.DOOR]: 'door',
   [DOOR.OPEN_DOOR]: 'open',
   [TORCH_ID]: 'post',
@@ -155,6 +167,8 @@ export function iconShape(id) {
   const shape = SHAPE[id];
   if (shape === 'slab') return 'slab';
   if (shape === 'stairs') return 'stairs';
+  if (shape === 'crop') return CROP_BOX;
+
   return 'cube';
 }
 
