@@ -231,6 +231,7 @@ export class Chunk {
         for (const c of pathCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
         for (const c of farmCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
         for (const c of penCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
+        for (const c of wallCells(groundY)) cells.push({ ...c, x: centre.x + c.dx, y: c.dy, z: centre.z + c.dz });
         for (const c of cells) {
           const lx = c.x - ox;
           const lz = c.z - oz;
