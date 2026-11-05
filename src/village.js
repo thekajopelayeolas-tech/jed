@@ -95,7 +95,7 @@ export function houseCells(house, groundY, planks = BLOCK.PLANKS) {
         // Windows: glass in the middle of the two side walls (the walls along z), at head height.
         const isSideWall = edgeX && !edgeZ;
         const isWindow = isSideWall && h === 1 && dz === Math.floor(house.d / 2);
-        const id = isWindow ? BLOCK.GLASS : h === 0 ? BLOCK.COBBLESTONE : planks;
+        const id = isWindow ? BLOCK.GLASS : h === 0 ? BUILD.STONE_BRICKS : planks;
         cells.push({ dx: house.x + dx, dy: y0 + h, dz: house.z + dz, id });
       }
     }
@@ -167,6 +167,29 @@ export function penCells(groundY) {
 }
 
 // The cobblestone roads at ground level: one between the two rows of houses, and one along the south edge.
+// Walls around the village perimeter for a medieval feel.
+export function wallCells(groundY) {
+  const cells = [];
+  const x0 = LEVEL_BOX.x0 - 1;
+  const x1 = LEVEL_BOX.x1 + 1;
+  const z0 = LEVEL_BOX.z0 - 1;
+  const z1 = LEVEL_BOX.z1 + 1;
+  for (let x = x0; x <= x1; x++) {
+    for (let h = 0; h < 3; h++) {
+      cells.push({ dx: x, dy: groundY + h, dz: z0, id: BUILD.STONE_BRICKS });
+      cells.push({ dx: x, dy: groundY + h, dz: z1, id: BUILD.STONE_BRICKS });
+    }
+  }
+  for (let z = z0; z <= z1; z++) {
+    for (let h = 0; h < 3; h++) {
+      cells.push({ dx: x0, dy: groundY + h, dz: z, id: BUILD.STONE_BRICKS });
+      cells.push({ dx: x1, dy: groundY + h, dz: z, id: BUILD.STONE_BRICKS });
+    }
+  }
+  return cells;
+}
+
+
 export function pathCells(groundY) {
   const cells = [];
   for (const z of [-7, 5]) {
