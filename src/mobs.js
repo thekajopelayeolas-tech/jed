@@ -497,12 +497,18 @@ export class Mob {
 
     // Knockback fades out over time and is added on top of the AI movement.
     this.knock.multiplyScalar(Math.max(0, 1 - KNOCKBACK_DECAY * dt));
+    // Apply a smoothing factor to movement so they turn more naturally.
+    this.mx = this.mx ?? 0;
+    this.mz = this.mz ?? 0;
+    this.mx += (mx - this.mx) * Math.min(1, dt * 10);
+    this.mz += (mz - this.mz) * Math.min(1, dt * 10);
+    
     // Land mobs walk straight toward their goal, so the travel is the goal itself. The goal is kept so a wall on the
     // path can be climbed (see tryJump).
-    this.goalX = mx;
-    this.goalZ = mz;
-    this.vel.x = mx * this.def.speed + this.knock.x;
-    this.vel.z = mz * this.def.speed + this.knock.z;
+    this.goalX = this.mx;
+    this.goalZ = this.mz;
+    this.vel.x = this.mx * this.def.speed + this.knock.x;
+    this.vel.z = this.mz * this.def.speed + this.knock.z;
     // A fish in water floats, so gravity does not pull it down. Out of water, it falls like any mob.
     const inWater = this.def.water && this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y), Math.floor(this.pos.z)) === BLOCK.WATER;
     this.vel.y = inWater ? 0 : Math.max(-40, this.vel.y - GRAVITY * dt);
@@ -541,9 +547,9 @@ export class Mob {
     if (this.model.tail) this.model.tail.rotation.z = Math.sin(this.walkPhase * 0.7 + 1) * 0.18;
     // The body faces the way the mob walks: most mobs face opposite their travel, and iron golems and zombies face
     // along it (walksBackwards).
-    if (mx !== 0 || mz !== 0) {
+    if (this.mx !== 0 || this.mz !== 0) {
       const facing = this.def.walksBackwards ? 1 : -1;
-      this.group.rotation.y = Math.atan2(facing * mx, facing * mz);
+      this.group.rotation.y = Math.atan2(facing * this.mx, facing * this.mz);
     }
     this.group.rotation.z = 0;
     if (this.sleeping && this.bedTarget) {
