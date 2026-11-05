@@ -8,9 +8,16 @@ import { BLOCK } from './blocks.js';
 export function useBucket(world, heldId, x, y, z, placeAt) {
   if (heldId === BLOCK.BUCKET) {
     // Fill from a water cell. The cell becomes air, and the bucket is now a water bucket.
-    if (world.getBlock(x, y, z) !== BLOCK.WATER) return null;
-    world.setBlock(x, y, z, BLOCK.AIR);
-    return { item: BLOCK.WATER_BUCKET, placed: false };
+    if (world.getBlock(x, y, z) === BLOCK.WATER) {
+      world.setBlock(x, y, z, BLOCK.AIR);
+      return { item: BLOCK.WATER_BUCKET, placed: false };
+    }
+    // Fill from a lava cell.
+    if (world.getBlock(x, y, z) === BLOCK.LAVA) {
+      world.setBlock(x, y, z, BLOCK.AIR);
+      return { item: BLOCK.LAVA_BUCKET, placed: false };
+    }
+    return null;
   }
   if (heldId === BLOCK.WATER_BUCKET) {
     // Pour water into the cell in front of the player, if that cell is free. The bucket goes back to empty.
@@ -18,6 +25,14 @@ export function useBucket(world, heldId, x, y, z, placeAt) {
     const cur = world.getBlock(px, py, pz);
     if (cur !== BLOCK.AIR) return null;
     world.setBlock(px, py, pz, BLOCK.WATER);
+    return { item: BLOCK.BUCKET, placed: true };
+  }
+  if (heldId === BLOCK.LAVA_BUCKET) {
+    // Pour lava.
+    const { x: px, y: py, z: pz } = placeAt;
+    const cur = world.getBlock(px, py, pz);
+    if (cur !== BLOCK.AIR) return null;
+    world.setBlock(px, py, pz, BLOCK.LAVA);
     return { item: BLOCK.BUCKET, placed: true };
   }
   return null;
