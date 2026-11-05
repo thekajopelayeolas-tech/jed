@@ -41,27 +41,41 @@ export function waterMerge(world, x, y, z) {
   return true;
 }
 
-// Water flowing out of a source: the free cells around it, within FLOW_REACH across the ground, become flowing
-// water (slabs). The source itself is left as full water. Returns the flowing cells it made, so they can be
-// cleared again later with removeSourceFlow.
+// Flowing water: source spreads to neighbouring blocks, and down.
 export function flowFrom(world, x, y, z) {
   const made = [];
   const seen = new Set([`${x},${y},${z}`]);
-  let frontier = [{ x, z, dist: 0 }];
+  let frontier = [{ x, y, z, dist: 0 }];
+  
   while (frontier.length > 0) {
     const next = [];
     for (const cur of frontier) {
       if (cur.dist >= FLOW_REACH) continue;
+      
+      // Try flowing down first
+      const downY = cur.y - 1;
+      if (world.getBlock(cur.x, downY, cur.z) === BLOCK.AIR) {
+        const key = `${cur.x},${downY},${cur.z}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          if (world.setBlock(cur.x, downY, cur.z, BLOCK.FLOWING_WATER) !== false) {
+            made.push({ x: cur.x, y: downY, z: cur.z });
+            next.push({ x: cur.x, y: downY, z: cur.z, dist: cur.dist + 1 });
+          }
+        }
+      }
+      
+      // Then spread sideways
       for (const [dx, dz] of NEIGHBOURS) {
         const nx = cur.x + dx;
         const nz = cur.z + dz;
-        const key = `${nx},${nz}`;
+        const key = `${nx},${cur.y},${nz}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        if (world.getBlock(nx, y, nz) !== BLOCK.AIR) continue;
-        if (world.setBlock(nx, y, nz, BLOCK.FLOWING_WATER) === false) continue;
-        made.push({ x: nx, y, z: nz });
-        next.push({ x: nx, z: nz, dist: cur.dist + 1 });
+        if (world.getBlock(nx, cur.y, nz) !== BLOCK.AIR) continue;
+        if (world.setBlock(nx, cur.y, nz, BLOCK.FLOWING_WATER) === false) continue;
+        made.push({ x: nx, y: cur.y, z: nz });
+        next.push({ x: nx, y: cur.y, z: nz, dist: cur.dist + 1 });
       }
     }
     frontier = next;
