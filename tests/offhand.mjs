@@ -36,9 +36,9 @@ check('the shield returns to the inventory', inv.unequipOffhand() === true);
 check('the off-hand is empty after it returns', !inv.hasOffhandShield());
 check('the returned shield is in the inventory', inv.countOf(BLOCK.SHIELD) === 1);
 
-// Only a shield can go in the off-hand.
+// Any item can go in the off-hand.
 inv.slots[0] = { id: BLOCK.STONE, count: 4 };
-check('a stone cannot go in the off-hand', inv.equipOffhand(0) === false);
+check('a stone can go in the off-hand', inv.equipOffhand(0) === true);
 
 // The off-hand survives a save and reload.
 const storage = new Map();

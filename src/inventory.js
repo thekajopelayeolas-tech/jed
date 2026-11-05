@@ -173,23 +173,24 @@ export class Inventory {
     this.offhand = { id, count };
   }
 
-  // Moves a shield from a hotbar slot into the off-hand, freeing that hotbar slot. Returns true if it moved.
-  // Only one shield fits in the off-hand, so a second shield stays where it is.
+  // Moves an item from a hotbar slot into the off-hand, freeing that hotbar slot. Returns true if it moved.
+  // Only one item fits in the off-hand, so a second item stays where it is.
   equipOffhand(index) {
     const s = this.slots[index];
-    if (s.id !== BLOCK.SHIELD || s.count <= 0) return false;
+    if (s.id === BLOCK.AIR || s.count <= 0) return false;
     if (this.shieldSlot.id !== BLOCK.AIR) return false;
-    this.setShieldSlot(BLOCK.SHIELD, 1);
+    this.setShieldSlot(s.id, 1);
     s.count -= 1;
     if (s.count <= 0) { s.id = BLOCK.AIR; s.count = 0; }
     return true;
   }
 
-  // Returns the off-hand shield to the inventory. It goes to the first free slot, and stays in the off-hand if the
+  // Returns the off-hand item to the inventory. It goes to the first free slot, and stays in the off-hand if the
   // inventory is full. Returns true if it moved.
   unequipOffhand() {
-    if (this.shieldSlot.id === BLOCK.AIR) return false;
-    if (this.add(BLOCK.SHIELD, 1) === 0) {
+    const s = this.shieldSlot;
+    if (s.id === BLOCK.AIR) return false;
+    if (this.add(s.id, s.count) === 0) {
       this.setShieldSlot(BLOCK.AIR, 0);
       return true;
     }
@@ -199,6 +200,11 @@ export class Inventory {
   hasOffhandShield() {
     const s = this.shieldSlot;
     return s.id === BLOCK.SHIELD && s.count > 0;
+  }
+
+  hasOffhandItem() {
+    const s = this.shieldSlot;
+    return s.id !== BLOCK.AIR && s.count > 0;
   }
 
   get selectedItem() {

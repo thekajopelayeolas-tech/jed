@@ -63,9 +63,10 @@ export function createHeldView(camera, itemTexture, atlasMaterial, blockCube) {
   let leftMesh = null;
   let leftKey = null;
 
-  // Shows the shield in the left hand, or nothing. The shield is a flat card with its sprite.
-  function setLeftItem(hasShield) {
-    const k = hasShield ? 'shield' : 'none';
+  // Shows the item in the left hand, or nothing.
+  function setLeftItem(item) {
+    const look = heldLook(item);
+    const k = look ? String(look.id) : 'none';
     if (k === leftKey) return;
     leftKey = k;
     if (leftMesh) {
@@ -75,21 +76,25 @@ export function createHeldView(camera, itemTexture, atlasMaterial, blockCube) {
       leftMesh.material.dispose();
       leftMesh = null;
     }
-    if (!hasShield) return;
-    const tex = itemTexture(SHIELD_ID);
-    leftMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.3, 0.3),
-      new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide }),
-    );
+    if (!look) return;
+    if (look.isBlock) {
+      leftMesh = new THREE.Mesh(blockCube(look.id), atlasMaterial);
+    } else {
+      const tex = itemTexture(look.id);
+      leftMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.3, 0.3),
+        new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide }),
+      );
+    }
     leftHolder.add(leftMesh);
   }
 
   // Swing while walking: a gentle bob that grows with horizontal movement speed.
   let t = 0;
-  // `hasShield` puts a shield in the left hand. `shieldUp` raises it in front of the player to block.
-  function update(dt, speed, selectedItem, hasShield = false, shieldUp = false) {
+  // `offhandItem` puts an item in the left hand. `shieldUp` raises it in front of the player to block.
+  function update(dt, speed, selectedItem, offhandItem = null, shieldUp = false) {
     setItem(selectedItem);
-    setLeftItem(hasShield);
+    setLeftItem(offhandItem);
     t += dt;
     const swing = Math.min(1, speed / 4.3);
     holder.position.y = REST.y + Math.sin(t * 8) * 0.012 * swing;
