@@ -43,7 +43,6 @@ export const MOB = {
   ZOMBIE: 'zombie',
   VILLAGER: 'villager',
   IRON_GOLEM: 'iron_golem',
-  DRAGON: 'dragon',
 };
 for (const [id] of EXTRA_MOBS) MOB[id.toUpperCase()] = id;
 
@@ -77,7 +76,6 @@ const MOB_DEFS = {
   // Iron golems and zombies walk backwards: they face away from the way they move.
   [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, damage: 7, guardDamage: 7, walksBackwards: true },
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true, walksBackwards: true },
-  [MOB.DRAGON]: { size: [2.0, 2.0, 2.0], color: 0x5e005e, health: 50, speed: 1.5, hostile: true, damage: 5, drops: [BLOCK.POOP], tammable: true },
 };
 
 // The 68 catalogue mobs. Each row gives its stats, body shape, and colour. Drops are the item names in the
