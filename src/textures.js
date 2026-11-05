@@ -319,6 +319,11 @@ const PAINTERS = {
     const hues = [[1, 0.3, 0.3, 1], [1, 0.8, 0.2, 1], [0.3, 1, 0.4, 1], [0.3, 0.6, 1, 1], [0.8, 0.4, 1, 1]];
     return hues[Math.floor(noise(x, y, 30) * hues.length) % hues.length];
   },
+  goldOre: (x, y) => {
+    const n = noise(x, y, 40);
+    if (n < 0.75) return jitter(STONE, noise(x, y, 41), 0.18);
+    return jitter([1, 0.9, 0.1], noise(x, y, 42), 0.1);
+  },
 };
 
 // Tile index for each named painter, in atlas order.
@@ -381,6 +386,8 @@ export const BLOCK_TILES = {
   [BLOCK.WHITE_BED]: { top: 'bedWhiteTop', side: 'bedWhiteSide', bottom: 'planks' },
   [BLOCK.WHITE_BED_FOOT]: { top: 'bedWhiteFoot', side: 'bedWhiteFoot', bottom: 'bedWhiteFoot' },
   // `front` is the tile for the side the block faces. Blocks without one look the same on every side.
+  [BLOCK.GOLD_ORE]: { top: 'goldOre', side: 'goldOre', bottom: 'goldOre' },
+
   [BLOCK.FURNACE]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceFront', bottom: 'furnaceTop' },
   [FURNACE_STATE.LIT]: { top: 'furnaceTop', side: 'furnaceSide', front: 'furnaceLitSide', bottom: 'furnaceTop' },
   [BLOCK.DIAMOND_ORE]: { top: 'diamondOre', side: 'diamondOre', bottom: 'diamondOre' },
