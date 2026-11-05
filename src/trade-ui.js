@@ -50,7 +50,7 @@ export function createTradeUI(inventory) {
     });
     row.appendChild(button);
     rows.appendChild(row);
-    return { offer, button };
+    return { offer, button, row };
   });
 
   function refresh() {
@@ -62,9 +62,12 @@ export function createTradeUI(inventory) {
   }
   function show(villager) {
     open = true;
-    title.textContent = `Trade with ${villager?.def?.name ?? 'Villager'}`;
+    title.textContent = `Trade with ${villager?.def?.name ?? 'Villager'} (${villager.job ?? 'unemployed'})`;
     status.textContent = '';
     root.style.display = 'flex';
+    for (const { offer, row } of offerRows) {
+      row.style.display = (!villager.job || offer.job === villager.job) ? 'grid' : 'none';
+    }
     refresh();
   }
   root.addEventListener('click', (event) => {

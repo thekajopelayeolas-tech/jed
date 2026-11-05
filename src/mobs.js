@@ -30,6 +30,13 @@ const FLEECE_WOOL = new Map([[0xc83232, BLOCK.RED_WOOL], [0xe9c12b, BLOCK.YELLOW
 export const TAME_TELEPORT_RANGE = 24;
 
 // Mob types. The first twelve are the original kinds. The rest come from the catalogue, one id per row.
+export const VILLAGER_JOBS = {
+  BLACKSMITH: 'blacksmith',
+  TOOLSMITH: 'toolsmith',
+  FARMER: 'farmer',
+  MAP_CREATOR: 'map_creator',
+};
+
 export const MOB = {
   COW: 'cow',
   SHEEP: 'sheep',
@@ -171,6 +178,7 @@ export class Mob {
     this.bedTarget = null;
     this.enteredHome = false;
     this.sleeping = false;
+    this.job = null;
     // A wolf can be tamed with a bone. A tamed wolf follows the player and does not wander off.
     this.tamed = false;
     // True while the mob is standing on something. Jumps need it, so a mob cannot jump in mid-air.
@@ -705,7 +713,11 @@ export class MobManager {
       if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR) return;
       const mob = new Mob(this.scene, this.world, type, x + 0.5, y + 1, z + 0.5);
       mob.home = home;
-      if (type === MOB.VILLAGER) mob.bedTarget = this.findBedTarget(home);
+      if (type === MOB.VILLAGER) {
+        mob.bedTarget = this.findBedTarget(home);
+        const jobs = Object.values(VILLAGER_JOBS);
+        mob.job = jobs[Math.floor(Math.random() * jobs.length)];
+      }
       this.mobs.push(mob);
       return;
     }

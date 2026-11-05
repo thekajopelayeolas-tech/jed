@@ -1,16 +1,17 @@
 import { BLOCK } from './blocks.js';
+import { VILLAGER_JOBS } from './mobs.js';
 
 // A compact village market: villagers buy farm goods and sell useful supplies for emeralds.
 export const VILLAGER_TRADES = [
-  { id: 'wheat', input: { id: BLOCK.WHEAT, count: 10 }, output: { id: BLOCK.EMERALD, count: 1 } },
-  { id: 'chicken', input: { id: BLOCK.COOKED_CHICKEN, count: 5 }, output: { id: BLOCK.EMERALD, count: 2 } },
-  { id: 'flowers', input: { id: BLOCK.RED_FLOWER, count: 4 }, output: { id: BLOCK.EMERALD, count: 1 } },
-  { id: 'bread', input: { id: BLOCK.EMERALD, count: 1 }, output: { id: BLOCK.BREAD, count: 3 } },
-  { id: 'iron', input: { id: BLOCK.EMERALD, count: 3 }, output: { id: BLOCK.IRON_INGOT, count: 2 } },
-  { id: 'diamond', input: { id: BLOCK.EMERALD, count: 12 }, output: { id: BLOCK.DIAMOND, count: 1 } },
-  { id: 'emerald-helmet', input: { id: BLOCK.EMERALD, count: 8 }, output: { id: BLOCK.EMERALD_HELMET, count: 1 } },
-  { id: 'emerald-chest', input: { id: BLOCK.EMERALD, count: 14 }, output: { id: BLOCK.EMERALD_CHEST, count: 1 } },
-  { id: 'rainbow-gem', input: { id: BLOCK.EMERALD, count: 20 }, output: { id: BLOCK.RAINBOW_GEM, count: 1 } },
+  { id: 'wheat', job: VILLAGER_JOBS.FARMER, input: { id: BLOCK.WHEAT, count: 10 }, output: { id: BLOCK.EMERALD, count: 1 } },
+  { id: 'chicken', job: VILLAGER_JOBS.FARMER, input: { id: BLOCK.COOKED_CHICKEN, count: 5 }, output: { id: BLOCK.EMERALD, count: 2 } },
+  { id: 'flowers', job: VILLAGER_JOBS.FARMER, input: { id: BLOCK.RED_FLOWER, count: 4 }, output: { id: BLOCK.EMERALD, count: 1 } },
+  { id: 'bread', job: VILLAGER_JOBS.FARMER, input: { id: BLOCK.EMERALD, count: 1 }, output: { id: BLOCK.BREAD, count: 3 } },
+  { id: 'iron', job: VILLAGER_JOBS.BLACKSMITH, input: { id: BLOCK.EMERALD, count: 3 }, output: { id: BLOCK.IRON_INGOT, count: 2 } },
+  { id: 'diamond', job: VILLAGER_JOBS.TOOLSMITH, input: { id: BLOCK.EMERALD, count: 12 }, output: { id: BLOCK.DIAMOND, count: 1 } },
+  { id: 'emerald-helmet', job: VILLAGER_JOBS.TOOLSMITH, input: { id: BLOCK.EMERALD, count: 8 }, output: { id: BLOCK.EMERALD_HELMET, count: 1 } },
+  { id: 'emerald-chest', job: VILLAGER_JOBS.TOOLSMITH, input: { id: BLOCK.EMERALD, count: 14 }, output: { id: BLOCK.EMERALD_CHEST, count: 1 } },
+  { id: 'rainbow-gem', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.EMERALD, count: 20 }, output: { id: BLOCK.RAINBOW_GEM, count: 1 } },
 ];
 
 export function canFitTradeOutput(inventory, output) {

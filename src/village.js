@@ -175,13 +175,13 @@ export function wallCells(groundY) {
   const z0 = LEVEL_BOX.z0 - 1;
   const z1 = LEVEL_BOX.z1 + 1;
   for (let x = x0; x <= x1; x++) {
-    for (let h = 0; h < 3; h++) {
+    for (let h = 0; h < 6; h++) {
       cells.push({ dx: x, dy: groundY + h, dz: z0, id: BUILD.STONE_BRICKS });
       cells.push({ dx: x, dy: groundY + h, dz: z1, id: BUILD.STONE_BRICKS });
     }
   }
   for (let z = z0; z <= z1; z++) {
-    for (let h = 0; h < 3; h++) {
+    for (let h = 0; h < 6; h++) {
       cells.push({ dx: x0, dy: groundY + h, dz: z, id: BUILD.STONE_BRICKS });
       cells.push({ dx: x1, dy: groundY + h, dz: z, id: BUILD.STONE_BRICKS });
     }
