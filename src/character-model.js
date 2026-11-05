@@ -98,12 +98,7 @@ export function buildPlayerModel() {
   shells.bootsLeft = bootL;
   shells.bootsRight = bootR;
 
-  const torchLight = new THREE.PointLight(0xffaa00, 1.5, 8);
-  torchLight.position.set(0, 1.5, 0);
-  torchLight.visible = false;
-  group.add(torchLight);
-
-  return { group, parts, hand, shells, torchLight };
+  return { group, parts, hand, shells };
 }
 
 // Armour pieces. Each returns a group of boxes. Sizes are a little larger than the body part they cover.

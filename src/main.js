@@ -94,6 +94,10 @@ const drops = new DropManager(scene, world, opaqueMat);
 // Held blocks use the world's atlas material and the same cube geometry as drops, so they look the same as placed blocks.
 const heldView = createHeldView(camera, (id) => itemTexture(THREE, id), opaqueMat, blockGeometry);
 const mobs = new MobManager(scene, world, SEED);
+const torchLight = new THREE.PointLight(0xffaa00, 1.5, 8);
+torchLight.visible = false;
+scene.add(torchLight);
+
 // Peaceful and creative worlds have no hostile mobs. The night spawn becomes passive there.
 mobs.hostileSpawns = MODE !== 'peaceful' && MODE !== 'creative';
 // Creative mode takes no damage. The player's hurt() checks this flag.
@@ -1279,11 +1283,12 @@ function frame(now) {
   // A shield goes to the off-hand automatically: any shield in the hotbar moves there, and the left hand carries it.
   // The shield rises while the right button holds it up to block.
   for (let i = 0; i < HOTBAR_SIZE; i++) {
+  // Torch in offhand emits dynamic light
+  torchLight.position.copy(player.pos).add(new THREE.Vector3(0, 1.5, 0));
+  torchLight.visible = (inventory.shieldSlot.id === BLOCK.TORCH);
+  
     if (inventory.slots[i].id === BLOCK.SHIELD) inventory.equipOffhand(i);
   }
-  
-  // Torch in offhand emits dynamic light
-  model.torchLight.visible = (inventory.shieldSlot.id === BLOCK.TORCH);
   
   heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem, inventory.hasOffhandItem() ? inventory.shieldSlot : null, combat.shieldUp);
   camera.rotation.order = 'YXZ';
