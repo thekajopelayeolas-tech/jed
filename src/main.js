@@ -1295,6 +1295,26 @@ function frame(now) {
   window.torchLight.position.copy(player.pos).add(new THREE.Vector3(0, 1.5, 0));
   window.torchLight.visible = (inventory.shieldSlot.id === BLOCK.TORCH);
   
+  // Animation: shift water UVs over time
+  const waterTime = performance.now() / 2000;
+  for (const chunk of world.chunks.values()) {
+    if (chunk.mesh) {
+      const transMesh = chunk.mesh.children.find(c => c.material === transMat);
+      if (transMesh) {
+        const uvs = transMesh.geometry.attributes.uv;
+        // Only shift UVs if they correspond to water faces.
+        // This is tricky because the mesh is interleaved.
+        // We might need to store which indices belong to water, or just shift everything
+        // if we assume only water is in the transparent mesh.
+        for (let i = 0; i < uvs.count; i++) {
+          uvs.setX(i, uvs.getX(i) + Math.sin(waterTime) * 0.005);
+          uvs.setY(i, uvs.getY(i) + Math.cos(waterTime) * 0.005);
+        }
+        uvs.needsUpdate = true;
+      }
+    }
+  }
+  
   heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem, inventory.hasOffhandItem() ? inventory.shieldSlot : null, combat.shieldUp);
   camera.rotation.order = 'YXZ';
   camera.rotation.y = player.yaw;
