@@ -113,6 +113,14 @@ export function buildMobModel(kind) {
     armL.add(part(0.18, 0.6, 0.18, p.skin, 0, -0.28, 0.1));
     armR.add(part(0.18, 0.6, 0.18, p.skin, 0, -0.28, 0.1));
     group.add(head, eyeL, eyeR, body, legL, legR, armL, armR);
+  // Armour stand: a base, a pole, and a crossbar.
+  if (kind === 'armour_stand') {
+    part(0.6, 0.1, 0.6, 0x5a4a3a, 0, 0.05, 0); // Base
+    part(0.1, 1.2, 0.1, 0x5a4a3a, 0, 0.7, 0);   // Pole
+    part(0.8, 0.1, 0.1, 0x5a4a3a, 0, 1.2, 0);   // Crossbar
+    return { group, legs: [], arms: [], materials, height: 1.8 };
+  }
+
     // A zombie has a dark torn patch on its shirt.
     if (kind === 'zombie') group.add(part(0.2, 0.2, 0.02, 0x1d3d2a, -0.1, 1.0, 0.16));
     // A villager has a brown hat, and a nose on its pale face.

@@ -44,6 +44,8 @@ export const MOB = {
   VILLAGER: 'villager',
   IRON_GOLEM: 'iron_golem',
 };
+  ARMOUR_STAND: 'armour_stand',
+
 for (const [id] of EXTRA_MOBS) MOB[id.toUpperCase()] = id;
 
 // Each village keeps this many villagers and iron golems. They are topped up when the player is near.
@@ -76,6 +78,8 @@ const MOB_DEFS = {
   // Iron golems and zombies walk backwards: they face away from the way they move.
   [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, damage: 7, guardDamage: 7, walksBackwards: true },
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true, walksBackwards: true },
+  [MOB.ARMOUR_STAND]: { size: [0.5, 1.8, 0.5], color: 0x996633, health: 1, speed: 0, hostile: false, drops: [] },
+
 };
 
 // The 68 catalogue mobs. Each row gives its stats, body shape, and colour. Drops are the item names in the
