@@ -52,6 +52,7 @@ import { buildPlayerModel } from './character-model.js';
 import { cropDrops, grassSeedDrop, plantWheatSeed, tillSoil, tickCropGrowth } from './farming.js';
 import { ParticleManager } from './particles.js';
 import { villagesNear } from './village.js';
+import { mansionsNear } from './structures.js';
 
 // The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
 // single save and the default seed are used, so an older save still loads.
@@ -203,8 +204,8 @@ function attack() {
     if (canFireGun(inventory.countOf(BLOCK.BULLET))) fireGun();
     return;
   }
-  if (inventory.selectedItem.id === BLOCK.MAP) {
-    teleportToVillage();
+  if (inventory.selectedItem.id === BLOCK.MAP || inventory.selectedItem.id === BLOCK.MANSION_MAP) {
+    teleportToStructure();
     return;
   }
   if (pickUpBoatAimed()) return;
@@ -767,15 +768,19 @@ function updateCombat(dt) {
   }
 }
 
-function teleportToVillage() {
-  const near = villagesNear(player.pos.x, player.pos.z, SEED, 2000);
+function teleportToStructure() {
+  const isMansion = inventory.selectedItem.id === BLOCK.MANSION_MAP;
+  const searchFunc = isMansion ? mansionsNear : villagesNear;
+  const name = isMansion ? 'mansion' : 'village';
+  
+  const near = searchFunc(player.pos.x, player.pos.z, SEED, 2000);
   if (near.length > 0) {
     const v = near[0];
     player.pos.set(v.x, 80, v.z);
     player.vel.set(0, 0, 0);
-    showMessage(`Teleported to village at X: ${Math.floor(v.x)}, Z: ${Math.floor(v.z)}`);
+    showMessage(`Teleported to ${name} at X: ${Math.floor(v.x)}, Z: ${Math.floor(v.z)}`);
   } else {
-    showMessage('No nearby villages to teleport to.');
+    showMessage(`No nearby ${name}s to teleport to.`);
   }
 }
 

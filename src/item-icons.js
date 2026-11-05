@@ -245,6 +245,7 @@ function stringSprite() {
 
 const SPRITES = new Map([
   [BLOCK.MAP, poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => [0.9, 0.85, 0.7])],
+  [BLOCK.MANSION_MAP, poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => [0.7, 0.4, 0.4])],
   [BLOCK.STICK, stroke(3, 13, 13, 3, 1.4, HANDLE)],
   // Cooked beef: a browned crust over brown meat, with a bone end.
   [BLOCK.COOKED_BEEF, layered([

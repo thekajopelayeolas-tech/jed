@@ -391,6 +391,7 @@ export const BLOCK_DEFS = {
   [STORAGE.CHEST]: { name: 'Chest', top: [0.6, 0.45, 0.25], side: [0.55, 0.4, 0.22], bottom: [0.6, 0.45, 0.25], solid: true, transparent: false },
   [DOOR.OPEN_DOOR]: { name: 'Open Door', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: false, transparent: true },
   [BLOCK.MAP]: { name: 'Map', top: [1, 1, 1], side: [1, 1, 1], bottom: [1, 1, 1], solid: false, transparent: true, item: true },
+  MANSION_MAP: 140,
   [BUILD.CONCRETE_STAIRS]: { name: 'Concrete Stairs', top: [0.6, 0.6, 0.6], side: [0.6, 0.6, 0.6], bottom: [0.6, 0.6, 0.6], solid: true, transparent: false },
 };
 
