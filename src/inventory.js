@@ -95,6 +95,13 @@ export const RECIPES = [
   // Farming and food. Nine wheat make one wheat block, and one wheat block gives back nine wheat.
   { result: BLOCK.WHEAT_BLOCK, count: 1, shaped: true, pattern: ['WWW', 'WWW', 'WWW'], key: { W: BLOCK.WHEAT } },
   { result: BLOCK.RED_DYE, count: 2, shaped: true, pattern: ['F'], key: { F: BLOCK.RED_FLOWER } },
+  { result: BLOCK.ORANGE_DYE, count: 2, shaped: true, pattern: ['RY'], key: { R: BLOCK.RED_DYE, Y: BLOCK.YELLOW_DYE } },
+  { result: BLOCK.PURPLE_DYE, count: 2, shaped: true, pattern: ['RB'], key: { R: BLOCK.RED_DYE, B: BLOCK.BLUE_DYE } },
+  { result: BLOCK.PINK_DYE, count: 2, shaped: true, pattern: ['RW'], key: { R: BLOCK.RED_DYE, W: BLOCK.WHITE_DYE } },
+  { result: BLOCK.CYAN_DYE, count: 2, shaped: true, pattern: ['BW'], key: { B: BLOCK.BLUE_DYE, W: BLOCK.WHITE_DYE } },
+  { result: BLOCK.GREEN_DYE, count: 2, shaped: true, pattern: ['YB'], key: { Y: BLOCK.YELLOW_DYE, B: BLOCK.BLUE_DYE } },
+  { result: BLOCK.LIME_DYE, count: 2, shaped: true, pattern: ['GW'], key: { G: BLOCK.GREEN_DYE, W: BLOCK.WHITE_DYE } },
+
   { result: BLOCK.YELLOW_DYE, count: 2, shaped: true, pattern: ['F'], key: { F: BLOCK.YELLOW_FLOWER } },
   { result: BLOCK.BLUE_DYE, count: 2, shaped: true, pattern: ['F'], key: { F: BLOCK.BLUE_FLOWER } },
   { result: BLOCK.WHITE_DYE, count: 2, shaped: true, pattern: ['F'], key: { F: BLOCK.WHITE_FLOWER } },

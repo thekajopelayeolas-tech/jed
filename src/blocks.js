@@ -125,6 +125,14 @@ export const BLOCK = {
   WHEAT_CROP_2: 136,
   WHEAT_CROP_3: 137,
   RED_FLOWER: 138,
+  ORANGE_DYE: 200,
+  PURPLE_DYE: 201,
+  PINK_DYE: 202,
+  CYAN_DYE: 203,
+  LIME_DYE: 204,
+  GREEN_DYE: 205,
+
+
   MAP: 139,
   YELLOW_FLOWER: 139,
   BLUE_FLOWER: 140,
@@ -242,6 +250,14 @@ export const BLOCK_DEFS = {
   [BLOCK.BEDROCK]: { name: 'Bedrock', top: [0.15, 0.15, 0.15], side: [0.15, 0.15, 0.15], bottom: [0.15, 0.15, 0.15], solid: true, transparent: false },
   [BLOCK.GLASS]: { name: 'Glass', top: [0.8, 0.9, 0.95], side: [0.8, 0.9, 0.95], bottom: [0.8, 0.9, 0.95], solid: true, transparent: true, alpha: 0.4 },
   [BLOCK.COAL_ORE]: { name: 'Coal Ore', top: [0.3, 0.3, 0.3], side: [0.3, 0.3, 0.3], bottom: [0.3, 0.3, 0.3], solid: true, transparent: false },
+  [BLOCK.ORANGE_DYE]: { name: 'Orange Dye', top: [0.9, 0.6, 0.2], side: [0.9, 0.6, 0.2], bottom: [0.9, 0.6, 0.2], solid: false, transparent: true, item: true },
+  [BLOCK.PURPLE_DYE]: { name: 'Purple Dye', top: [0.6, 0.2, 0.6], side: [0.6, 0.2, 0.6], bottom: [0.6, 0.2, 0.6], solid: false, transparent: true, item: true },
+  [BLOCK.PINK_DYE]: { name: 'Pink Dye', top: [0.9, 0.6, 0.8], side: [0.9, 0.6, 0.8], bottom: [0.9, 0.6, 0.8], solid: false, transparent: true, item: true },
+  [BLOCK.GREEN_DYE]: { name: 'Green Dye', top: [0.2, 0.6, 0.2], side: [0.2, 0.6, 0.2], bottom: [0.2, 0.6, 0.2], solid: false, transparent: true, item: true },
+
+  [BLOCK.CYAN_DYE]: { name: 'Cyan Dye', top: [0.2, 0.8, 0.8], side: [0.2, 0.8, 0.8], bottom: [0.2, 0.8, 0.8], solid: false, transparent: true, item: true },
+  [BLOCK.LIME_DYE]: { name: 'Lime Dye', top: [0.6, 0.9, 0.2], side: [0.6, 0.9, 0.2], bottom: [0.6, 0.9, 0.2], solid: false, transparent: true, item: true },
+
   [BLOCK.IRON_ORE]: { name: 'Iron Ore', top: [0.6, 0.45, 0.35], side: [0.6, 0.45, 0.35], bottom: [0.6, 0.45, 0.35], solid: true, transparent: false },
   [BLOCK.TORCH]: { name: 'Torch', top: [1.0, 0.8, 0.2], side: [1.0, 0.8, 0.2], bottom: [1.0, 0.8, 0.2], solid: false, transparent: true },
   [BLOCK.CRAFTING_TABLE]: { name: 'Crafting Table', top: [0.6, 0.4, 0.2], side: [0.5, 0.35, 0.2], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },

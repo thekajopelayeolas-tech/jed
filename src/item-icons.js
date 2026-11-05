@@ -457,6 +457,14 @@ const SPRITES = new Map([
   [BLOCK.WOODEN_SHOVEL, shovelSprite(WOOD_HEAD)],
   [BLOCK.STONE_SHOVEL, shovelSprite(STONE)],
   [BLOCK.IRON_SHOVEL, shovelSprite(IRON)],
+  [BLOCK.ORANGE_DYE, dyeDust([0.9, 0.6, 0.2], 5)],
+  [BLOCK.PURPLE_DYE, dyeDust([0.6, 0.2, 0.6], 7)],
+  [BLOCK.PINK_DYE, dyeDust([0.9, 0.6, 0.8], 11)],
+  [BLOCK.CYAN_DYE, dyeDust([0.2, 0.8, 0.8], 13)],
+  [BLOCK.LIME_DYE, dyeDust([0.6, 0.9, 0.2], 19)],
+  [BLOCK.GREEN_DYE, dyeDust([0.2, 0.6, 0.2], 23)],
+
+
   [BLOCK.WOODEN_HOE, hoeSprite(WOOD_HEAD)],
   [BLOCK.STONE_HOE, hoeSprite(STONE)],
   [BLOCK.IRON_HOE, hoeSprite(IRON)],

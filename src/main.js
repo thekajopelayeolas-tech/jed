@@ -52,7 +52,6 @@ import { buildPlayerModel } from './character-model.js';
 import { cropDrops, grassSeedDrop, plantWheatSeed, tillSoil, tickCropGrowth } from './farming.js';
 import { ParticleManager } from './particles.js';
 import { villagesNear } from './village.js';
-import { mansionsNear } from './structures.js';
 
 // The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
 // single save and the default seed are used, so an older save still loads.
@@ -769,11 +768,8 @@ function updateCombat(dt) {
 }
 
 function teleportToStructure() {
-  const isMansion = inventory.selectedItem.id === BLOCK.MANSION_MAP;
-  const searchFunc = isMansion ? mansionsNear : villagesNear;
-  const name = isMansion ? 'mansion' : 'village';
-  
-  const near = searchFunc(player.pos.x, player.pos.z, SEED, 2000);
+  const name = "village";
+  const near = villagesNear(player.pos.x, player.pos.z, SEED, 2000);
   if (near.length > 0) {
     const v = near[0];
     player.pos.set(v.x, 80, v.z);

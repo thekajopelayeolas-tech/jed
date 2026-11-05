@@ -5,7 +5,7 @@ import { BIOME, BIOME_DEFS, biomeAt } from './biomes.js';
 import { woodSet } from './wood.js';
 import { LIGHT } from './lighting.js';
 import { REGION, villageCentre, houseCells, pathCells, farmCells, penCells, wallCells, HOUSES, LEVEL_BOX } from './village.js';
-import { mansionCentre, mansionCells } from './structures.js';
+
 
 // Caves: a 3D noise field. Cells where it is near its peak become air, so tunnels wind through the rock.
 // Two octaves give irregular cave shapes. Noise is sampled per cell using a flattened 2D lookup on (x+z, y).
@@ -192,8 +192,7 @@ export class Chunk {
         }
       }
     }
-    this.placeStructures(seed, ox, oz);
-    this.placeMansions(seed, ox, oz);
+    this.placeVillages(seed, ox, oz);
     this.placeTrees(seed, ox, oz);
     this.dirty = true;
   }
@@ -246,32 +245,9 @@ export class Chunk {
         }
       }
     }
-
-  placeMansions(seed, ox, oz) {
-    for (let rx = Math.floor(ox / REGION) - 1; rx <= Math.floor((ox + CHUNK_SIZE) / REGION) + 1; rx++) {
-      for (let rz = Math.floor(oz / REGION) - 1; rz <= Math.floor((oz + CHUNK_SIZE) / REGION) + 1; rz++) {
-        const centre = mansionCentre(rx, rz, seed);
-        if (!centre) continue;
-        const groundY = surfaceHeight(seed, centre.x, centre.z);
-        if (biomeAt(centre.x, centre.z, seed, groundY) !== BIOME.DARK_FOREST) continue;
-        
-        const cells = mansionCells(groundY);
-        for (const c of cells) {
-          const lx = centre.x + c.dx - ox;
-          const lz = centre.z + c.dz - oz;
-          if (lx < 0 || lx >= CHUNK_SIZE || lz < 0 || lz >= CHUNK_SIZE) continue;
-          if (c.y < 0 || c.y >= CHUNK_HEIGHT) continue;
-          const current = this.get(lx, c.y, lz);
-          if (current === BLOCK.BEDROCK) continue;
-          this.set(lx, c.y, lz, c.id, c.facing ?? 0);
-        }
-      }
-    }
-  }
   }
 
-  // Picks stone or an ore for an underground cell. Each ore has its own noise field, so they do not overlap.
-  // Coal is common near the top. Iron is more common than before. Diamond is uncommon and only deep.
+   // Coal is common near the top. Iron is more common than before. Diamond is uncommon and only deep.
   // Rainbow is rare and deepest.
   stoneOrOre(wx, y, wz, seed) {
     const coal = valueNoise2D(wx * 0.2, y * 0.2 + wz * 0.2, seed + 31);
@@ -293,6 +269,7 @@ export class Chunk {
     for (let x = 2; x < CHUNK_SIZE - 2; x++) {
       for (let z = 2; z < CHUNK_SIZE - 2; z++) {
         // No trees inside a village's clear area.
+
         if (this.clearForVillage?.has(x + CHUNK_SIZE * z)) continue;
         const wx = ox + x;
         const wz = oz + z;
