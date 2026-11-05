@@ -94,9 +94,9 @@ const hud = createHud();
 const drops = new DropManager(scene, world, opaqueMat);
 // The first-person held item. Sprites for non-block items come from the same textures as the drops.
 // Held blocks use the world's atlas material and the same cube geometry as drops, so they look the same as placed blocks.
-const torchLight = new THREE.PointLight(0xffaa00, 1.5, 8);
-torchLight.visible = false;
-scene.add(torchLight);
+window.torchLight = new THREE.PointLight(0xffaa00, 1.5, 8);
+window.torchLight.visible = false;
+scene.add(window.torchLight);
 
 const heldView = createHeldView(camera, (id) => itemTexture(THREE, id), opaqueMat, blockGeometry);
 const mobs = new MobManager(scene, world, SEED);
@@ -1292,8 +1292,8 @@ function frame(now) {
   }
   
   // Torch in offhand emits dynamic light
-  torchLight.position.copy(player.pos).add(new THREE.Vector3(0, 1.5, 0));
-  torchLight.visible = (inventory.shieldSlot.id === BLOCK.TORCH);
+  window.torchLight.position.copy(player.pos).add(new THREE.Vector3(0, 1.5, 0));
+  window.torchLight.visible = (inventory.shieldSlot.id === BLOCK.TORCH);
   
   heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem, inventory.hasOffhandItem() ? inventory.shieldSlot : null, combat.shieldUp);
   camera.rotation.order = 'YXZ';
