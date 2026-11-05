@@ -30,6 +30,7 @@ export const VILLAGER_TRADES = [
   { id: 'paper-trade', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.WHEAT, count: 20 }, output: { id: BLOCK.EMERALD, count: 1 } },
   { id: 'pearl-trade', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.ENDER_PEARL, count: 1 }, output: { id: BLOCK.EMERALD, count: 5 } },
   { id: 'bamboo-trade', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.BAMBOO, count: 10 }, output: { id: BLOCK.EMERALD, count: 1 } },
+  { id: 'map', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.EMERALD, count: 5 }, output: { id: BLOCK.MAP, count: 1 } },
 ];
 
 export function canFitTradeOutput(inventory, output) {

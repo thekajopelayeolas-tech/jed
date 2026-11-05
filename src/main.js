@@ -51,6 +51,7 @@ import { createLobbyUI } from './lobby-ui.js';
 import { buildPlayerModel } from './character-model.js';
 import { cropDrops, grassSeedDrop, plantWheatSeed, tillSoil, tickCropGrowth } from './farming.js';
 import { ParticleManager } from './particles.js';
+import { villagesNear } from './village.js';
 
 // The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
 // single save and the default seed are used, so an older save still loads.
@@ -761,6 +762,19 @@ function updateCombat(dt) {
     if (a.life <= 0) arrows.splice(i, 1);
   }
 }
+function useMap() {
+  const near = villagesNear(player.pos.x, player.pos.z, SEED, 2000);
+  if (near.length > 0) {
+    const v = near[0];
+    showMessage(`Map points to a village at X: ${Math.floor(v.x)}, Z: ${Math.floor(v.z)}`);
+  } else {
+    showMessage('The map shows no nearby villages.');
+  }
+  if (inventory.selectedItem.id === BLOCK.MAP) { useMap(); return; }
+
+}
+
+
 
 function useOrPlace() {
   // Shears on a sheep take its wool. Otherwise the held item acts as usual.
