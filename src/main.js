@@ -1288,7 +1288,8 @@ function frame(now) {
   }
   
   // Torch in offhand emits dynamic light
-  model.torchLight.visible = (inventory.shieldSlot.id === BLOCK.TORCH);
+  torchLight.position.copy(player.pos).add(new THREE.Vector3(0, 1.5, 0));
+  torchLight.visible = (inventory.offhand.id === BLOCK.TORCH);
   
   heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem, inventory.hasOffhandItem() ? inventory.shieldSlot : null, combat.shieldUp);
   camera.rotation.order = 'YXZ';
