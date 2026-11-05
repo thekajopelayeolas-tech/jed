@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { BLOCK, BLOCK_DEFS } from './blocks.js';
 import { CHUNK_SIZE, CHUNK_HEIGHT } from './constants.js';
-import { LIGHT, lightFactor } from './lighting.js';
+import { LIGHT, lightFactor, MAX_LIGHT } from './lighting.js';
 import { BLOCK_TILES, TILE_INDEX, tileUV } from './textures.js';
 import { isFullCube, boxesFor, DOOR, doorTileName } from './building.js';
 import { sideName, isFrontFace } from './facing.js';
@@ -64,7 +64,9 @@ function emitBox(box, id, def, target, world, chunk, wx, y, wz, x, z) {
     { dir: [0, 0, -1], shade: 0.9, face: 'side', corners: [[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]] },
   ];
   for (const f of shapes) {
-    const lf = lightFactor(Math.max(0, world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.SKY), world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.BLOCK)));
+    const skyLight = world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.SKY);
+    const blockLight = world.getLight(fx + f.dir[0], fy + f.dir[1], fz + f.dir[2], LIGHT.BLOCK);
+    const lf = lightFactor(Math.min(MAX_LIGHT, Math.max(0, skyLight) + Math.max(0, blockLight)));
     let tileName = BLOCK_TILES[id][f.face] ?? BLOCK_TILES[id].side;
     // A door's lower half is plain planks, and its upper half keeps the handle on the front. The upper half is the
     // cell with the same door directly below it. A door has no front tile on its other faces, so those stay planks.
@@ -127,7 +129,9 @@ export function buildChunkGeometry(chunk, world) {
           const fx = wx + f.dir[0];
           const fy = y + f.dir[1];
           const fz = wz + f.dir[2];
-          const lf = lightFactor(Math.max(0, world.getLight(fx, fy, fz, LIGHT.SKY), world.getLight(fx, fy, fz, LIGHT.BLOCK)));
+          const skyLight = world.getLight(fx, fy, fz, LIGHT.SKY);
+          const blockLight = world.getLight(fx, fy, fz, LIGHT.BLOCK);
+          const lf = lightFactor(Math.min(MAX_LIGHT, Math.max(0, skyLight) + Math.max(0, blockLight)));
           // A directional block shows its front tile on the side that faces its front. Others use one tile.
           const side = sideName(f.dir);
           const isFront = BLOCK_TILES[id].front !== undefined && side !== null && isFrontFace(chunk.getFacing(x, y, z), side);
