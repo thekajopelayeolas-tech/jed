@@ -162,6 +162,22 @@ export function createInventoryUI(inventory, player, atlasMaterial) {
 
   // Armour slot click. With matching armour on the cursor, it is worn. With an empty cursor, the worn piece is taken off.
   function clickArmour(part) {
+    if (part === 'shield') {
+      const old = inventory.shieldSlot;
+      if (cursor.id === BLOCK.AIR) {
+        if (old.id === BLOCK.AIR) return;
+        inventory.setShieldSlot(BLOCK.AIR, 0);
+        cursor.id = old.id;
+        cursor.count = old.count;
+      } else {
+        inventory.setShieldSlot(cursor.id, cursor.count);
+        cursor.id = old.id;
+        cursor.count = old.count;
+      }
+      render();
+      return;
+    }
+
     const info = armourInfo(cursor.id);
     if (cursor.id === BLOCK.AIR) {
       const worn = player.armour[part];

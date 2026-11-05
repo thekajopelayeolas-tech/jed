@@ -1086,10 +1086,10 @@ if (saved) {
     const src = saved.inventory?.[i];
     if (src) { s.id = src.id; s.count = src.count; }
   });
-  // The off-hand is only restored if it holds a shield. Older saves have none.
-  if (saved.offhand?.id === BLOCK.SHIELD && saved.offhand.count > 0) {
-    // The shield goes back into the shield slot, under the boots. Older saves kept it in the off-hand; this is the same.
-    inventory.setShieldSlot(BLOCK.SHIELD, 1);
+  // The off-hand is restored if it holds any item. Older saves have none.
+  if (saved.offhand?.id !== BLOCK.AIR && saved.offhand.count > 0) {
+    // The item goes back into the shield slot, under the boots.
+    inventory.setShieldSlot(saved.offhand.id, saved.offhand.count);
   }
   const p = saved.player;
   world.update(p.x, p.z, 0, 16);
