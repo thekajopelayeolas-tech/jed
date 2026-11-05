@@ -50,6 +50,7 @@ import { createMultiplayer } from './multiplayer.js';
 import { createLobbyUI } from './lobby-ui.js';
 import { buildPlayerModel } from './character-model.js';
 import { cropDrops, grassSeedDrop, plantWheatSeed, tillSoil, tickCropGrowth } from './farming.js';
+import { ParticleManager } from './particles.js';
 
 // The world to play is picked on the title screen and passed in the URL as ?world=<id>. With no id, the original
 // single save and the default seed are used, so an older save still loads.
@@ -76,6 +77,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // The camera is in the scene so the held item, which is attached to it, is drawn.
 scene.add(camera);
 const sky = createSky(scene);
+const particles = new ParticleManager(scene);
 const weather = new WeatherSystem(scene, SEED);
 
 const atlas = createAtlasTexture(THREE);
@@ -214,6 +216,7 @@ function attack() {
     // Any tamed wolf takes the player's target, so it attacks the same mob until it dies.
     for (const w of mobs.mobs) if (w.tamed && w !== mob) w.wolfTarget = mob;
     mob.takeHit(dmg, player.pos.x, player.pos.z);
+    particles.spawn(mob.pos.x, mob.pos.y + mob.height / 2, mob.pos.z, 0xff0000, 10);
     if (mob.dead) for (const id of mob.dropIds()) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
     return;
   }
@@ -228,6 +231,7 @@ function finishBreak(hit) {
   // Two-part blocks (doors, beds) clear both halves, so breaking either one removes the whole block.
   const cleared = world.breakWhole(x, y, z);
   if (cleared.length > 0) {
+    particles.spawn(x, y, z, 0x888888, 15);
     // One item per block, not one per cell, so a two-part block still gives a single door or bed.
     // Breaking the bed's foot gives back a bed, the same as breaking its head.
       const harvestedCrop = cropDrops(hit.id);
@@ -1130,6 +1134,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
 
+  particles.update(dt);
   // The player does not move while a panel is open or while asleep.
   // Riding a boat: the boat moves on the water, the player sits on it, and walking keys steer it.
   // Shift gets off. Otherwise the player moves normally on land.
