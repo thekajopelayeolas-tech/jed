@@ -1,0 +1,16 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- The Voxel Block Icon -->
+  <g transform="translate(10, 5)">
+    <!-- Top Face (Grass) -->
+    <polygon points="25,0 50,15 25,30 0,15" fill="#4ade80" />
+    <!-- Left Face (Dirt) -->
+    <polygon points="0,15 25,30 25,50 0,35" fill="#854d0e" />
+    <!-- Right Face (Darker Dirt) -->
+    <polygon points="25,30 50,15 50,35 25,50" fill="#713f12" />
+  </g>
+  
+  <!-- The Text -->
+  <text x="70" y="40" font-family="monospace" font-weight="bold" font-size="24" fill="#1f2937" letter-spacing="1">
+    VOXELCRAFT
+  </text>
+</svg>

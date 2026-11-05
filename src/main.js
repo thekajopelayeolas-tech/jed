@@ -1281,6 +1281,10 @@ function frame(now) {
   for (let i = 0; i < HOTBAR_SIZE; i++) {
     if (inventory.slots[i].id === BLOCK.SHIELD) inventory.equipOffhand(i);
   }
+  
+  // Torch in offhand emits dynamic light
+  model.torchLight.visible = (inventory.shieldSlot.id === BLOCK.TORCH);
+  
   heldView.update(dt, Math.hypot(player.vel.x, player.vel.z), inventory.selectedItem, inventory.hasOffhandItem() ? inventory.shieldSlot : null, combat.shieldUp);
   camera.rotation.order = 'YXZ';
   camera.rotation.y = player.yaw;
