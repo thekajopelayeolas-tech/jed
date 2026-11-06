@@ -244,7 +244,14 @@ function stringSprite() {
 }
 
 const SPRITES = new Map([
-  [BLOCK.MAP, poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => [0.9, 0.85, 0.7])],
+  [BLOCK.MAP, layered([
+    poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => [0.95, 0.9, 0.8]),
+    stroke(3, 3, 13, 3, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
+    stroke(13, 3, 13, 13, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
+    stroke(13, 13, 3, 13, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
+    stroke(3, 13, 3, 3, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
+    stroke(5, 5, 11, 11, 0.2, {light: [0.5, 0.4, 0.3], dark: [0.3, 0.2, 0.1]}),
+  ])],
   [BLOCK.MANSION_MAP, poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => [0.7, 0.4, 0.4])],
   [BLOCK.STICK, stroke(3, 13, 13, 3, 1.4, HANDLE)],
   // Cooked beef: a browned crust over brown meat, with a bone end.
@@ -490,6 +497,21 @@ const SPRITES = new Map([
   [BLOCK.EMERALD_CHEST, armourSprite('chest', IRON)],
   [BLOCK.EMERALD_LEGS, armourSprite('legs', IRON)],
   [BLOCK.EMERALD_BOOTS, armourSprite('boots', IRON)],
+  [BLOCK.RAW_MUTTON, ellipse(8, 8, 5, 4, (px, py) => tint([0.9, 0.7, 0.6], grain(px, py) * 0.1))],
+  [BLOCK.COOKED_MUTTON, ellipse(8, 8, 5, 4, (px, py) => tint([0.6, 0.4, 0.3], grain(px, py) * 0.1))],
+  [BLOCK.RAW_PORK, ellipse(8, 8, 5, 4, (px, py) => tint([0.95, 0.7, 0.7], grain(px, py) * 0.1))],
+  [BLOCK.COOKED_PORK, ellipse(8, 8, 5, 4, (px, py) => tint([0.7, 0.5, 0.4], grain(px, py) * 0.1))],
+  [BLOCK.RAW_RABBIT, ellipse(8, 8, 4, 3, (px, py) => tint([0.8, 0.7, 0.6], grain(px, py) * 0.1))],
+  [BLOCK.COOKED_RABBIT, ellipse(8, 8, 4, 3, (px, py) => tint([0.6, 0.5, 0.4], grain(px, py) * 0.1))],
+  [BLOCK.RAW_FISH, ellipse(8, 8, 6, 3, (px, py) => tint([0.6, 0.7, 0.8], grain(px, py) * 0.1))],
+  [BLOCK.COOKED_FISH, ellipse(8, 8, 6, 3, (px, py) => tint([0.4, 0.5, 0.6], grain(px, py) * 0.1))],
+  [BLOCK.BREAD, ellipse(8, 8, 6, 4, (px, py) => tint([0.8, 0.6, 0.3], grain(px, py) * 0.1))],
+  [BLOCK.CAKE, poly([[3, 6], [13, 6], [13, 11], [3, 11]], (px, py) => tint([0.9, 0.8, 0.7], grain(px, py) * 0.05))],
+  [BLOCK.COOKIES, ellipse(8, 8, 4, 4, (px, py) => tint([0.6, 0.4, 0.2], grain(px, py) * 0.1))],
+  [BLOCK.STEW, ellipse(8, 8, 5, 5, (px, py) => tint([0.5, 0.4, 0.2], grain(px, py) * 0.1))],
+  [BLOCK.RAW_CHICKEN, ellipse(8, 8, 4, 4, (px, py) => tint([0.9, 0.8, 0.7], grain(px, py) * 0.1))],
+  [BLOCK.COOKED_CHICKEN, ellipse(8, 8, 4, 4, (px, py) => tint([0.7, 0.5, 0.3], grain(px, py) * 0.1))],
+
   [BLOCK.GOLDEN_APPLE, ellipse(8, 8, 5, 5, (px, py) => tint([0.95, 0.8, 0.1], grain(px, py) * 0.08))],
 
 ]);
