@@ -512,6 +512,12 @@ const SPRITES = new Map([
   [BLOCK.RAW_CHICKEN, ellipse(8, 8, 4, 4, (px, py) => tint([0.9, 0.8, 0.7], grain(px, py) * 0.1))],
   [BLOCK.COOKED_CHICKEN, ellipse(8, 8, 4, 4, (px, py) => tint([0.7, 0.5, 0.3], grain(px, py) * 0.1))],
 
+  [BLOCK.EMERALD_ORE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.2, 0.5, 0.2], grain(px, py) * 0.1))],
+  [BLOCK.RAINBOW_ORE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => {
+    const hue = Math.floor((py + px * 0.5) / 3) % 3;
+    return [[1, 0.2, 0.2], [0.2, 1, 0.2], [0.2, 0.2, 1]][hue];
+  })],
+
   [BLOCK.GOLDEN_APPLE, ellipse(8, 8, 5, 5, (px, py) => tint([0.95, 0.8, 0.1], grain(px, py) * 0.08))],
 
 ]);
