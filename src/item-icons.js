@@ -291,14 +291,15 @@ const SPRITES = new Map([
   [BLOCK.RAINBOW_LEGS, armourSprite('legs', RAINBOW)],
   [BLOCK.RAINBOW_BOOTS, armourSprite('boots', RAINBOW)],
   [BLOCK.COAL, layered([
-    ellipse(5, 6, 2.8, 2.6, coalColor),
-    ellipse(10.5, 8.5, 3, 2.8, coalColor),
-    ellipse(6.5, 11.5, 2.4, 2.2, coalColor),
+    poly([[2, 4], [6, 2], [10, 4], [8, 8], [4, 8]], (px, py) => pick({ light: [0.3, 0.3, 0.3], dark: [0.15, 0.15, 0.15] }, px < 6, px, py)),
+    poly([[7, 7], [13, 6], [14, 11], [10, 13], [6, 10]], (px, py) => pick({ light: [0.35, 0.35, 0.35], dark: [0.2, 0.2, 0.2] }, px < 10, px, py)),
   ])],
-  [BLOCK.IRON_INGOT, poly([[2, 7], [4.5, 5], [12, 5], [14, 7.5], [12.5, 11], [3.5, 11.5]],
-    (px, py) => pick(IRON, py < 7.5, px, py))],
-  [BLOCK.WOOL, poly([[2, 3], [14, 3], [14, 13], [2, 13]],
-    (px, py) => (grain(px, py) > 0.2 ? [0.82, 0.82, 0.8] : [0.94, 0.94, 0.92]))],
+  [BLOCK.IRON_INGOT, poly([[3, 5], [13, 3], [14, 8], [4, 12]], (px, py) => pick({ light: [0.95, 0.95, 0.97], dark: [0.66, 0.66, 0.7] }, py < 7, px, py))],
+  [BLOCK.WOOL, layered([
+    poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => (grain(px, py) > 0 ? [0.95, 0.95, 0.95] : [0.9, 0.9, 0.9])),
+    stroke(2, 2, 14, 14, 0.5, { light: [0.8, 0.8, 0.8], dark: [0.6, 0.6, 0.6] }),
+    stroke(14, 2, 2, 14, 0.5, { light: [0.8, 0.8, 0.8], dark: [0.6, 0.6, 0.6] }),
+  ])],
   // Raw beef: deep red with white fat marbling and a bone end.
   [BLOCK.BEEF, layered([
     ellipse(8, 8.5, 6.2, 4.8, (px, py) => {
