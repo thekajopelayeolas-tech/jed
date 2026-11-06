@@ -125,6 +125,11 @@ export const BLOCK = {
   WHEAT_CROP_2: 136,
   WHEAT_CROP_3: 137,
   RED_FLOWER: 138,
+  GOLDEN_APPLE: 141,
+  IRON_BLOCK: 142,
+  OBSIDIAN: 143,
+  ENCHANTING_TABLE: 144,
+
   ORANGE_DYE: 200,
   PURPLE_DYE: 201,
   PINK_DYE: 202,
@@ -404,6 +409,11 @@ export const BLOCK_DEFS = {
   [BUILD.BRICK_STAIRS]: { name: 'Brick Stairs', top: [0.6, 0.3, 0.25], side: [0.6, 0.3, 0.25], bottom: [0.6, 0.3, 0.25], solid: true, transparent: false },
   [DOOR.DOOR]: { name: 'Door', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: true, transparent: false },
   [FURNACE_STATE.LIT]: { name: 'Lit Furnace', top: [0.45, 0.45, 0.45], side: [0.9, 0.45, 0.12], bottom: [0.45, 0.45, 0.45], solid: true, transparent: false },
+  [BLOCK.GOLDEN_APPLE]: { name: 'Golden Apple', top: [0.95, 0.8, 0.1], side: [0.95, 0.8, 0.1], bottom: [0.95, 0.8, 0.1], solid: false, transparent: true, item: true },
+  [BLOCK.IRON_BLOCK]: { name: 'Iron Block', top: [0.9, 0.9, 0.9], side: [0.9, 0.9, 0.9], bottom: [0.9, 0.9, 0.9], solid: true, transparent: false },
+  [BLOCK.OBSIDIAN]: { name: 'Obsidian', top: [0.1, 0.1, 0.2], side: [0.1, 0.1, 0.2], bottom: [0.1, 0.1, 0.2], solid: true, transparent: false },
+  [BLOCK.ENCHANTING_TABLE]: { name: 'Enchanting Table', top: [0.5, 0.1, 0.1], side: [0.2, 0.2, 0.2], bottom: [0.4, 0.2, 0.1], solid: true, transparent: false },
+
   [STORAGE.CHEST]: { name: 'Chest', top: [0.6, 0.45, 0.25], side: [0.55, 0.4, 0.22], bottom: [0.6, 0.45, 0.25], solid: true, transparent: false },
   [DOOR.OPEN_DOOR]: { name: 'Open Door', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: false, transparent: true },
   [BLOCK.MAP]: { name: 'Map', top: [1, 1, 1], side: [1, 1, 1], bottom: [1, 1, 1], solid: false, transparent: true, item: true },

@@ -522,6 +522,11 @@ const SPRITES = new Map([
 
   [BLOCK.EMERALD_ORE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.2, 0.5, 0.2], grain(px, py) * 0.1))],
   [BLOCK.RAINBOW_ORE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => {
+  [BLOCK.GOLDEN_APPLE, ellipse(8, 8, 5, 5, (px, py) => tint([0.95, 0.8, 0.1], grain(px, py) * 0.08))],
+  [BLOCK.IRON_BLOCK, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.9, 0.9, 0.9], grain(px, py) * 0.05))],
+  [BLOCK.OBSIDIAN, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.1, 0.1, 0.2], grain(px, py) * 0.05))],
+  [BLOCK.ENCHANTING_TABLE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.5, 0.1, 0.1], grain(px, py) * 0.05))],
+
     const hue = Math.floor((py + px * 0.5) / 3) % 3;
     return [[1, 0.2, 0.2], [0.2, 1, 0.2], [0.2, 0.2, 1]][hue];
   })],
