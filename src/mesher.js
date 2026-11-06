@@ -106,7 +106,7 @@ export function buildChunkGeometry(chunk, world) {
         // Skip air and any id without a block texture, such as an item from a bad save.
         if (id === BLOCK.AIR || !BLOCK_TILES[id]) continue;
         const def = BLOCK_DEFS[id];
-        const target = def.transparent ? trans : opaque;
+        const target = def?.transparent ? trans : opaque;
         const wx = ox + x;
         const wz = oz + z;
 
@@ -123,7 +123,7 @@ export function buildChunkGeometry(chunk, world) {
           const nid = world.getBlock(wx + f.dir[0], y + f.dir[1], wz + f.dir[2]);
           // Hide a face if the neighbour is opaque, or is the same transparent block type.
           // A slab or stair does not fill its whole cell, so a cube must still draw its face next to one.
-          if (nid !== BLOCK.AIR && isFullCube(nid) && (!BLOCK_DEFS[nid].transparent || nid === id)) continue;
+          if (nid !== BLOCK.AIR && isFullCube(nid) && (BLOCK_DEFS[nid]?.transparent !== true || nid === id)) continue;
 
           // Brightness comes from the light in the empty cell this face looks into.
           const fx = wx + f.dir[0];

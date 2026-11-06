@@ -15,7 +15,7 @@ export const TORCH_EMISSION = MAX_LIGHT;
 const EMISSION = { [BLOCK.TORCH]: TORCH_EMISSION };
 
 function isOpaque(id) {
-  return isSolid(id) && !BLOCK_DEFS[id].transparent;
+  return isSolid(id) && BLOCK_DEFS[id]?.transparent !== true;
 }
 
 // Light lost when moving from a cell of `level` in direction d.
