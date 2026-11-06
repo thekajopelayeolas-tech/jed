@@ -90,9 +90,12 @@ function poly(points, color) {
 
 function swordSprite(blade) {
   return layered([
-    stroke(4, 12, 12, 4, 1.3, blade),
-    stroke(2.2, 10.2, 5.8, 13.8, 0.9, HANDLE),
-    stroke(4, 12, 1.5, 14.5, 1.0, HANDLE),
+    // Blade
+    poly([[7, 1], [9, 1], [9, 12], [8, 14], [7, 12]], (px, py) => pick(blade, px < 8, px, py)),
+    // Guard
+    poly([[5, 11], [11, 11], [11, 13], [5, 13]], () => HANDLE.dark),
+    // Handle
+    stroke(8, 13, 8, 15, 0.8, HANDLE),
   ]);
 }
 
@@ -245,12 +248,16 @@ function stringSprite() {
 
 const SPRITES = new Map([
   [BLOCK.MAP, layered([
-    poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => [0.95, 0.9, 0.8]),
-    stroke(3, 3, 13, 3, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
-    stroke(13, 3, 13, 13, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
-    stroke(13, 13, 3, 13, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
-    stroke(3, 13, 3, 3, 0.8, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
-    stroke(5, 5, 11, 11, 0.2, {light: [0.5, 0.4, 0.3], dark: [0.3, 0.2, 0.1]}),
+    // Main paper area
+    poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => [0.95, 0.9, 0.8]),
+    // Map features
+    poly([[4, 4], [8, 4], [8, 8], [4, 8]], () => [0.3, 0.6, 0.3]), // Land
+    poly([[10, 10], [13, 10], [13, 13], [10, 13]], () => [0.2, 0.5, 0.8]), // Water
+    // Border
+    stroke(2, 2, 14, 2, 0.5, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
+    stroke(14, 2, 14, 14, 0.5, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
+    stroke(14, 14, 2, 14, 0.5, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
+    stroke(2, 14, 2, 2, 0.5, {light: [0.7, 0.6, 0.5], dark: [0.5, 0.4, 0.3]}),
   ])],
   [BLOCK.MANSION_MAP, poly([[3, 3], [13, 3], [13, 13], [3, 13]], (px, py) => [0.7, 0.4, 0.4])],
   [BLOCK.STICK, stroke(3, 13, 13, 3, 1.4, HANDLE)],
