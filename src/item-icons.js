@@ -500,7 +500,7 @@ const SPRITES = new Map([
   [BLOCK.HONEYCOMB, poly([[4, 3], [12, 3], [14, 8], [12, 13], [4, 13], [2, 8]], (px, py) => tint([0.92, 0.7, 0.2], grain(px, py) * 0.1))],
   [BLOCK.SCUTE, ellipse(8, 8, 6, 4.5, (px, py) => tint([0.55, 0.45, 0.3], grain(px, py) * 0.08))],
   [BLOCK.BAMBOO, stroke(4, 13, 12, 3, 1.2, { light: [0.55, 0.8, 0.35], dark: [0.35, 0.55, 0.2] })],
-  [BLOCK.EMERALD, poly([[8, 2], [13, 6], [8, 14], [3, 6]], (px, py) => pick(IRON, px < 8, px, py))],
+  [BLOCK.EMERALD, poly([[8, 2], [13, 6], [8, 14], [3, 6]], (px, py) => pick(EMERALD, px < 8, px, py))],
   [BLOCK.EMERALD_HELMET, armourSprite('helmet', IRON)],
   [BLOCK.EMERALD_CHEST, armourSprite('chest', IRON)],
   [BLOCK.EMERALD_LEGS, armourSprite('legs', IRON)],
