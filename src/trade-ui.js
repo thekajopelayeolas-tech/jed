@@ -36,7 +36,9 @@ export function createTradeUI(inventory) {
     row.style.cssText = 'display:grid;grid-template-columns:52px minmax(0,1fr) 52px 120px;align-items:center;gap:10px;background:#a5a5a5;padding:6px;';
     row.appendChild(iconCanvas(offer.input.id, 40));
     const label = document.createElement('div');
-    label.textContent = `${offer.input.count} ${BLOCK_DEFS[offer.input.id]?.name ?? 'Item'}  →  ${offer.output.count} ${BLOCK_DEFS[offer.output.id]?.name ?? 'Item'}`;
+    const inputName = BLOCK_DEFS[offer.input.id]?.name ?? 'Item';
+    const outputName = BLOCK_DEFS[offer.output.id]?.name ?? 'Item';
+    label.textContent = `${offer.input.count} ${inputName}  →  ${offer.output.count} ${outputName}`;
     label.style.cssText = 'font-size:13px;';
     row.appendChild(label);
     row.appendChild(iconCanvas(offer.output.id, 40));
