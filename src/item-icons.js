@@ -12,9 +12,11 @@ const STONE = { light: [0.72, 0.72, 0.72], dark: [0.46, 0.46, 0.46] };
 const IRON = { light: [0.95, 0.95, 0.97], dark: [0.66, 0.66, 0.7] };
 
 // Stable pseudo-random value in [-0.5, 0.5) for a pixel, so sprites look the same on every run.
+// Enhanced for more visual texture.
 function grain(px, py) {
-  const h = Math.sin(Math.floor(px) * 12.9898 + Math.floor(py) * 78.233) * 43758.5453;
-  return h - Math.floor(h) - 0.5;
+  const h1 = Math.sin(Math.floor(px) * 12.9898 + Math.floor(py) * 78.233) * 43758.5453;
+  const h2 = Math.sin(Math.floor(px) * 39.346 + Math.floor(py) * 11.135) * 12345.6789;
+  return (h1 - Math.floor(h1) + h2 - Math.floor(h2)) / 2 - 0.5;
 }
 
 function tint(c, amount) {
@@ -522,16 +524,13 @@ const SPRITES = new Map([
 
   [BLOCK.EMERALD_ORE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.2, 0.5, 0.2], grain(px, py) * 0.1))],
   [BLOCK.RAINBOW_ORE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => {
-  [BLOCK.GOLDEN_APPLE, ellipse(8, 8, 5, 5, (px, py) => tint([0.95, 0.8, 0.1], grain(px, py) * 0.08))],
-  [BLOCK.IRON_BLOCK, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.9, 0.9, 0.9], grain(px, py) * 0.05))],
-  [BLOCK.OBSIDIAN, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.1, 0.1, 0.2], grain(px, py) * 0.05))],
-  [BLOCK.ENCHANTING_TABLE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.5, 0.1, 0.1], grain(px, py) * 0.05))],
-
     const hue = Math.floor((py + px * 0.5) / 3) % 3;
     return [[1, 0.2, 0.2], [0.2, 1, 0.2], [0.2, 0.2, 1]][hue];
   })],
-
   [BLOCK.GOLDEN_APPLE, ellipse(8, 8, 5, 5, (px, py) => tint([0.95, 0.8, 0.1], grain(px, py) * 0.08))],
+  [BLOCK.IRON_BLOCK, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.9, 0.9, 0.9], grain(px, py) * 0.05))],
+  [BLOCK.OBSIDIAN, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.1, 0.1, 0.2], grain(px, py) * 0.05))],
+  [BLOCK.UPGRADE_TABLE, poly([[2, 2], [14, 2], [14, 14], [2, 14]], (px, py) => tint([0.5, 0.1, 0.1], grain(px, py) * 0.05))],
 
 ]);
 
@@ -554,7 +553,7 @@ function buildPixels(spec) {
         const rim = !at(x - 1, y) || !at(x, y - 1) || !at(x + 1, y) || !at(x, y + 1);
         if (rim) {
           const lit = !at(x - 1, y) || !at(x, y - 1);
-          const k = lit ? 1.12 : 0.85;
+          const k = lit ? 1.25 : 0.75; // Increased contrast
           rgb = [Math.min(1, rgb[0] * k), Math.min(1, rgb[1] * k), Math.min(1, rgb[2] * k)];
         }
         // Detail: a soft light from the top left across the whole sprite, and a little fine grain on each pixel, so
@@ -583,6 +582,9 @@ const pixelCache = new Map();
 
 // RGBA bytes for an item's 16x16 sprite, or null if the item has no sprite. Do not modify the result.
 export function itemPixels(id) {
+  if (id === BLOCK.DIAMOND_SWORD_SHARPNESS || id === BLOCK.DIAMOND_SWORD_FIRE_ASPECT) {
+    id = BLOCK.DIAMOND_SWORD;
+  }
   if (!SPRITES.has(id)) return null;
   if (!pixelCache.has(id)) pixelCache.set(id, buildPixels(SPRITES.get(id)));
   return pixelCache.get(id);

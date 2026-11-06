@@ -28,6 +28,7 @@ import { createInventoryUI } from './inventory-ui.js';
 import { createFurnaceUI } from './furnace-ui.js';
 import { createTradeUI } from './trade-ui.js';
 import { createRecipeBookUI } from './recipe-book-ui.js';
+import { createUpgradeTableUI } from './upgrade-table-ui.js';
 import { createHeldView } from './held-view.js';
 import { itemTexture } from './item-icons.js';
 import { Furnace, emptyFurnaceInto } from './smelting.js';
@@ -219,7 +220,7 @@ function attack() {
   if (mob) {
     // Shears never kill a sheep: they are for shearing with right-click, so a hit does nothing extra.
     if (inventory.selectedItem.id === BLOCK.SHEARS && mob.type === MOB.SHEEP) return;
-    const dmg = attackDamage(inventory.selectedItem.id);
+    const dmg = attackDamage(inventory.selectedItem);
     // Hitting a villager angers its village's iron golem.
     mobs.angerGolemsOf(mob);
     // Any tamed wolf takes the player's target, so it attacks the same mob until it dies.
@@ -496,6 +497,7 @@ function tradeAimedVillager() {
   if (crafting?.isOpen()) crafting.toggle();
   if (furnaceUI?.isOpen()) furnaceUI.close();
   if (chestUI?.isOpen()) chestUI.close();
+  if (upgradeTableUI?.isOpen()) upgradeTableUI.close();
   tradeUI.open(villager);
   document.exitPointerLock();
   return true;
@@ -638,7 +640,7 @@ function combatPress() {
   if (inventory.hasOffhandShield() && held !== BLOCK.BOW) return false;
   if (held === BLOCK.BOW && inventory.countOf(BLOCK.ARROW) > 0) {
     combat.drawing = true;
-    combat.drawTime = 0;
+     combat.drawTime = 0;
     return true;
   }
   return false;
@@ -841,6 +843,7 @@ function useOrPlace() {
     const { x, y, z } = hit.block;
     if (crafting.isOpen()) crafting.toggle();
     if (furnaceUI.isOpen()) furnaceUI.close();
+    if (upgradeTableUI.isOpen()) upgradeTableUI.close();
     chestUI.open(chestAt(x, y, z));
     document.exitPointerLock();
     return;
@@ -848,8 +851,15 @@ function useOrPlace() {
   if (hit && (hit.id === BLOCK.FURNACE || hit.id === FURNACE_STATE.LIT)) {
     const { x, y, z } = hit.block;
     // Only one panel at a time: close the crafting panel before opening the furnace.
+    if (upgradeTableUI.isOpen()) upgradeTableUI.close();
     if (crafting.isOpen()) crafting.toggle();
     furnaceUI.open(furnaceAt(x, y, z));
+    document.exitPointerLock();
+    return;
+  }
+  if (hit && hit.id === BLOCK.UPGRADE_TABLE) {
+    if (crafting.isOpen()) crafting.toggle();
+    upgradeTableUI.open();
     document.exitPointerLock();
     return;
   }
@@ -949,6 +959,7 @@ const sleep = createSleep();
 let sleepBed = null;
 const crafting = createInventoryUI(inventory, player, opaqueMat);
 const furnaceUI = createFurnaceUI(inventory);
+const upgradeTableUI = createUpgradeTableUI(inventory);
 const chestUI = createChestUI(inventory);
 const tradeUI = createTradeUI(inventory);
 const recipeBook = createRecipeBookUI(inventory);

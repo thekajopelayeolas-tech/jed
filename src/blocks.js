@@ -99,6 +99,8 @@ export const BLOCK = {
   ARROW: 104,
   // The ender pearl, thrown to teleport. Id 105 is new and never reused.
   ENDER_PEARL: 105,
+  DIAMOND_SWORD_SHARPNESS: 166,
+  DIAMOND_SWORD_FIRE_ASPECT: 167,
   // Mob drops. Ids 106 to 115 are new and never reused. Each is an item a mob leaves when killed.
   BONE: 106,
   STRING: 107,
@@ -110,8 +112,9 @@ export const BLOCK = {
   HONEYCOMB: 113,
   SCUTE: 114,
   BAMBOO: 115,
-  // Lava pools in some deep caves. Id 128 is new and never reused.
-  LAVA: 128,
+  // Enchanted Swords. New IDs 166-167.
+  DIAMOND_SWORD_SHARPNESS: 166,
+  DIAMOND_SWORD_FIRE_ASPECT: 167,
   // Flowing water: water that spreads out as slabs. A bucket cannot pick it up. Id 129 is new and never reused.
   FLOWING_WATER: 129,
   // A gun, fired with right-click, and the bullets it fires. Ids 130 and 131 are new and never reused.
@@ -128,7 +131,7 @@ export const BLOCK = {
   GOLDEN_APPLE: 141,
   IRON_BLOCK: 142,
   OBSIDIAN: 143,
-  ENCHANTING_TABLE: 144,
+  UPGRADE_TABLE: 144,
 
   ORANGE_DYE: 200,
   PURPLE_DYE: 201,
@@ -219,6 +222,8 @@ export const TOOL_ITEMS = {
   [BLOCK.DIAMOND_PICKAXE]: { tool: TOOL.PICKAXE, tier: 4, speed: 12, damage: 6, item: true },
   [BLOCK.DIAMOND_AXE]: { tool: TOOL.AXE, tier: 4, speed: 12, damage: 8, item: true },
   [BLOCK.DIAMOND_SWORD]: { tool: TOOL.SWORD, tier: 4, speed: 2.5, damage: 12, item: true },
+  [BLOCK.DIAMOND_SWORD_SHARPNESS]: { tool: TOOL.SWORD, tier: 4, speed: 2.5, damage: 15, item: true },
+  [BLOCK.DIAMOND_SWORD_FIRE_ASPECT]: { tool: TOOL.SWORD, tier: 4, speed: 2.5, damage: 18, item: true },
   // Shovels dig dirt-type blocks. Tiers and speeds follow the other tools: wood, stone, iron.
   [BLOCK.WOODEN_SHOVEL]: { tool: TOOL.SHOVEL, tier: 1, speed: 2, damage: 2, item: true },
   [BLOCK.STONE_SHOVEL]: { tool: TOOL.SHOVEL, tier: 2, speed: 4, damage: 3, item: true },
@@ -412,13 +417,16 @@ export const BLOCK_DEFS = {
   [BLOCK.GOLDEN_APPLE]: { name: 'Golden Apple', top: [0.95, 0.8, 0.1], side: [0.95, 0.8, 0.1], bottom: [0.95, 0.8, 0.1], solid: false, transparent: true, item: true },
   [BLOCK.IRON_BLOCK]: { name: 'Iron Block', top: [0.9, 0.9, 0.9], side: [0.9, 0.9, 0.9], bottom: [0.9, 0.9, 0.9], solid: true, transparent: false },
   [BLOCK.OBSIDIAN]: { name: 'Obsidian', top: [0.1, 0.1, 0.2], side: [0.1, 0.1, 0.2], bottom: [0.1, 0.1, 0.2], solid: true, transparent: false },
-  [BLOCK.ENCHANTING_TABLE]: { name: 'Enchanting Table', top: [0.5, 0.1, 0.1], side: [0.2, 0.2, 0.2], bottom: [0.4, 0.2, 0.1], solid: true, transparent: false },
+  [BLOCK.UPGRADE_TABLE]: { name: 'Upgrade Table', top: [0.5, 0.1, 0.1], side: [0.2, 0.2, 0.2], bottom: [0.4, 0.2, 0.1], solid: true, transparent: false },
 
   [STORAGE.CHEST]: { name: 'Chest', top: [0.6, 0.45, 0.25], side: [0.55, 0.4, 0.22], bottom: [0.6, 0.45, 0.25], solid: true, transparent: false },
   [DOOR.OPEN_DOOR]: { name: 'Open Door', top: [0.75, 0.6, 0.38], side: [0.75, 0.6, 0.38], bottom: [0.75, 0.6, 0.38], solid: false, transparent: true },
   [BLOCK.MAP]: { name: 'Map', top: [1, 1, 1], side: [1, 1, 1], bottom: [1, 1, 1], solid: false, transparent: true, item: true },
   MANSION_MAP: 140,
   [BUILD.CONCRETE_STAIRS]: { name: 'Concrete Stairs', top: [0.6, 0.6, 0.6], side: [0.6, 0.6, 0.6], bottom: [0.6, 0.6, 0.6], solid: true, transparent: false },
+  [BLOCK.DIAMOND_SWORD_SHARPNESS]: { name: 'Sharpness Diamond Sword', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
+  [BLOCK.DIAMOND_SWORD_FIRE_ASPECT]: { name: 'Fire Aspect Diamond Sword', top: [0.4, 0.9, 0.95], side: [0.4, 0.9, 0.95], bottom: [0.4, 0.9, 0.95], solid: false, transparent: true, item: true },
+
 };
 
 export function isSolid(id) {

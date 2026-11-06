@@ -517,6 +517,19 @@ export class Mob {
       mz = 0;
       this.wanderDir.set(0, 0);
     }
+    // Ledge check: do not walk off a ledge if it is more than 1 block tall.
+    if (!this.def.water) {
+      const footY = Math.floor(this.pos.y);
+      // If the block below (footY-1) AND the block below that (footY-2) are not solid,
+      // it's a drop of at least 2 blocks.
+      if (!isSolid(this.world.getBlock(nxt, footY - 1, nzt)) && 
+          !isSolid(this.world.getBlock(nxt, footY - 2, nzt))) {
+        mx = 0;
+        mz = 0;
+        this.wanderDir.set(0, 0);
+      }
+    }
+
 
     // Knockback fades out over time and is added on top of the AI movement.
     this.knock.multiplyScalar(Math.max(0, 1 - KNOCKBACK_DECAY * dt));
@@ -779,6 +792,11 @@ export class MobManager {
       if (id === BLOCK.AIR) continue;
       // The first non-air cell decides it: water means no land spawn here.
       if (id === BLOCK.WATER) return;
+
+      // Restrict spawning to ground blocks
+      const groundBlocks = [BLOCK.GRASS, BLOCK.DIRT, BLOCK.STONE, BLOCK.SAND, BLOCK.COBBLESTONE];
+      if (!groundBlocks.includes(id)) return;
+
       if (this.world.getBlock(x, y + 1, z) !== BLOCK.AIR) return;
       // A hostile mob only spawns at night, so by day no hostile spawn happens here at all.
       if (MOB_DEFS[type]?.hostile && !night) return;

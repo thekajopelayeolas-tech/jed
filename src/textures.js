@@ -324,6 +324,14 @@ const PAINTERS = {
     if (n < 0.75) return jitter(STONE, noise(x, y, 41), 0.18);
     return jitter([1, 0.9, 0.1], noise(x, y, 42), 0.1);
   },
+  ironBlock: (x, y) => jitter([0.9, 0.9, 0.95], noise(x, y, 90), 0.05),
+  obsidian: (x, y) => jitter([0.1, 0.05, 0.15], noise(x, y, 91), 0.05),
+  upgradeTable: (x, y) => {
+    // Basic stylized table texture
+    if (x < 2 || x > 13 || y < 2 || y > 13) return [0.2, 0.1, 0.1, 1]; // Dark frame
+    if ((x + y) % 2 === 0) return [0.5, 0.1, 0.1, 1]; // Reddish pattern
+    return [0.4, 0.05, 0.05, 1];
+  },
 };
 
 // Tile index for each named painter, in atlas order.
@@ -400,6 +408,9 @@ export const BLOCK_TILES = {
   [BLOCK.STONE_SLAB]: { top: 'stone', side: 'stone', bottom: 'stone' },
   [BLOCK.BRICK_SLAB]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },
   [BLOCK.CONCRETE_SLAB]: { top: 'concrete', side: 'concrete', bottom: 'concrete' },
+  [BLOCK.IRON_BLOCK]: { top: 'ironBlock', side: 'ironBlock', bottom: 'ironBlock' },
+  [BLOCK.OBSIDIAN]: { top: 'obsidian', side: 'obsidian', bottom: 'obsidian' },
+  [BLOCK.UPGRADE_TABLE]: { top: 'upgradeTable', side: 'upgradeTable', bottom: 'upgradeTable' },
   [BLOCK.WOOD_STAIRS]: { top: 'planks', side: 'planks', bottom: 'planks' },
   [BLOCK.STONE_STAIRS]: { top: 'stone', side: 'stone', bottom: 'stone' },
   [BLOCK.BRICK_STAIRS]: { top: 'bricks', side: 'bricks', bottom: 'bricks' },

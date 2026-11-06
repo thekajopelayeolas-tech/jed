@@ -135,6 +135,16 @@ export function iconCanvas(id, size = ICON) {
   c.width = ICON;
   c.height = ICON;
   c.style.cssText = `width:${size}px;height:${size}px;image-rendering:pixelated;flex:none;`;
-  c.getContext('2d').drawImage(baseIcon(id), 0, 0);
+  const ctx = c.getContext('2d');
+  ctx.drawImage(baseIcon(id), 0, 0);
+  
+  // Apply purple glow effect to enchanted items
+  if (id === BLOCK.DIAMOND_SWORD_SHARPNESS || id === BLOCK.DIAMOND_SWORD_FIRE_ASPECT) {
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = 'rgba(200, 100, 255, 0.4)'; // Brighter, more transparent purple
+    ctx.fillRect(0, 0, ICON, ICON);
+    ctx.globalCompositeOperation = 'source-over';
+  }
   return c;
 }
+

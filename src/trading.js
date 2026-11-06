@@ -10,7 +10,7 @@ const BETTER_ITEMS = [
   { id: BLOCK.COOKED_BEEF, count: 10 },
   { id: BLOCK.ENDER_PEARL, count: 2 },
   { id: BLOCK.OBSIDIAN, count: 3 },
-  { id: BLOCK.ENCHANTING_TABLE, count: 1 }
+  { id: BLOCK.UPGRADE_TABLE, count: 1 }
 ];
 
 const NEW_TRADES = [];
@@ -38,7 +38,7 @@ export const VILLAGER_TRADES = [
   // Tuturmen (New Specialized Job)
   { id: 'diamond-pick', job: VILLAGER_JOBS.TUTURMEN, input: { id: BLOCK.EMERALD, count: 20 }, output: { id: BLOCK.DIAMOND_PICKAXE, count: 1 } },
   { id: 'obsidian', job: VILLAGER_JOBS.TUTURMEN, input: { id: BLOCK.EMERALD, count: 3 }, output: { id: BLOCK.OBSIDIAN, count: 2 } },
-  { id: 'enchanting-table', job: VILLAGER_JOBS.TUTURMEN, input: { id: BLOCK.EMERALD, count: 30 }, output: { id: BLOCK.ENCHANTING_TABLE, count: 1 } },
+  { id: 'upgrade-table', job: VILLAGER_JOBS.TUTURMEN, input: { id: BLOCK.EMERALD, count: 30 }, output: { id: BLOCK.UPGRADE_TABLE, count: 1 } },
 
   ...NEW_TRADES
 ];

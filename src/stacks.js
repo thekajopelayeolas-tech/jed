@@ -10,27 +10,36 @@ export function placeStack(slot, cursor) {
     if (slot.id === BLOCK.AIR) return;
     cursor.id = slot.id;
     cursor.count = slot.count;
+    cursor.level = slot.level;
     slot.id = BLOCK.AIR;
     slot.count = 0;
+    slot.level = undefined;
     return;
   }
   if (slot.id === BLOCK.AIR) {
     slot.id = cursor.id;
     slot.count = cursor.count;
+    slot.level = cursor.level;
     cursor.id = BLOCK.AIR;
     cursor.count = 0;
+    cursor.level = undefined;
     return;
   }
-  if (slot.id === cursor.id && slot.count < STACK_MAX) {
+  // Only merge if ID and level match
+  if (slot.id === cursor.id && (slot.level || 0) === (cursor.level || 0) && slot.count < STACK_MAX) {
     const take = Math.min(STACK_MAX - slot.count, cursor.count);
     slot.count += take;
     cursor.count -= take;
-    if (cursor.count === 0) cursor.id = BLOCK.AIR;
+    if (cursor.count === 0) {
+        cursor.id = BLOCK.AIR;
+        cursor.level = undefined;
+    }
     return;
   }
-  // Different items: swap the held stack with the slot.
+  // Different items or levels: swap the held stack with the slot.
   [slot.id, cursor.id] = [cursor.id, slot.id];
   [slot.count, cursor.count] = [cursor.count, slot.count];
+  [slot.level, cursor.level] = [cursor.level, slot.level];
 }
 
 // Right click on a slot: with an empty cursor, take half. With a held stack, put down one item.
@@ -40,19 +49,25 @@ export function splitStack(slot, cursor) {
     const half = Math.ceil(slot.count / 2);
     cursor.id = slot.id;
     cursor.count = half;
+    cursor.level = slot.level;
     slot.count -= half;
     return;
   }
+  // Can only split into an empty slot if levels match (or empty)
   if (slot.id === BLOCK.AIR) {
     slot.id = cursor.id;
     slot.count = 1;
-  } else if (slot.id === cursor.id && slot.count < STACK_MAX) {
+    slot.level = cursor.level;
+  } else if (slot.id === cursor.id && (slot.level || 0) === (cursor.level || 0) && slot.count < STACK_MAX) {
     slot.count += 1;
   } else {
     return;
   }
   cursor.count -= 1;
-  if (cursor.count === 0) cursor.id = BLOCK.AIR;
+  if (cursor.count === 0) {
+    cursor.id = BLOCK.AIR;
+    cursor.level = undefined;
+  }
 }
 
 // Shift click: move a whole stack from slots[i] into slots[targetFrom..targetTo).
