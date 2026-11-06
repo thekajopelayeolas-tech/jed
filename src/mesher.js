@@ -21,7 +21,7 @@ const FACES = [
 // the corner. Returns 3 (open) down to 0 (fully occluded).
 function isOccluder(world, x, y, z) {
   const id = world.getBlock(x, y, z);
-  return id !== BLOCK.AIR && !BLOCK_DEFS[id].transparent ? 1 : 0;
+  return id !== BLOCK.AIR && BLOCK_DEFS[id]?.transparent !== true ? 1 : 0;
 }
 
 function cornerAO(world, wx, y, wz, f, c) {
