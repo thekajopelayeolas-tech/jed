@@ -227,7 +227,6 @@ function attack() {
     mob.takeHit(dmg, player.pos.x, player.pos.z);
     particles.spawn(mob.pos.x, mob.pos.y + mob.height / 2, mob.pos.z, 0xff0000, 10);
     if (mob.dead) {
-      if (mob.def.hostile) player.xp += 10;
       for (const id of mob.dropIds()) drops.spawn(id, mob.pos.x, mob.pos.y, mob.pos.z);
     }
     return;
@@ -951,7 +950,7 @@ let sleepBed = null;
 const crafting = createInventoryUI(inventory, player, opaqueMat);
 const furnaceUI = createFurnaceUI(inventory);
 const chestUI = createChestUI(inventory);
-const tradeUI = createTradeUI(inventory, player);
+const tradeUI = createTradeUI(inventory);
 const recipeBook = createRecipeBookUI(inventory);
 // The creative inventory: every item, free. Only opened in creative worlds (B toggles it there).
 const creativeUI = createCreativeUI(inventory);

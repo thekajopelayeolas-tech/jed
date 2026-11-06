@@ -48,7 +48,6 @@ export class Player {
     this.flying = false;
     this.canFly = false;
     this.lastSpaceTap = -Infinity;
-    this.xp = 0;
   }
 
   // Double-tapping Space toggles flight in a creative world. Flight only works when `canFly` is set.

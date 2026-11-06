@@ -2,8 +2,6 @@ import { BLOCK } from './blocks.js';
 import { VILLAGER_JOBS } from './mobs.js';
 
 // A compact village market: villagers buy farm goods and sell useful supplies for emeralds.
-import { VILLAGER_JOBS } from './mobs.js';
-
 const NEW_TRADES = [];
 const NEW_JOB_VALUES = Object.values(VILLAGER_JOBS).slice(4);
 for (let i = 0; i < 200; i++) {
@@ -11,8 +9,7 @@ for (let i = 0; i < 200; i++) {
     id: `trade-${i}`,
     job: NEW_JOB_VALUES[i % 10],
     input: { id: BLOCK.EMERALD, count: 1 },
-    output: { id: BLOCK.WHEAT, count: 1 },
-    xpRequired: i * 5
+    output: { id: BLOCK.WHEAT, count: 1 }
   });
 }
 
@@ -57,14 +54,13 @@ export function canFitTradeOutput(inventory, output) {
   return matchingSpace + emptySlots >= output.count;
 }
 
-export function canMakeTrade(inventory, offer, player) {
-  if (offer.xpRequired && player.xp < offer.xpRequired) return false;
+export function canMakeTrade(inventory, offer) {
   return inventory.countOf(offer.input.id) >= offer.input.count && canFitTradeOutput(inventory, offer.output);
 }
 
 // Atomic transaction: insufficient payment or reward capacity leaves the inventory unchanged.
-export function executeTrade(inventory, offer, player) {
-  if (!canMakeTrade(inventory, offer, player)) return false;
+export function executeTrade(inventory, offer) {
+  if (!canMakeTrade(inventory, offer)) return false;
   if (!inventory.remove(offer.input.id, offer.input.count)) return false;
   return inventory.add(offer.output.id, offer.output.count) === 0;
 }
