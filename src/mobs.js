@@ -35,6 +35,16 @@ export const VILLAGER_JOBS = {
   TOOLSMITH: 'toolsmith',
   FARMER: 'farmer',
   MAP_CREATOR: 'map_creator',
+  LIBRARIAN: 'librarian',
+  CLERIC: 'cleric',
+  BUTCHER: 'butcher',
+  FISHERMAN: 'fisherman',
+  FLETCHER: 'fletcher',
+  LEATHERWORKER: 'leatherworker',
+  STONEMASON: 'stonemason',
+  SHEPHERD: 'shepherd',
+  ALCHEMY_MASTER: 'alchemy_master',
+  BEAST_MASTER: 'beast_master',
 };
 
 export const MOB = {
@@ -83,7 +93,7 @@ const MOB_DEFS = {
   [MOB.VILLAGER]: { size: [0.6, 1.9, 0.6], color: 0x6b4a2b, health: 20, speed: 1.0, hostile: false, drops: [] },
   // The iron golem stays peaceful until the player hits a villager. Then it attacks the player, with 7 damage.
   // Iron golems and zombies walk backwards: they face away from the way they move.
-  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 0.9, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, damage: 7, guardDamage: 7, walksBackwards: true },
+  [MOB.IRON_GOLEM]: { size: [1.0, 2.4, 1.0], color: 0xbfc3c8, health: 30, speed: 1.5, hostile: false, drops: [BLOCK.IRON_INGOT], scale: 1.25, damage: 7, guardDamage: 7, walksBackwards: true },
   [MOB.ZOMBIE]: { size: [0.6, 1.9, 0.6], color: 0x3f8f3f, health: 10, speed: 2.3, hostile: true, damage: 3, drops: [BLOCK.ROTTEN_FLESH], burnsInSun: true, walksBackwards: true },
   [MOB.ARMOUR_STAND]: { size: [0.5, 1.8, 0.5], color: 0x996633, health: 1, speed: 0, hostile: false, drops: [] },
 

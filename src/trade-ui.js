@@ -2,7 +2,7 @@ import { BLOCK_DEFS } from './blocks.js';
 import { iconCanvas } from './icons.js';
 import { VILLAGER_TRADES, canMakeTrade, executeTrade } from './trading.js';
 
-export function createTradeUI(inventory) {
+export function createTradeUI(inventory, player) {
   let open = false;
   const root = document.createElement('div');
   root.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);pointer-events:auto;font-family:monospace;z-index:20;';
@@ -44,7 +44,11 @@ export function createTradeUI(inventory) {
     button.textContent = 'Trade';
     button.style.cssText = 'font:inherit;padding:8px;cursor:pointer;';
     button.addEventListener('click', () => {
-      if (executeTrade(inventory, offer)) status.textContent = 'Trade complete.';
+      if (offer.xpRequired && player.xp < offer.xpRequired) {
+        status.textContent = 'Need more XP.';
+        return;
+      }
+      if (executeTrade(inventory, offer, player)) status.textContent = 'Trade complete.';
       else status.textContent = inventory.countOf(offer.input.id) < offer.input.count ? 'Not enough payment.' : 'Make room in your inventory first.';
       refresh();
     });
@@ -54,7 +58,14 @@ export function createTradeUI(inventory) {
   });
 
   function refresh() {
-    for (const { offer, button } of offerRows) button.disabled = !canMakeTrade(inventory, offer);
+    for (const { offer, button } of offerRows) {
+      button.disabled = !canMakeTrade(inventory, offer, player);
+      if (offer.xpRequired && player.xp < offer.xpRequired) {
+        button.textContent = `Need ${offer.xpRequired} XP`;
+      } else {
+        button.textContent = 'Trade';
+      }
+    }
   }
   function close() {
     open = false;

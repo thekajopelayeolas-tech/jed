@@ -2,6 +2,21 @@ import { BLOCK } from './blocks.js';
 import { VILLAGER_JOBS } from './mobs.js';
 
 // A compact village market: villagers buy farm goods and sell useful supplies for emeralds.
+import { VILLAGER_JOBS } from './mobs.js';
+
+const NEW_TRADES = [];
+const NEW_JOB_VALUES = Object.values(VILLAGER_JOBS).slice(4);
+for (let i = 0; i < 200; i++) {
+  NEW_TRADES.push({
+    id: `trade-${i}`,
+    job: NEW_JOB_VALUES[i % 10],
+    input: { id: BLOCK.EMERALD, count: 1 },
+    output: { id: BLOCK.WHEAT, count: 1 },
+    xpRequired: i * 5
+  });
+}
+
+// A compact village market: villagers buy farm goods and sell useful supplies for emeralds.
 export const VILLAGER_TRADES = [
   // Farmer
   { id: 'wheat', job: VILLAGER_JOBS.FARMER, input: { id: BLOCK.WHEAT, count: 10 }, output: { id: BLOCK.EMERALD, count: 1 } },
@@ -32,6 +47,8 @@ export const VILLAGER_TRADES = [
   { id: 'bamboo-trade', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.BAMBOO, count: 10 }, output: { id: BLOCK.EMERALD, count: 1 } },
   { id: 'map', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.EMERALD, count: 5 }, output: { id: BLOCK.MAP, count: 1 } },
   { id: 'mansion-map', job: VILLAGER_JOBS.MAP_CREATOR, input: { id: BLOCK.EMERALD, count: 10 }, output: { id: BLOCK.MANSION_MAP, count: 1 } },
+  
+  ...NEW_TRADES
 ];
 
 export function canFitTradeOutput(inventory, output) {
@@ -40,13 +57,14 @@ export function canFitTradeOutput(inventory, output) {
   return matchingSpace + emptySlots >= output.count;
 }
 
-export function canMakeTrade(inventory, offer) {
+export function canMakeTrade(inventory, offer, player) {
+  if (offer.xpRequired && player.xp < offer.xpRequired) return false;
   return inventory.countOf(offer.input.id) >= offer.input.count && canFitTradeOutput(inventory, offer.output);
 }
 
 // Atomic transaction: insufficient payment or reward capacity leaves the inventory unchanged.
-export function executeTrade(inventory, offer) {
-  if (!canMakeTrade(inventory, offer)) return false;
+export function executeTrade(inventory, offer, player) {
+  if (!canMakeTrade(inventory, offer, player)) return false;
   if (!inventory.remove(offer.input.id, offer.input.count)) return false;
   return inventory.add(offer.output.id, offer.output.count) === 0;
 }
