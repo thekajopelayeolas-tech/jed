@@ -45,6 +45,7 @@ export const VILLAGER_JOBS = {
   SHEPHERD: 'shepherd',
   ALCHEMY_MASTER: 'alchemy_master',
   BEAST_MASTER: 'beast_master',
+  TUTURMEN: 'tuturmen',
 };
 
 export const MOB = {
